@@ -1,0 +1,62 @@
+{
+  "name": "ledger",
+  "version": "0.1.0",
+  "description": "The Bean Counter. The canonical, deterministic bridge for building reliable money, account, and financial systems. Enforces structural and functional integrity so mistakes never happen.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "tsx scripts/verify-determinism.ts",
+    "clean": "rm -rf dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eternal-roman/ledger.git"
+  },
+  "keywords": [
+    "ledger",
+    "accounting",
+    "double-entry",
+    "fintech",
+    "deterministic",
+    "exact-arithmetic",
+    "ai-skill",
+    "financial-systems",
+    "bean-counter"
+  ],
+  "author": "eternal-roman",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/eternal-roman/ledger/issues"
+  },
+  "homepage": "https://github.com/eternal-roman/ledger#readme",
+  "dependencies": {
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-check": "^3.23.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  }
+}

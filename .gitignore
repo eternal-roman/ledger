@@ -1,0 +1,27 @@
+.planning/
+# Planning, knowledge seeds, detailed architecture, review docs, internal plans
+# Only final package + minimal public README/ docs are committed
+
+# Build / deps
+node_modules/
+dist/
+build/
+*.log
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+
+# Env
+.env
+.env.local
+*.env
+
+# Misc
+*.tmp
