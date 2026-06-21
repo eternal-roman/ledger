@@ -11,7 +11,7 @@ export function buildBasicBank() {
   let ledger = emptyLedger();
   const g = loadDefaultKnowledge();
 
-  const entry = createBalancedEntry('loan1', '2026-06-21', loans, deposits, Money.from(100000, 'USD'), 'Issue loan funded by deposit');
+  const entry = createBalancedEntry('loan1', '2026-06-21', loans, deposits, Money.from('100000', 'USD'), 'Issue loan funded by deposit');
   ledger = ledger.apply(entry).ledger;
 
   const ruleCheck = validateAssetRecognition(entry, g);

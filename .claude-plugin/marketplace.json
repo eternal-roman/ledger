@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ledger",
+  "description": "The Bean Counter — the uncompromising Financial Architect. Forces exact Money arithmetic, double-entry balance, GAAP/IFRS grounding, Zero-Skip protocol, and canon citations on every financial value and construct.",
+  "owner": {
+    "name": "eternal-roman",
+    "url": "https://github.com/eternal-roman/ledger"
+  },
+  "plugins": [
+    {
+      "name": "ledger",
+      "description": "Uncompromising financial integrity. Money.from always, validated JournalEntry + Ledger.apply, citations required, no floats, provable balance.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
