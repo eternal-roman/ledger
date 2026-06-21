@@ -62,9 +62,9 @@ export class Money {
 
   /** Multiply by a scalar (rounding mode is passed through to decimal.js). */
   mul(scalar: string | number, roundingMode?: number): Money {
-    const result = this._amount.mul(new Decimal(String(scalar)));
+    let result = this._amount.mul(new Decimal(String(scalar)));
     if (roundingMode !== undefined) {
-      result.toDecimalPlaces(10, roundingMode);
+      result = result.toDecimalPlaces(this.scale, roundingMode);
     }
     return new Money(result, this.currency, this.scale, this.asOf, this.provenance);
   }

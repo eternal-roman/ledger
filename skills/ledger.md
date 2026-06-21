@@ -28,5 +28,12 @@ Before any financial modeling or code:
 
 See AGENTS.md and the package core for the executable truth.
 
-Commands: /ledger-verify, /ledger-audit, /ledger-cite, /ledger-reconcile, /ledger-sim
+Commands (full support tree):
+- /ledger-verify — force kernel + report violations + citations
+- /ledger-audit — project hygiene (Money.from everywhere, no mutation, invariants, levers)
+- /ledger-cite — graph fetch with levers for any canon (FOMC, IFRS, tax, macro, valuation)
+- /ledger-reconcile — assumptions -> validated balanced entries + citations
+- /ledger-sim — seeded deterministic runs with full trace + assumptions explicit
+
+See commands/ for host instructions. Always traverse the ladder and prove with validateEntry / Ledger.
 

@@ -72,18 +72,18 @@ describe('Ledger (immutable append + projections)', () => {
         fc.array(fc.integer({ min: 100, max: 10000 }), { minLength: 1, maxLength: 6 }),
         (amounts) => {
           let ledger = emptyLedger();
-          let netCash = 0;
+          let netCash = Money.from(0, 'USD');
 
           for (const amt of amounts) {
             const e = capEntry(String(amt));
             const res = ledger.apply(e);
             if (!res.result.ok) return false;
             ledger = res.ledger;
-            netCash += amt;
+            netCash = netCash.add(Money.from(String(amt), 'USD'));
           }
 
           const bal = ledger.balance(cash);
-          return bal.toString() === `${netCash.toFixed(2)} USD`;
+          return bal.toString() === netCash.toString();
         }
       ),
       { numRuns: 20 }
