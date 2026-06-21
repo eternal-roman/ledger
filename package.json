@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "version": "0.1.2",
-  "description": "Ledger — The Uncompromising Financial Architect (The Bean Counter). The canonical, deterministic financial integrity layer for money, accounts, and systems. Enforces double-entry GAAP/IFRS precision, exact arithmetic (no floats), Zero-Skip protocols, and graph-retrieved canon knowledge. Mistakes do not ship.",
+  "description": "The Bean Counter — uncompromising Financial Architect. Exact Money, double-entry, validated ledgers, canon citations. The best financial construct is the one that cannot be wrong.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,8 @@
     "AGENTS.md",
     "examples",
     "skills",
-    "commands"
+    "commands",
+    "assets"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -62,5 +63,8 @@
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.0"
+  },
+  "pi": {
+    "skills": ["./skills"]
   }
 }
