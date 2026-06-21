@@ -11,15 +11,17 @@ export interface JournalEntryLine {
 
 export class JournalEntry {
   public readonly lines: readonly JournalEntryLine[];
+  public readonly citations?: readonly string[]; // from knowledge fetch
 
   constructor(
     public readonly id: string,
     public readonly effectiveDate: string,
     lines: JournalEntryLine[],
-    public readonly description: string
+    public readonly description: string,
+    citations?: string[]
   ) {
-    // Freeze for immutability
     this.lines = Object.freeze([...lines]);
+    this.citations = citations ? Object.freeze([...citations]) : undefined;
   }
 }
 
@@ -51,13 +53,14 @@ export function createBalancedEntry(
   debitAccount: Account,
   creditAccount: Account,
   amount: Money,
-  description: string
+  description: string,
+  citations?: string[]
 ): JournalEntry {
   const lines = [
     makeLine(debitAccount, amount, 'debit'),
     makeLine(creditAccount, amount, 'credit'),
   ];
-  const entry = new JournalEntry(id, effectiveDate, lines, description);
+  const entry = new JournalEntry(id, effectiveDate, lines, description, citations);
   const validation = validateEntry(entry);
   if (!validation.ok) {
     throw new Error(`Failed to create balanced entry: ${validation.violations.map(v => v.message).join(', ')}`);

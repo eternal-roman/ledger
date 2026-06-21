@@ -19,13 +19,17 @@
     "dist",
     "README.md",
     "LICENSE",
-    "AGENTS.md"
+    "AGENTS.md",
+    "examples",
+    "skills",
+    "commands"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "tsx scripts/verify-determinism.ts",
+    "verify:full": "npm run build && npm test && npm run verify",
     "clean": "rm -rf dist"
   },
   "repository": {
