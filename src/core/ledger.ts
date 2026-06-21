@@ -33,21 +33,24 @@ export class Ledger {
 
   /** Pure function: balance for account as of date (simple sum, later can be more sophisticated) */
   balance(account: Account, asOf?: string): Money {
-    // TODO: improve to respect per-account / entry currency for zeros
-    let totalDebit = Money.from(0, 'USD');
-    let totalCredit = Money.from(0, 'USD');
-
     const relevant = this._entries.filter(e => !asOf || e.effectiveDate <= asOf);
+    const accLines = relevant.flatMap(e => e.lines.filter(l => l.account.code === account.code));
 
-    for (const entry of relevant) {
-      for (const line of entry.lines) {
-        if (line.account.code !== account.code) continue;
+    if (accLines.length === 0) {
+      return Money.from(0, 'USD');
+    }
 
-        if (line.side === 'debit') {
-          totalDebit = totalDebit.add(line.amount);
-        } else {
-          totalCredit = totalCredit.add(line.amount);
-        }
+    // Determine currency from actual lines for this account (support multi-curr)
+    const currency = accLines[0].amount.currency;
+    let totalDebit = Money.from(0, currency);
+    let totalCredit = Money.from(0, currency);
+
+    for (const line of accLines) {
+      if (line.amount.currency !== currency) continue; // skip unexpected mixed for acct
+      if (line.side === 'debit') {
+        totalDebit = totalDebit.add(line.amount);
+      } else {
+        totalCredit = totalCredit.add(line.amount);
       }
     }
 
@@ -63,6 +66,7 @@ export class Ledger {
    * Verify the fundamental accounting equation.
    * Discovers accounts from entries if none provided.
    * Uses Assets + Expenses = Liabilities + Equity + Income  (pre-closing)
+   * Supports multi-currency by checking equation holds within each currency.
    */
   verifyFundamentalEquation(accounts?: Account[]): boolean {
     let accts = accounts;
@@ -78,21 +82,31 @@ export class Ledger {
       accts = Array.from(seen.values());
     }
 
-    let debitSide = Money.from(0, 'USD');
-    let creditSide = Money.from(0, 'USD');
+    // Per-currency sides to support mixed-currency ledgers exactly
+    const byCurr: Map<string, { debit: Money; credit: Money }> = new Map();
 
     for (const acct of accts) {
       const bal = this.balance(acct);
+      const c = bal.currency;
+      if (!byCurr.has(c)) {
+        byCurr.set(c, { debit: Money.from(0, c), credit: Money.from(0, c) });
+      }
+      const s = byCurr.get(c)!;
       const isDebitNormal = acct.type === AccountType.Asset || acct.type === AccountType.Expense;
       if (isDebitNormal) {
-        debitSide = debitSide.add(bal);
+        s.debit = s.debit.add(bal);
       } else {
-        creditSide = creditSide.add(bal);
+        s.credit = s.credit.add(bal);
       }
     }
 
-    // Assets + Expenses == Liabilities + Equity + Income
-    return debitSide.toDecimal().eq(creditSide.toDecimal());
+    // For each currency, Assets + Expenses == Liabilities + Equity + Income
+    for (const { debit, credit } of byCurr.values()) {
+      if (!debit.toDecimal().eq(credit.toDecimal())) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

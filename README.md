@@ -1,14 +1,23 @@
 # Ledger
 
-**Ledger — The Uncompromising Financial Architect**  
-**The Bean Counter**  
-*He says nothing. He balances the books to the penny. Mistakes do not leave the building.*
+<p align="center">
+  <img src="assets/bean-counter.jpg" width="260" alt="Ledger — The Bean Counter">
+</p>
+
+<p align="center">
+  <strong>Ledger — The Uncompromising Financial Architect</strong><br>
+  <strong>The Bean Counter</strong>
+</p>
+
+<p align="center">
+  <em>He says nothing. He balances the books to the penny. Mistakes do not leave the building.</em>
+</p>
 
 Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
 
-Where other systems cut corners, Ledger builds vaults. It guarantees every component is structurally sound, mathematically deterministic, and anchored in institutional-grade best practices.
+You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption — or he will say nothing and let it pass only when debits equal credits and every rate has a source.
 
-**Cartoon Stereotype:** Ledger is depicted as a black-and-white, layered Family Guy style cartoon character — a gaunt, middle-aged accountant with a permanent scowl, thick horn-rimmed glasses, receding hairline, wearing a rumpled dress shirt with rolled sleeves and suspenders, a loosened striped tie, and a classic green eyeshade pulled low. One hand clutches a massive leather-bound ledger; the other grips a red mechanical pencil. Sharp bold outlines, high-contrast ink, subtle cross-hatch layering for depth and cel-shaded planes. Pure monochrome line art with no color fills.
+Where other systems cut corners, Ledger builds vaults. It guarantees every component is structurally sound, mathematically deterministic, and anchored in institutional-grade best practices.
 
 It makes structural and functional integrity **impossible to violate** by accident:
 
@@ -19,13 +28,39 @@ It makes structural and functional integrity **impossible to violate** by accide
 - Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact (build plan) before any production code
 - Grounded in canonical bodies of knowledge: Accounting & Banking, Finance & Capital Management, Economics & Public Policy, Tax & Estate Law
 - Graph-theory knowledge retrieval: levers fetch only the required rules and canon on demand
-- AI agents are forced to act like the unforgiving bean counter
+- The agent *is* the Bean Counter: exacting, silent until the numbers prove themselves
+
+## How it works
+
+Before any financial modeling, recognition, or code, the agent runs the **Zero-Skip Execution Protocol**:
+
+1. Does this touch value, accounts, recognition, measurement, or risk pricing?
+2. Can it be expressed with the immutable kernel? (`Money.from`, `JournalEntry`, `Ledger.apply`)
+3. Is there a canon fact or graph-retrieved knowledge that governs it? Cite the source.
+4. Is the result deterministic and reproducible?
+5. Do `validateEntry` and the ledger prove the invariants (balance, accounting equation)?
+
+The graphic of the Bean Counter — eyeshade, ledger, red pencil — embodies the presence that refuses to ship anything unproven.
 
 ## Install
+
+For the library + reference implementation:
 
 ```bash
 npm install ledger
 ```
+
+The package ships the persona files (AGENTS.md, skills/, commands/, assets/ graphic) so agents can load them directly.
+
+For AI hosts:
+
+- Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) into your project or global rules.
+- Use host adapters in this repo (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
+- For Claude Code / similar marketplaces: add the repo as plugin source (it provides .claude-plugin/).
+- The `pi` config enables skill loading in compatible harnesses.
+- Pair with ponytail for general minimalism.
+
+See pony tail's agent-portability patterns for similar distribution.
 
 ## Core Usage
 
@@ -40,7 +75,7 @@ const contribution = createBalancedEntry(
   '2026-06-21',
   cash,
   equity,
-  Money.from(10000, 'USD'),
+  Money.from('10000', 'USD'),
   'Initial capital'
 );
 
@@ -58,7 +93,7 @@ See `examples/personal-ledger.ts` for a complete working example.
 
 ## AI Agent Integration
 
-Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package for your host).
+Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package for your host). Many hosts also discover host-specific adapters (`.cursor/rules/`, `.clinerules/`, `.windsurf/rules/`, `.github/copilot-instructions.md`, etc.).
 
 The agent becomes **The Bean Counter** (Ledger — The Uncompromising Financial Architect):
 - Executes the Zero-Skip Execution Protocol on every task (Plan & Unpack → Gap Analysis → complete Artifact)
@@ -67,12 +102,17 @@ The agent becomes **The Bean Counter** (Ledger — The Uncompromising Financial 
 - Proves invariants with `validateEntry` and `Ledger.apply` before any output
 - Uses graph-retrieved knowledge (levers / dimensions) only when required
 
+This is the sibling to ponytail (the lazy senior dev): ponytail for minimalism, Ledger for uncompromised financial structure.
+
 Commands (when supported by host):
-- `/ledger-verify`
-- `/ledger-audit`
-- `/ledger-cite`
-- `/ledger-reconcile`
-- `/ledger-sim`
+
+| Command            | What it does |
+|--------------------|--------------|
+| `/ledger-verify`   | Check diff/snippet for invariants, Money usage, balanced entries, citations |
+| `/ledger-audit`    | Whole-project financial hygiene and structural integrity audit |
+| `/ledger-cite`     | Retrieve canon-backed facts using knowledge levers (GAAP/IFRS, policy, tax) |
+| `/ledger-reconcile`| Turn assumptions and rates into validated double-entry with citations |
+| `/ledger-sim`      | Run seeded deterministic scenarios with full assumption trace and proof |
 
 ## Determinism & Verification
 
@@ -93,6 +133,20 @@ Property-based tests + explicit reproducibility checks are part of the package.
 - Graph-theory knowledge retrieval for targeted canon
 - Fail closed. The Final Verification: "Was this lazy? Is this mathematically and structurally undeniable?"
 - Minimal surface that still protects integrity
+
+## Development
+
+When updating persona text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters), keep them consistent with the Zero-Skip rules and each other.
+
+Run the verification harness:
+
+```bash
+npm run verify:full
+```
+
+The graphic (assets/bean-counter.jpg) exemplifies the Bean Counter; updates to it should preserve the high-contrast, exacting presence without adding explanatory prose about its style.
+
+This package is the sibling to ponytail: keep the distribution components (skills layout, toml commands, pi config, adapters) aligned for seamless use together.
 
 ## License
 

@@ -1,0 +1,9 @@
+{
+  "name": "ledger",
+  "version": "0.1.2",
+  "description": "The Bean Counter — uncompromising Financial Architect. Exact Money, double-entry, validated ledgers, canon citations. The best financial construct is the one that cannot be wrong.",
+  "author": {
+    "name": "eternal-roman",
+    "url": "https://github.com/eternal-roman/ledger"
+  }
+}
