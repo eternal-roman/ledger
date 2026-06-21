@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "version": "0.1.1",
-  "description": "The Bean Counter. The canonical, deterministic bridge for building reliable money, account, and financial systems. Enforces structural and functional integrity so mistakes never happen.",
+  "description": "Ledger — The Uncompromising Financial Architect (The Bean Counter). The canonical, deterministic financial integrity layer for money, accounts, and systems. Enforces double-entry GAAP/IFRS precision, exact arithmetic (no floats), Zero-Skip protocols, and graph-retrieved canon knowledge. Mistakes do not ship.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
