@@ -77,7 +77,7 @@ describe('Ledger (immutable append + projections)', () => {
           for (const amt of amounts) {
             const e = capEntry(String(amt));
             const res = ledger.apply(e);
-            if (!res.result.ok) return false; // should never happen for our generator
+            if (!res.result.ok) return false;
             ledger = res.ledger;
             netCash += amt;
           }
@@ -88,5 +88,11 @@ describe('Ledger (immutable append + projections)', () => {
       ),
       { numRuns: 20 }
     );
+  });
+
+  it('verifyFundamentalEquation passes for balanced capital contribution', () => {
+    let ledger = emptyLedger().apply(capEntry('10000')).ledger;
+    expect(ledger.verifyFundamentalEquation([cash, equity])).toBe(true);
+    expect(ledger.verifyFundamentalEquation()).toBe(true); // auto-discover
   });
 });

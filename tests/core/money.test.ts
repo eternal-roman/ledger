@@ -35,4 +35,14 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const m = Money.from(0.1, 'USD');
     expect(m.toString()).toMatch(/^0\.1/);
   });
+
+  it('respects currency scale (JPY has 0 decimals)', () => {
+    const jpy = Money.from('1234', 'JPY');
+    expect(jpy.scale).toBe(0);
+    expect(jpy.toString()).toBe('1234 JPY');
+
+    const usd = Money.from('1234.56', 'USD');
+    expect(usd.scale).toBe(2);
+    expect(usd.toString()).toBe('1234.56 USD');
+  });
 });

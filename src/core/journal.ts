@@ -42,6 +42,30 @@ export function makeLine(account: Account, amount: Money, side: Side): JournalEn
 }
 
 /**
+ * Convenience helper: create a balanced two-line JournalEntry.
+ * Automatically validates and throws on invariant failure.
+ */
+export function createBalancedEntry(
+  id: string,
+  effectiveDate: string,
+  debitAccount: Account,
+  creditAccount: Account,
+  amount: Money,
+  description: string
+): JournalEntry {
+  const lines = [
+    makeLine(debitAccount, amount, 'debit'),
+    makeLine(creditAccount, amount, 'credit'),
+  ];
+  const entry = new JournalEntry(id, effectiveDate, lines, description);
+  const validation = validateEntry(entry);
+  if (!validation.ok) {
+    throw new Error(`Failed to create balanced entry: ${validation.violations.map(v => v.message).join(', ')}`);
+  }
+  return entry;
+}
+
+/**
  * Core kernel invariant: balanced double entry.
  * This is the foundation that must never be bypassed.
  */
