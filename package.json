@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Ledger — The Uncompromising Financial Architect (The Bean Counter). The canonical, deterministic financial integrity layer for money, accounts, and systems. Enforces double-entry GAAP/IFRS precision, exact arithmetic (no floats), Zero-Skip protocols, and graph-retrieved canon knowledge. Mistakes do not ship.",
   "type": "module",
   "main": "dist/index.js",
