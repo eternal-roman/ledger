@@ -22,18 +22,17 @@ npm install ledger
 ## Core Usage
 
 ```ts
-import { Money, Account, AccountType, JournalEntry, makeLine, emptyLedger, validateEntry } from 'ledger';
+import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry } from 'ledger';
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Owner Equity', AccountType.Equity);
 
-const contribution = new JournalEntry(
+const contribution = createBalancedEntry(
   'cap-001',
   '2026-06-21',
-  [
-    makeLine(cash, Money.from(10000, 'USD'), 'debit'),
-    makeLine(equity, Money.from(10000, 'USD'), 'credit'),
-  ],
+  cash,
+  equity,
+  Money.from(10000, 'USD'),
   'Initial capital'
 );
 
@@ -46,6 +45,8 @@ console.log(ledger.balance(cash).toString()); // "10000.00 USD"
 ```
 
 All operations are pure and immutable. The kernel will refuse any unbalanced state.
+
+See `examples/personal-ledger.ts` for a complete working example.
 
 ## AI Agent Integration
 
