@@ -1,0 +1,2 @@
+description = "Run deterministic scenario simulations with seed, trace all assumptions and prove invariants"
+prompt = "Run the described deterministic financial scenario or simulation. Seed any randomness. Use only ledger core (Money, JournalEntry, Ledger). Log every assumption explicitly (time, jurisdiction, rates, sources). Prove the result with validateEntry + Ledger.apply + fundamental equation. Output exact trace and final balanced state. Any probability work must be seeded and assumptions listed."
