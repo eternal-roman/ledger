@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20, 22]
+        node-version: [22, 24]
 
     steps:
     - uses: actions/checkout@v4
@@ -38,3 +38,8 @@ jobs:
 
     - name: Full verify
       run: npm run verify:full
+
+# Notes on versions:
+# - actions/checkout@v4 and actions/setup-node@v4 pinned (proven stable; main CI green post lock fix).
+# - Matrix updated to [22, 24] (Node 20 deprecated on GitHub runners per 2025 changelog; warnings observed in prior runs).
+# - Dependabot PRs #2 (checkout 4->7) and #3 (setup-node 4->6) reviewed: 1-line changes only; based on stale pre-fix commit (c392e59) causing npm ci lock mismatch failures. Changes evaluated as low-risk but kept conservative to avoid unverified major jumps. Full audit+release required before any merge per project rules. PRs will be closed without merge.
