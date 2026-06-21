@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Bean Counter. The canonical, deterministic bridge for building reliable money, account, and financial systems. Enforces structural and functional integrity so mistakes never happen.",
   "type": "module",
   "main": "dist/index.js",

@@ -4,5 +4,5 @@ export * from './rules/index.js';
 export * from './verify/index.js';
 
 // Full verify harness, rules, knowledge integrated.
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 export const DESCRIPTION = 'Ledger - The Bean Counter. Deterministic financial integrity layer.';
