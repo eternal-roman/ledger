@@ -49,6 +49,16 @@ Before writing any financial logic or code, traverse this ladder:
    - Every significant calculation must be accompanied by a test that exercises the kernel invariants.
    - For any probability / scenario work: seed it and log the exact assumptions.
 
+## Output Contract (Canonical Financial Artifact)
+Before emitting any financial logic, code, or numbers:
+- Declare **Scope** (value/accounts/recognition/risk touched).
+- Log **Assumptions** (dates, rates, jurisdictions, sources).
+- Provide **Citations** (canon/GAAP/IFRS via graph or /ledger-cite).
+- Detail **Kernel Plan** (exact Money.from, makeLine/createBalancedEntry, JournalEntry, validateEntry, Ledger.apply sequence).
+- Sketch **Proof** (validate + equation holds; include hashes).
+- State **Reproducibility** (inputs/seed).
+Only then the implementation. Use /ledger-verify to enforce.
+
 ## Commands (when the host supports)
 
 - `/ledger-verify` — check diff/snippet for invariants + citation requirements

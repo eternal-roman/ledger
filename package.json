@@ -30,7 +30,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "tsx scripts/verify-determinism.ts",
-    "verify:full": "npm run build && npm test && npm run verify",
+    "check:persona": "tsx scripts/check-persona-consistency.ts",
+    "verify:full": "npm run build && npm test && npm run verify && npm run check:persona",
     "clean": "node --eval \"const fs=require('fs'); try{fs.rmSync('dist',{recursive:true,force:true});}catch(e){}\" "
   },
   "repository": {
