@@ -1,14 +1,10 @@
 # Ledger Commercial Grade Builder Plan
 
-> **Progress Note (2026-06-21)**: Initial execution of the plan has started concurrently with its creation.
-> - All external persona references removed (self-contained).
-> - Graphics refresh begun: refined hero, icon (light/dark), banner assets added to `assets/`.
-> - README and AGENTS updated to use new refined visuals + stronger slogans.
-> - `skills/ledger/SKILL.md` hardened with mandatory Zero-Skip + Canonical Financial Artifact Output Contract.
-> - New `scripts/check-persona-consistency.ts` + `npm run check:persona` + wired into `verify:full`.
-> - All adapters + commands + AGENTS lightly synced; checker now passes.
-> - `npm run verify:full` green.
-> Next: deeper kernel expansion, more seeds, rich examples, full CLI, evidence benchmarks, and more graphic polish.
+> **Progress Note (2026-06-22)**: Cycle 1 (kernel) completed. Merged via PR#9, patch release 0.4.1.
+> - FXRate, convert, toFormat, allocate/div, tags support, (prior multi-curr/audit from remote PR#8).
+> - 44 tests, full verify green.
+> - Current: main up to date post-merge. Next: Cycle 2 knowledge expansion (new seeds: gaap, us-tax, valuation; graph edges).
+> - After cycles: /release patch + merge followed. Graphics/enforcement from prior intact.
 
 **Goal**: Transform Ledger into the canonical, trusted source for simplicity, consistency, and reliability when AI builds financial, accounting, investing, tax, and monetary software artifacts.
 
