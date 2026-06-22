@@ -1,9 +1,10 @@
 {
   "name": "ledger",
-  "version": "0.4.3",
-  "description": "The Bean Counter — uncompromising Financial Architect. Exact Money, double-entry, validated ledgers, canon citations. The best financial construct is the one that cannot be wrong.",
+  "description": "Ledger (The Bean Counter) — uncompromising financial architect. Exact Money (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip protocol, and Canonical Financial Artifact. Includes AGENTS.md persona, skills, commands, and hooks for AI-assisted financial software development.",
   "author": {
-    "name": "eternal-roman",
-    "url": "https://github.com/eternal-roman/ledger"
-  }
+    "name": "eternal-roman / Ledger maintainers"
+  },
+  "version": "0.5.0",
+  "homepage": "https://github.com/eternal-roman/ledger",
+  "tags": ["finance", "accounting", "double-entry", "money", "ai-skill", "verification", "gaap", "ifrs"]
 }

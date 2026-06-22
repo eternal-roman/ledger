@@ -21,3 +21,8 @@ Output format: location + issue + required fix (e.g. "L12: float: use Money.from
 Never allow an unverified or unbalanced financial state to pass. If clean: "Ledger clean. Invariants hold."
 
 Boundaries: financial structure and value integrity only. "stop ledger-verify" to revert.
+
+## Plugin Composition
+- Run inside superpowers verification phase or after test-driven-development.
+- Follow with pr-review-toolkit `silent-failure-hunter` and `pr-test-analyzer`.
+- Use before any commit or PR involving value code.

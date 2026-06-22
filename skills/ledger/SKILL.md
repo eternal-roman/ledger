@@ -63,6 +63,7 @@ Only then the implementation. Use /ledger-verify to enforce.
 
 - `/ledger-verify` — check diff/snippet for invariants + citation requirements
 - `/ledger-audit` — whole project financial hygiene review
+- `/ledger-review` — full multi-layer review (kernel + superpowers verification + pr-review-toolkit + security)
 - `/ledger-cite` — retrieve canon-backed fact for a concept
 - `/ledger-reconcile` — turn assumptions into proper journal entries with citations
 - `/ledger-sim` — run deterministic scenario with seed and trace assumptions
@@ -74,3 +75,13 @@ Ledger governs financial value handling and structural integrity. The graphic of
 Failure does not ship. Balance the books.
 
 See the package `AGENTS.md` and core implementation for the executable truth. Reference implementation lives here.
+
+## Plugin Integration (when available)
+
+Combine with:
+- superpowers (brainstorming, writing-plans, test-driven-development, verification-before-completion)
+- pr-review-toolkit agents after changes (silent-failure-hunter, type-design-analyzer)
+- security-guidance (automatic)
+- skill-creator / plugin-dev when editing this or related files
+
+See references/plugin-integration.md for details.

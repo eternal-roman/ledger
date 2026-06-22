@@ -1,7 +1,12 @@
 #!/usr/bin/env node
-// ledger-activate — minimal activation hook for Ledger (The Bean Counter)
-// Primary rules come from AGENTS.md + skills/ledger/SKILL.md (auto-loaded by many hosts).
-// Extend for richer status or tracking in supporting hosts.
+// ledger-activate — legacy Node activation hook for Ledger (The Bean Counter)
+// 
+// PRIMARY IMPLEMENTATION IS NOW BASH: hooks/ledger-activate (no extension) + run-hook.cmd
+// This .js is kept only for pure-Node hook hosts or backward compatibility.
+//
+// See hooks/README.md for details and the switch to bash (recommended via superpowers patterns).
+// Use Git Bash on Windows for full compatibility and to eliminate pwsh friction.
 
-console.log('Ledger rules active (Bean Counter). Use core primitives. Balance the books.');
+console.log('Ledger (Bean Counter) active. (legacy node hook)');
+console.log('See hooks/ledger-activate (bash) and hooks/README.md for the recommended bash version.');
 process.exit(0);
