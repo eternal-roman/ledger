@@ -161,6 +161,45 @@ export class Money {
     return this._amount.cmp(other._amount);
   }
 
+  /** Negate the amount (sign flip), preserve currency, scale, asOf, provenance. */
+  negate(): Money {
+    return new Money(this._amount.negated(), this.currency, this.scale, this.asOf, this.provenance);
+  }
+
+  /** Absolute value, preserve currency, scale, asOf, provenance. */
+  abs(): Money {
+    return new Money(this._amount.abs(), this.currency, this.scale, this.asOf, this.provenance);
+  }
+
+  /**
+   * Serialize to plain object for roundtrips, persistence, hashing.
+   * v: version for forward compat.
+   */
+  toJSON(): { v: string; a: string; c: string; asOf?: string; provenance?: string } {
+    return {
+      v: '1',
+      a: this._amount.toString(),
+      c: this.currency,
+      asOf: this.asOf,
+      provenance: this.provenance,
+    };
+  }
+
+  /**
+   * Reconstruct Money from the toJSON shape.
+   * Accepts loose keys for flexibility (a/amount, c/currency, provenance/p).
+   */
+  static fromJSON(j: any): Money {
+    if (!j || typeof j !== 'object') throw new Error('Money.fromJSON expects object');
+    const amt = j.a ?? j.amount;
+    const cur = j.c ?? j.currency;
+    const prov = j.provenance ?? j.p;
+    if (amt == null || !cur) {
+      throw new Error('Money.fromJSON missing amount or currency');
+    }
+    return Money.from(amt, cur, j.asOf, prov);
+  }
+
   /** Combine provenance strings for add/sub (internal, exact, no mutation). */
   private static combineProvenance(a?: string, b?: string): string | undefined {
     if (a && b && a !== b) return `${a}|${b}`;
