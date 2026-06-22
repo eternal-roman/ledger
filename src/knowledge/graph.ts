@@ -44,30 +44,38 @@ export function fetch(
   asOf?: string,
   maxDepth = 3
 ): Subgraph {
-  // Simple: find by id or content match, then filter dims, limited traversal
+  // Find by id or content match + dims, limited traversal. Dedup by id.
   const matched: KnowledgeNode[] = [];
+  const seen = new Set<string>();
   const usedEdges: KnowledgeEdge[] = [];
   const citations: string[] = [];
 
   for (const node of graph.nodes.values()) {
     const contentStr = JSON.stringify(node.content).toLowerCase();
-    if (node.id.includes(query) || contentStr.includes(query.toLowerCase())) {
-      if (matchesDimensions(node, levers, asOf)) {
+    const qLower = query.toLowerCase();
+    // Support simple compound queries like "foo OR bar" or "foo|bar"
+    const terms = qLower.split(/\s*(?:OR|\|)\s*/i).filter(Boolean);
+    const matchesQuery = terms.some(t => node.id.toLowerCase().includes(t) || contentStr.includes(t)) || node.id.includes(query) || contentStr.includes(qLower);
+    if (matchesQuery && matchesDimensions(node, levers, asOf)) {
+      if (!seen.has(node.id)) {
+        seen.add(node.id);
         matched.push(node);
         citations.push(`${node.provenance.source_id} ${node.provenance.locator}`);
       }
     }
   }
 
-  // Limited traversal for interacts etc.
+  // BFS-style limited traversal
   let current = [...matched];
   for (let d = 0; d < maxDepth; d++) {
     const next: KnowledgeNode[] = [];
     for (const edge of graph.edges) {
-      const fromNode = matched.find(n => n.id === edge.from) || current.find(n => n.id === edge.from);
-      if (fromNode && (edge.type === 'interacts_with' || edge.type === 'applies_to' || edge.type === 'derives_from')) {
+      if (!['interacts_with', 'applies_to', 'derives_from'].includes(edge.type)) continue;
+      const fromNode = current.find(n => n.id === edge.from);
+      if (fromNode) {
         const toNode = graph.nodes.get(edge.to);
-        if (toNode && matchesDimensions(toNode, levers, asOf) && !matched.some(m => m.id === toNode.id)) {
+        if (toNode && matchesDimensions(toNode, levers, asOf) && !seen.has(toNode.id)) {
+          seen.add(toNode.id);
           next.push(toNode);
           usedEdges.push(edge);
           citations.push(`${toNode.provenance.source_id} ${toNode.provenance.locator}`);

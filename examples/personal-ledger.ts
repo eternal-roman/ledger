@@ -59,6 +59,13 @@ function main() {
   const equationHolds = ledger.verifyFundamentalEquation(accounts);
   console.log('Fundamental equation holds:', equationHolds);
 
+  // Demonstrate new APIs
+  console.log('Income statement net:', ledger.incomeStatement().netIncome.toString());
+  console.log('Balance sheet balanced:', ledger.balanceSheet().balanced);
+  console.log('Zero check (savings after tx):', ledger.balance(savings).isZero() ? 'zero' : 'non-zero');
+  const snap = ledger.snapshot();
+  console.log('Snapshot asOf + entries:', snap.asOf, snap.entries.length);
+
   // All entries were validated at apply time
   console.log('Total entries:', ledger.entries.length);
 }

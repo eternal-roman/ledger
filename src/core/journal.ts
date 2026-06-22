@@ -37,8 +37,8 @@ export interface ValidationResult {
 }
 
 export function makeLine(account: Account, amount: Money, side: Side): JournalEntryLine {
-  if (amount.toDecimal().isNeg()) {
-    throw new Error('Amount must be positive. Use side (debit/credit) to indicate direction.');
+  if (amount.toDecimal().lte(0)) {
+    throw new Error('Amount must be strictly positive. Use side (debit/credit) to indicate direction.');
   }
   return { account, amount, side };
 }
@@ -60,12 +60,66 @@ export function createBalancedEntry(
     makeLine(debitAccount, amount, 'debit'),
     makeLine(creditAccount, amount, 'credit'),
   ];
+  return createEntry(id, effectiveDate, lines, description, citations);
+}
+
+/**
+ * General entry creator for compound (N-line) or custom balanced entries.
+ * Validates via kernel and throws on failure. Use makeLine for each leg.
+ */
+export function createEntry(
+  id: string,
+  effectiveDate: string,
+  lines: JournalEntryLine[],
+  description: string,
+  citations?: string[]
+): JournalEntry {
   const entry = new JournalEntry(id, effectiveDate, lines, description, citations);
   const validation = validateEntry(entry);
   if (!validation.ok) {
-    throw new Error(`Failed to create balanced entry: ${validation.violations.map(v => v.message).join(', ')}`);
+    throw new Error(`Failed to create entry: ${validation.violations.map(v => v.message).join(', ')}`);
   }
   return entry;
+}
+
+/**
+ * FX spot conversion using split per-currency balanced entries (core forbids mixed-curr entries).
+ * Returns two validated JournalEntry (foreign leg + domestic leg) using caller-supplied clearing accounts.
+ * Attach rateSource as citation. Use with Ledger.apply on each.
+ */
+export function createFxConversion(
+  idBase: string,
+  effectiveDate: string,
+  foreignDebit: Account,
+  domesticCredit: Account,
+  foreignAmount: Money,
+  domesticAmount: Money,
+  clearingForeign: Account,
+  clearingDomestic: Account,
+  description: string,
+  rateSource?: string
+): JournalEntry[] {
+  if (foreignAmount.currency === domesticAmount.currency) throw new Error('FX currencies must differ');
+  const cites = rateSource ? [rateSource] : undefined;
+  const legForeign = createEntry(`${idBase}-f`, effectiveDate, [
+    makeLine(foreignDebit, foreignAmount, 'debit'),
+    makeLine(clearingForeign, foreignAmount, 'credit')
+  ], `${description} (FX foreign leg)`, cites);
+  const legDomestic = createEntry(`${idBase}-d`, effectiveDate, [
+    makeLine(clearingDomestic, domesticAmount, 'debit'),
+    makeLine(domesticCredit, domesticAmount, 'credit')
+  ], `${description} (FX domestic leg)`, cites);
+  return [legForeign, legDomestic];
+}
+
+/**
+ * Derive amount in target currency from source * rate (for FX spot calc).
+ * Does NOT change the accounting; use exact computed values in createFxConversion.
+ * Uses exact mul under the hood.
+ */
+export function fxDerivedAmount(source: Money, rate: string | number, targetCurrency: string): Money {
+  const scaled = source.mul(rate);
+  return Money.from(scaled.toDecimal().toString(), targetCurrency);
 }
 
 /**
@@ -79,13 +133,19 @@ export function validateEntry(entry: JournalEntry): ValidationResult {
     violations.push({ type: 'TOO_FEW_LINES', message: 'Journal entry must have at least two lines (double-entry)' });
   }
 
+  for (const line of entry.lines) {
+    if (line.amount.toDecimal().lte(0)) {
+      violations.push({ type: 'INVALID_AMOUNT', message: 'All line amounts must be strictly positive' });
+    }
+  }
+
   // Group by currency
   const byCurrency = new Map<string, { debit: Money; credit: Money }>();
 
   for (const line of entry.lines) {
     const curr = line.amount.currency;
     if (!byCurrency.has(curr)) {
-      byCurrency.set(curr, { debit: Money.from(0, curr), credit: Money.from(0, curr) });
+      byCurrency.set(curr, { debit: Money.zero(curr), credit: Money.zero(curr) });
     }
     const bucket = byCurrency.get(curr)!;
 
