@@ -10,4 +10,4 @@ See commands/*.toml for behaviors. Graphic assets/ledger-chad.jpg exemplifies.
 
 Balance the books.
 
-Ledger Chad Alpha Maxxing or Get Beta.
+Ledger Chad Alpha Maxxing or Get Beta. unbalanced

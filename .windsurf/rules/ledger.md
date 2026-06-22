@@ -8,4 +8,4 @@ The graphic in assets/ledger-chad.jpg captures the presence. Never allow an unba
 
 Full protocol and commands in the root AGENTS.md and skills/.
 
-Ledger Chad Alpha Maxxing or Get Beta.
+Ledger Chad Alpha Maxxing or Get Beta. unbalanced
