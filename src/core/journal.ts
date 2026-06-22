@@ -3,13 +3,9 @@ import { Account } from './account.js';
 
 export type Side = 'debit' | 'credit';
 
-/** True only for a real YYYY-MM-DD calendar date (zero-padded), so lexical date comparison is sound. */
-export function isISODate(s: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const [y, m, d] = s.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
-}
+// Centralised in time/ for engine + fiscal periods (M0). Re-export keeps public surface stable.
+import { isISODate } from '../time/index.js';
+export { isISODate };
 
 export interface JournalEntryLine {
   readonly account: Account;
@@ -35,6 +31,39 @@ export class JournalEntry {
     this.citations = citations ? Object.freeze([...citations]) : undefined;
     this.tags = tags ? Object.freeze({ ...tags }) : undefined;
   }
+
+  /** Deterministic serialization (pairs with fromJSON; roundtrips preserve hash/equation). */
+  toJSON(): SerializedJournalEntry {
+    return {
+      v: '1',
+      id: this.id,
+      effectiveDate: this.effectiveDate,
+      lines: this.lines.map(l => ({
+        account: { code: l.account.code, name: l.account.name, type: l.account.type },
+        amount: l.amount.toJSON(),
+        side: l.side,
+        tags: l.tags ? { ...l.tags } : undefined,
+      })),
+      description: this.description,
+      citations: this.citations ? [...this.citations] : undefined,
+      tags: this.tags ? { ...this.tags } : undefined,
+    };
+  }
+
+  /** Rebuild validated entry from serialized form. Uses kernel factories so invariants re-enforced. */
+  static fromJSON(j: any): JournalEntry {
+    if (!j || j.v !== '1') throw new Error('JournalEntry.fromJSON: unsupported version or shape');
+    if (!j.id || !j.effectiveDate || !Array.isArray(j.lines) || !j.description) {
+      throw new Error('JournalEntry.fromJSON: missing required fields');
+    }
+    const lines: JournalEntryLine[] = j.lines.map((l: any) => {
+      const acct = Account.fromJSON ? Account.fromJSON(l.account) : new Account(l.account.code, l.account.name, l.account.type);
+      const amt = Money.fromJSON(l.amount);
+      return makeLine(acct, amt, l.side, l.tags);
+    });
+    // createEntry validates + throws on any invariant break (fail-closed on bad persisted data)
+    return createEntry(j.id, j.effectiveDate, lines, j.description, j.citations, j.tags);
+  }
 }
 
 export interface ValidationViolation {
@@ -46,6 +75,30 @@ export interface ValidationViolation {
 export interface ValidationResult {
   ok: boolean;
   violations: ValidationViolation[];
+}
+
+/** Serialized forms for persistence (exact, deterministic, versioned). */
+export interface SerializedAccountRef {
+  code: string;
+  name: string;
+  type: string; // AccountType string
+}
+
+export interface SerializedJournalEntryLine {
+  account: SerializedAccountRef;
+  amount: ReturnType<Money['toJSON']>;
+  side: Side;
+  tags?: Record<string, string>;
+}
+
+export interface SerializedJournalEntry {
+  v: string;
+  id: string;
+  effectiveDate: string;
+  lines: SerializedJournalEntryLine[];
+  description: string;
+  citations?: string[];
+  tags?: Record<string, string>;
 }
 
 export function makeLine(account: Account, amount: Money, side: Side, tags?: Record<string, string>): JournalEntryLine {
