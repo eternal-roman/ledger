@@ -23,7 +23,6 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const m2 = m1.add(Money.from('1', 'USD'));
     expect(m1.toString()).toBe('5.00 USD');
     expect(m2.toString()).toBe('6.00 USD');
-    // Different instances
     expect(m1).not.toBe(m2);
   });
 
@@ -33,7 +32,6 @@ describe('Money - exact arithmetic (no floats ever)', () => {
   });
 
   it('from number is converted exactly via string path', () => {
-    // Protect against accidental float
     const m = Money.from('0.1', 'USD');
     expect(m.toString()).toMatch(/^0\.1/);
   });
@@ -104,8 +102,6 @@ describe('Money - exact arithmetic (no floats ever)', () => {
       cash, equity,
       total, 'Capital split'
     );
-    // Note: the entry uses full total; allocate is used for downstream logic
-    // Here we prove allocated parts are exact and can be used in balances
     expect(validateEntry(entry).ok).toBe(true);
     const sumAlloc = owner.add(partner);
     expect(sumAlloc.equals(total)).toBe(true);

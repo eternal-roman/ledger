@@ -94,20 +94,14 @@ All operations are pure and immutable. The kernel will refuse any unbalanced sta
 See `examples/personal-ledger.ts` for a complete working example.
 
 ## Common Patterns
-- Zeros: `Money.zero('USD')` (or `Money.from(0, 'USD')`)
-- Compound entries: `createEntry(id, date, [makeLine(...), makeLine(...), ...], desc)`
-- FX (split per-currency): `createFxConversion(idBase, date, foreignAcct, domesticAcct, foreignMoney, domesticMoney, clrForeign, clrDomestic, 'spot', 'rate source')`
-- Trial balance: `ledger.trialBalance()`, `summarizeByType()`
-- Snapshot: `ledger.snapshot()`
-- Deterministic sim: `verifyDeterminism(entries)`
-- Rules + citations: `validateAssetRecognition`, `validateLiabilityRecognition`, `validateValuation`, `validateRevenueRecognition`, `validateExpenseRecognition`, `validateLeaseRecognition`
-- Knowledge: `loadDefaultKnowledge()`, fetch with levers (now supports OR queries)
-- FX/compound: `createEntry`, `createFxConversion`
-- Money: `zero()`, `equals()`, `isZero()`
-- Projectors: `incomeStatement()`, `balanceSheet()`, `summarizeByType()` (multi-curr robust)
-- Always: `validateEntry` + `Ledger.apply` + check `verifyFundamentalEquation`
+- `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)`
+- `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion`
+- `validateEntry(entry)` (kernel gate) + `ledger.apply(entry)`
+- `ledger.balance(account)`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`
+- Knowledge: `loadDefaultKnowledge()` + lever queries for GAAP/IFRS citations
+- Always prove with `validateEntry` + accounting equation before use.
 
-This iteration: more kernel (Money negate/abs/JSON), docs (SECURITY.md etc, issue template), plan progress. Feature branch, 4C PR, merge, patch 0.3.2 bump, verify:full, tag. Following /release fully.
+
 
 ## AI Agent Integration
 
