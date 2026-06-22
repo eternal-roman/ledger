@@ -57,3 +57,4 @@ This project has moved to **bash-based hooks** following patterns from the insta
 See `hooks/README.md` for full details and testing instructions.
 
 This change makes the environment consistent with how most of the recommended plugins (superpowers, plugin-dev, etc.) author their hooks.
+

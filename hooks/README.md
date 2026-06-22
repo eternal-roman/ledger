@@ -59,3 +59,4 @@ The hook runs automatically on SessionStart. You can manually test in bash:
 ```
 
 See also: CLAUDE.md, AGENTS.md, docs/claude-plugins.md
+
