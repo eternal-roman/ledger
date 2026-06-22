@@ -137,62 +137,10 @@ export class Money {
   }
 
   /**
-   * Allocate this Money into parts per the given ratios (weights 0-1 or any positive).
-   * Guarantees exact sum to original (remainder to last).
-   */
-  allocate(ratios: number[]): Money[] {
-    if (!ratios || ratios.length === 0) return [];
-    const total = ratios.reduce((a, b) => a + b, 0);
-    if (total <= 0) return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
-    const parts: Money[] = [];
-    let remaining = this._amount;
-    for (let i = 0; i < ratios.length - 1; i++) {
-      const share = this._amount.times(ratios[i] / total);
-      const rounded = share.toDecimalPlaces(this.scale, Decimal.ROUND_DOWN);
-      parts.push(new Money(rounded, this.currency, this.scale, this.asOf, this.provenance));
-      remaining = remaining.minus(rounded);
-    }
-    parts.push(new Money(remaining, this.currency, this.scale, this.asOf, this.provenance));
-    return parts;
-  }
-
-  toString(): string {
-    // Use the currency's scale for accurate, deterministic display
-    const formatted = this._amount.toFixed(this.scale);
-    return `${formatted} ${this.currency}`;
-  }
-
-  /** Return the raw Decimal for internal controlled use only (exact) */
-  toDecimal(): any {
-    return this._amount;
-  }
-
-  /** For hashing / determinism checks */
-  toHashable(): string {
-    return `${this._amount.toString()}:${this.currency}:${this.scale}:${this.asOf ?? ''}`;
-  }
-
-  /** Divide by scalar (exact within scale). */
-  div(scalar: string | number, roundingMode?: number): Money {
-    let result = this._amount.div(new Decimal(String(scalar)));
-    if (roundingMode !== undefined) {
-      result = result.toDecimalPlaces(this.scale, roundingMode);
-    }
-    return new Money(result, this.currency, this.scale, this.asOf, this.provenance);
-  }
-
-  /** Compare to other (same currency required). Returns -1, 0, or 1. */
-  compare(other: Money): -1 | 0 | 1 {
-    if (this.currency !== other.currency) {
-      throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
-    }
-    return this._amount.cmp(other._amount);
-  }
-
-  /**
    * Allocate this amount into parts by ratios (e.g. [1, 2, 1] for 25/50/25 split).
    * Returns array of Money that sum exactly to this (remainder to last part).
    * Ratios may be numbers or strings; handled exactly via Decimal.
+   * Guarantees exact sum to original.
    */
   allocate(ratios: (string | number)[]): Money[] {
     if (ratios.length === 0) return [];
@@ -216,6 +164,30 @@ export class Money {
       allocated = allocated.add(share);
     }
     return results;
+  }
+
+  toString(): string {
+    // Use the currency's scale for accurate, deterministic display
+    const formatted = this._amount.toFixed(this.scale);
+    return `${formatted} ${this.currency}`;
+  }
+
+  /** Return the raw Decimal for internal controlled use only (exact) */
+  toDecimal(): any {
+    return this._amount;
+  }
+
+  /** For hashing / determinism checks */
+  toHashable(): string {
+    return `${this._amount.toString()}:${this.currency}:${this.scale}:${this.asOf ?? ''}`;
+  }
+
+  /** Compare to other (same currency required). Returns -1, 0, or 1. */
+  compare(other: Money): -1 | 0 | 1 {
+    if (this.currency !== other.currency) {
+      throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
+    }
+    return this._amount.cmp(other._amount);
   }
 }
 
