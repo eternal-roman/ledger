@@ -20,12 +20,10 @@ const CANONICAL_SOURCES = [
   'AGENTS.md',
 ];
 
-const ADAPTERS = [
-  '.cursor/rules/ledger.mdc',
-  '.clinerules/ledger.md',
-  '.windsurf/rules/ledger.md',
-  '.kiro/steering/ledger.md',
-  '.github/copilot-instructions.md',
+const ADAPTERS: string[] = [
+  // Extra IDE adapters removed in cleanup (bloat + maintenance).
+  // Only canonical AGENTS.md + skills/ are required.
+  // .claude/agents/bean-counter-reviewer.md is kept as documented project customization.
 ];
 
 const COMMANDS = [
