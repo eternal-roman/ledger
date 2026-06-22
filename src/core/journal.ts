@@ -7,21 +7,25 @@ export interface JournalEntryLine {
   readonly account: Account;
   readonly amount: Money;
   readonly side: Side;
+  readonly tags?: Record<string, string>; // e.g. { project: 'X', department: 'Y' }
 }
 
 export class JournalEntry {
   public readonly lines: readonly JournalEntryLine[];
   public readonly citations?: readonly string[]; // from knowledge fetch
+  public readonly tags?: Record<string, string>; // entry-level tags
 
   constructor(
     public readonly id: string,
     public readonly effectiveDate: string,
     lines: JournalEntryLine[],
     public readonly description: string,
-    citations?: string[]
+    citations?: string[],
+    tags?: Record<string, string>
   ) {
     this.lines = Object.freeze([...lines]);
     this.citations = citations ? Object.freeze([...citations]) : undefined;
+    this.tags = tags ? { ...tags } : undefined;
   }
 }
 
@@ -36,11 +40,11 @@ export interface ValidationResult {
   violations: ValidationViolation[];
 }
 
-export function makeLine(account: Account, amount: Money, side: Side): JournalEntryLine {
+export function makeLine(account: Account, amount: Money, side: Side, tags?: Record<string, string>): JournalEntryLine {
   if (amount.toDecimal().lte(0)) {
     throw new Error('Amount must be strictly positive. Use side (debit/credit) to indicate direction.');
   }
-  return { account, amount, side };
+  return { account, amount, side, tags: tags ? { ...tags } : undefined };
 }
 
 /**
@@ -54,13 +58,14 @@ export function createBalancedEntry(
   creditAccount: Account,
   amount: Money,
   description: string,
-  citations?: string[]
+  citations?: string[],
+  tags?: Record<string, string>
 ): JournalEntry {
   const lines = [
     makeLine(debitAccount, amount, 'debit'),
     makeLine(creditAccount, amount, 'credit'),
   ];
-  return createEntry(id, effectiveDate, lines, description, citations);
+  return createEntry(id, effectiveDate, lines, description, citations, tags);
 }
 
 /**
@@ -72,9 +77,10 @@ export function createEntry(
   effectiveDate: string,
   lines: JournalEntryLine[],
   description: string,
-  citations?: string[]
+  citations?: string[],
+  tags?: Record<string, string>
 ): JournalEntry {
-  const entry = new JournalEntry(id, effectiveDate, lines, description, citations);
+  const entry = new JournalEntry(id, effectiveDate, lines, description, citations, tags);
   const validation = validateEntry(entry);
   if (!validation.ok) {
     throw new Error(`Failed to create entry: ${validation.violations.map(v => v.message).join(', ')}`);

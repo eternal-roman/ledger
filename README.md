@@ -13,6 +13,10 @@
   <em>He says nothing. He balances the books to the penny. Mistakes do not leave the building.</em>
 </p>
 
+<p align="center">
+  <img src="assets/bean-counter-logo.jpg" width="120" alt="Bean Counter logo icon">
+</p>
+
 Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
 
 You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption — or he will say nothing and let it pass only when debits equal credits and every rate has a source.
