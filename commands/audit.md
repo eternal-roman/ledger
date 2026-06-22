@@ -1,6 +1,6 @@
 # /ledger-audit
 
-Whole-project financial hygiene review (Bean Counter doctrine).
+Whole-project financial hygiene review (Ledger Chad doctrine).
 
 In supported hosts, audit workspace/diff/PR for:
 1. All monetary values constructed exclusively via `Money.from(...)` (no native number/float/parseFloat for amounts).

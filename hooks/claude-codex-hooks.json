@@ -8,7 +8,7 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" ledger-activate",
             "timeout": 5,
-            "statusMessage": "Loading Ledger (Bean Counter) financial integrity rules..."
+            "statusMessage": "Loading Ledger Chad financial integrity rules..."
           }
         ]
       }

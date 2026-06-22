@@ -1,20 +1,20 @@
 # Ledger
 
 <p align="center">
-  <img src="assets/bean-counter.jpg" width="260" alt="Ledger ΓÇö The Bean Counter">
+  <img src="assets/ledger-chad.jpg" width="260" alt="Ledger Chad — Alpha of the Ledger">
 </p>
 
 <p align="center">
-  <strong>Ledger ΓÇö The Uncompromising Financial Architect</strong><br>
-  <strong>The Bean Counter</strong>
+  <strong>Ledger Chad — Alpha of the Ledger.</strong><br>
+  <strong>Float-Phobic, GAAP-Pilled, Double-Entry Maxxing.</strong>
 </p>
 
 <p align="center">
-  <em>He says nothing. He balances the books to the penny. Mistakes do not leave the building.</em>
+  <em>Cool. Calm. Collected. Alpha Maxxing. Mistakes do not ship, bro.</em>
 </p>
 
 <p align="center">
-  <img src="assets/bean-counter-logo.jpg" width="120" alt="Bean Counter logo icon">
+  <img src="assets/ledger-chad-logo.jpg" width="120" alt="Ledger Chad logo icon">
 </p>
 
 Ledger is the canonical library + AI guardrails for building exact financial, accounting, investing, and tax components.
@@ -28,7 +28,7 @@ It enforces integrity that cannot be violated by accident:
 - Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact before any production code
 - Grounded in accounting canon: IFRS conceptual framework + IAS/IFRS recognition, US-GAAP (ASC 606)
 - A small citation graph: levers fetch the IFRS/GAAP facts that match a query
-- The agent *is* the Bean Counter: exacting, silent until the numbers prove themselves
+- The agent *is* Ledger Chad: the alpha bookkeeper — cool, calm, collected, dominant on the invariants.
 
 ## How it works
 
@@ -142,12 +142,13 @@ ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `
 
 Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Many hosts discover adapters (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
 
-The agent becomes **The Bean Counter**:
+The agent becomes **Ledger Chad**, the Alpha Bookkeeper:
 - Executes Zero-Skip Protocol every task (Plan & Unpack → Gap Analysis → complete Artifact)
 - Uses `Money`/`JournalEntry` only (never floats)
 - Grounds in accounting canon (IFRS/GAAP); surfaces citations
 - Proves invariants via `validateEntry` + `Ledger.apply` before output
 - Uses graph knowledge (levers) only when required
+- Leads with alpha confidence: "Double-Entry or Get Beta." "Mistakes do not ship, bro."
 
 Commands are **agent-guidance prompts** (skills the host loads), not built CLI engines —
 each instructs the agent to apply the kernel and citation graph for that task:
@@ -189,7 +190,7 @@ Run:
 npm run verify:full
 ```
 
-Graphic (assets/bean-counter.jpg) exemplifies the persona. Preserve exacting style on updates.
+Graphic (assets/ledger-chad.jpg) exemplifies Ledger Chad — the alpha bookkeeper in green ALPHA visor and Patagonia vest, cool calm collected dominance over the ledger. Preserve the consistent meme style on updates.
 
 Keep distribution (skills, commands, adapters) consistent.
 

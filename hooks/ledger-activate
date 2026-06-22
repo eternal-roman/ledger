@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ledger-activate — bash activation hook for Ledger (The Bean Counter)
+# ledger-activate — bash activation hook for Ledger (Ledger Chad)
 # Primary rules come from AGENTS.md + skills/ledger/SKILL.md
 #
 # This is the recommended bash version.
@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-echo 'Ledger (Bean Counter) active.'
+echo 'Ledger Chad active. Alpha Maxxing engaged.'
 echo 'Rules: Zero-Skip ladder + Canonical Financial Artifact + no floats + double-entry proof.'
 echo 'Plugins recommended in this workspace: superpowers, pr-review-toolkit, skill-creator, plugin-dev, security-guidance.'
 echo 'Use /ledger-verify, /ledger-audit, /ledger-review before shipping. Balance the books.'
