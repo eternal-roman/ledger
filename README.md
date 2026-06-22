@@ -17,9 +17,9 @@
   <img src="assets/bean-counter-logo.jpg" width="120" alt="Bean Counter logo icon">
 </p>
 
-Ledger is the canonical library and AI guardrails package for architecting exact financial, accounting, investing, and tax software components.
+Ledger is the canonical library + AI guardrails for building exact financial, accounting, investing, and tax components.
 
-It enforces structural and functional integrity that cannot be violated by accident:
+It enforces integrity that cannot be violated by accident:
 
 - Exact decimal arithmetic (never floats)
 - Enforced double-entry + accounting equation (GAAP/IFRS)
@@ -42,31 +42,23 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 
 ## Install
 
-For the library + reference implementation:
-
 ```bash
 npm install ledger
 ```
 
-The package ships the persona files (AGENTS.md, skills/, commands/, assets/ graphic) so agents can load them directly.
+Ships persona files (AGENTS.md, skills/, commands/, assets/) for agents.
 
 For AI hosts:
+- Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) or use adapters (`.cursor/rules/ledger.mdc`, etc.).
+- Claude Code: add via .claude-plugin/.
+- `pi` config for skill loading.
 
-- Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) into your project or global rules.
-- Use host adapters in this repo (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
-- For Claude Code / similar marketplaces: add the repo as plugin source (it provides .claude-plugin/).
-- The `pi` config enables skill loading in compatible harnesses.
+**Shell note**: Bash-first hooks (see `hooks/README.md`, `docs/claude-plugins.md`). Git Bash recommended on Windows.
 
-**Shell note**: Hooks and development are bash-first (see `hooks/README.md` and `docs/claude-plugins.md`). Use Git Bash on Windows.
+For developing this package: recommended plugins (see CLAUDE.md, .claude/settings.json):
+- superpowers, pr-review-toolkit, skill-creator, plugin-dev, security-guidance, etc.
 
-When developing this package in Claude Code, these plugins are recommended (see CLAUDE.md and .claude/settings.json):
-- superpowers (structured dev)
-- pr-review-toolkit (specialized reviews)
-- skill-creator + plugin-dev (for skills/commands)
-- security-guidance, hookify, commit-commands, claude-md-management, etc.
-
-See `.claude/`, `CLAUDE.md`, `AGENTS.md`, and `skills/ledger/references/` for the workflow.
-See package distribution patterns (skills, commands, adapters) for host integration.
+See `.claude/`, `CLAUDE.md`, `AGENTS.md`, `skills/ledger/references/`.
 
 ## Core Usage
 
@@ -77,51 +69,42 @@ const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Owner Equity', AccountType.Equity);
 
 const contribution = createBalancedEntry(
-  'cap-001',
-  '2026-06-21',
-  cash,
-  equity,
-  Money.from('10000', 'USD'),
-  'Initial capital'
+  'cap-001', '2026-06-21', cash, equity,
+  Money.from('10000', 'USD'), 'Initial capital'
 );
 
 const result = validateEntry(contribution);
 if (!result.ok) throw new Error('Invariant violation');
 
 let ledger = emptyLedger().apply(contribution).ledger;
-
 console.log(ledger.balance(cash).toString()); // "10000.00 USD"
 ```
 
-All operations are pure and immutable. The kernel will refuse any unbalanced state.
+Pure and immutable. Kernel refuses unbalanced state.
 
-See `examples/personal-ledger.ts` for a complete working example.
+See `examples/personal-ledger.ts`.
 
 ## Common Patterns
-- `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)`
-  - `Money.from` rejects non-integer JS numbers (use strings for fractions); `FXRate` is exact; `convert` rounds to scale.
-- `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion(..., rate?)` (rate-checked)
-- `validateEntry(entry)` (kernel gate: balance, positive + at-scale amounts, ISO dates, currency) + `ledger.apply(entry)`
-- `ledger.balance(account[, asOf, currency])`, `balancesByCurrency(account)`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`
-  - `balance()` fails closed on multi-currency accounts unless currency is passed.
-- `ledger.auditHash()` ΓÇö SHA-256 chain over entry fields for tamper detection; `verifyDeterminism(entries)` rebuilds and compares hashes.
-- Knowledge: `loadDefaultKnowledge()` + lever queries for GAAP/IFRS citations
-- Always prove with `validateEntry` + accounting equation before use.
-
-
+- `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)` — `Money.from` rejects non-int JS nums (use strings); FX exact, converts round to scale.
+- `makeLine` + `createBalancedEntry`/`createEntry` (compound)/`createFxConversion(..., rate?)`.
+- `validateEntry(entry)` (balance, scale, ISO date, currency) + `ledger.apply(entry)`.
+- `ledger.balance(account[, asOf, currency])`, `balancesByCurrency`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`. Fails closed on multi-currency unless currency given.
+- `ledger.auditHash()` — SHA-256 chain (tamper-detect); `verifyDeterminism` rebuilds + compares.
+- Knowledge: `loadDefaultKnowledge()` + levers for GAAP/IFRS.
+- Prove with `validateEntry` + equation before use.
 
 ## AI Agent Integration
 
-Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package). Hosts may discover adapters (`.cursor/rules/`, `.clinerules/`, `.windsurf/rules/`, `.github/copilot-instructions.md`, etc.).
+Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Many hosts discover adapters (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
 
-The agent becomes **The Bean Counter** (Ledger ΓÇö The Uncompromising Financial Architect):
-- Executes the Zero-Skip Execution Protocol on every task (Plan & Unpack ΓåÆ Gap Analysis ΓåÆ complete Artifact)
-- Uses `Money` and `JournalEntry` exclusively; never floats
-- Grounds logic in canonical bodies of knowledge (GAAP/IFRS, tax law, macro policy) and surfaces citations
-- Proves invariants with `validateEntry` and `Ledger.apply` before any output
-- Uses graph-retrieved knowledge (levers / dimensions) only when required
+The agent becomes **The Bean Counter**:
+- Executes Zero-Skip Protocol every task (Plan & Unpack → Gap Analysis → complete Artifact)
+- Uses `Money`/`JournalEntry` only (never floats)
+- Grounds in canon (GAAP/IFRS, tax, policy); surfaces citations
+- Proves invariants via `validateEntry` + `Ledger.apply` before output
+- Uses graph knowledge (levers) only when required
 
-Commands (when supported by host):
+Commands (when supported):
 
 | Command            | What it does |
 |--------------------|--------------|
@@ -153,17 +136,16 @@ Property-based tests and reproducibility checks are included.
 
 ## Development
 
-When updating persona text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters), keep them consistent with the Zero-Skip rules and each other.
+Keep persona text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters) consistent with Zero-Skip.
 
-Run the verification harness:
-
+Run:
 ```bash
 npm run verify:full
 ```
 
-The graphic (assets/bean-counter.jpg) exemplifies the Bean Counter. Updates must preserve its high-contrast, exacting presence.
+Graphic (assets/bean-counter.jpg) exemplifies the persona. Preserve exacting style on updates.
 
-Keep distribution components (skills layout, toml commands, adapters) consistent for host use.
+Keep distribution (skills, commands, adapters) consistent.
 
 ## License
 

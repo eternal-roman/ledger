@@ -18,12 +18,12 @@
 
 ## [0.5.0] - 2026-06-22
 
-### Added (gap closure on docs/ifrs-15-16-engine-scope per commercial plan + assessment)
-- **Persistence (gap #1 closed)**: `JournalEntry.toJSON/fromJSON`, `Ledger.toJSON/fromJSON`, `ChartOfAccounts.toJSON/fromJSON`, `Account.toJSON/fromJSON`. Deterministic roundtrips preserve `auditHash`, `verifyFundamentalEquation`, balances, and immutability.
-- **CoA management (gap #2 minimally)**: `ChartOfAccounts` (pure immutable registry, dedup by code, list/get/add, opening balances workflow via kernel entries).
-- **Periods + IFRS engine start (gaps #3,#5)**: `src/time` (M0: `isISODate`, `Period`, `periods(start,end,freq)`, `presentValueOfAnnuity`, `periodRate`); `src/standards/measure` (`Schedule`, `buildAmortizationSchedule`, `computePV`). Schedules emit kernel-validated entries. Golden PV test + full kernel proof (validate + apply + equation).
-- **Publish (gap #8)**: `prepublishOnly` runs `clean && verify:full`; packaging verified via `npm pack` (dist + persona + examples ship clean).
-- M0 satisfies CFA: citations (IFRS 16.26/36), exact Money, determinism, kernel plan executed.
+### Added (0.5.0)
+- Persistence (JSON roundtrips for entries/ledger/accounts/CoA preserving hashes/eq).
+- ChartOfAccounts (immutable registry + opening balances via kernel).
+- Time/measurement M0: periods, annuity PV, amortization schedules (kernel-validated).
+- prepublishOnly + verified packaging.
+- CFA compliance for new features.
 
 ### Fixed / Changed
 - `isISODate` centralised; schedule rounding fixed; 83 tests green.
