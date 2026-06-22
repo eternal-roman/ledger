@@ -17,21 +17,17 @@
   <img src="assets/bean-counter-logo.jpg" width="120" alt="Bean Counter logo icon">
 </p>
 
-Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
+Ledger is the canonical library and AI guardrails package for architecting exact financial, accounting, investing, and tax software components.
 
-You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption ΓÇö or he will say nothing and let it pass only when debits equal credits and every rate has a source.
-
-Where other systems cut corners, Ledger builds vaults. It guarantees every component is structurally sound, mathematically deterministic, and anchored in institutional-grade best practices.
-
-It makes structural and functional integrity **impossible to violate** by accident:
+It enforces structural and functional integrity that cannot be violated by accident:
 
 - Exact decimal arithmetic (never floats)
 - Enforced double-entry + accounting equation (GAAP/IFRS)
 - Immutable append-only ledgers with full audit
 - Deterministic, reproducible by default
-- Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact (build plan) before any production code
-- Grounded in canonical bodies of knowledge: Accounting & Banking, Finance & Capital Management, Economics & Public Policy, Tax & Estate Law
-- Graph-theory knowledge retrieval: levers fetch only the required rules and canon on demand
+- Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact before any production code
+- Grounded in canonical bodies of knowledge (Accounting, Finance, Economics, Tax & Estate Law)
+- Graph-theory knowledge retrieval: levers fetch only required rules and canon
 - The agent *is* the Bean Counter: exacting, silent until the numbers prove themselves
 
 ## How it works
@@ -43,8 +39,6 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 3. Is there a canon fact or graph-retrieved knowledge that governs it? Cite the source.
 4. Is the result deterministic and reproducible?
 5. Do `validateEntry` and the ledger prove the invariants (balance, accounting equation)?
-
-The graphic of the Bean Counter ΓÇö eyeshade, ledger, red pencil ΓÇö embodies the presence that refuses to ship anything unproven.
 
 ## Install
 
@@ -63,16 +57,16 @@ For AI hosts:
 - For Claude Code / similar marketplaces: add the repo as plugin source (it provides .claude-plugin/).
 - The `pi` config enables skill loading in compatible harnesses.
 
-**Shell note**: Hooks and development are bash-first (see `hooks/README.md` and `docs/claude-plugins.md`). Git Bash recommended on Windows to eliminate pwsh.
+**Shell note**: Hooks and development are bash-first (see `hooks/README.md` and `docs/claude-plugins.md`). Use Git Bash on Windows.
 
-When developing *this* package in Claude Code, a curated set of plugins is recommended and pre-installed at project scope (see CLAUDE.md and .claude/settings.json):
+When developing this package in Claude Code, these plugins are recommended (see CLAUDE.md and .claude/settings.json):
 - superpowers (structured dev)
 - pr-review-toolkit (specialized reviews)
-- skill-creator + plugin-dev (for evolving skills/commands)
+- skill-creator + plugin-dev (for skills/commands)
 - security-guidance, hookify, commit-commands, claude-md-management, etc.
 
-See `.claude/`, `CLAUDE.md`, `AGENTS.md` ("When Developing This Library"), and `skills/ledger/references/` for the integrated workflow.
-See the package distribution patterns (skills, commands, adapters) for host integration.
+See `.claude/`, `CLAUDE.md`, `AGENTS.md`, and `skills/ledger/references/` for the workflow.
+See package distribution patterns (skills, commands, adapters) for host integration.
 
 ## Core Usage
 
@@ -105,12 +99,12 @@ See `examples/personal-ledger.ts` for a complete working example.
 
 ## Common Patterns
 - `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)`
-  - `Money.from` rejects non-integer JS numbers (pass strings for fractional amounts); `FXRate` keeps rates exact (no floats), and `convert` rounds to the target currency scale.
+  - `Money.from` rejects non-integer JS numbers (use strings for fractions); `FXRate` is exact; `convert` rounds to scale.
 - `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion(..., rate?)` (rate-checked)
 - `validateEntry(entry)` (kernel gate: balance, positive + at-scale amounts, ISO dates, currency) + `ledger.apply(entry)`
 - `ledger.balance(account[, asOf, currency])`, `balancesByCurrency(account)`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`
-  - `balance()` fails closed on a multi-currency account unless you pass a currency ΓÇö it never silently drops one.
-- `ledger.auditHash()` ΓÇö a SHA-256 hash chain over every entry field (account, date, memo, amounts), so tampering is detectable; `verifyDeterminism(entries)` rebuilds twice and compares hashes.
+  - `balance()` fails closed on multi-currency accounts unless currency is passed.
+- `ledger.auditHash()` ΓÇö SHA-256 chain over entry fields for tamper detection; `verifyDeterminism(entries)` rebuilds and compares hashes.
 - Knowledge: `loadDefaultKnowledge()` + lever queries for GAAP/IFRS citations
 - Always prove with `validateEntry` + accounting equation before use.
 
@@ -118,7 +112,7 @@ See `examples/personal-ledger.ts` for a complete working example.
 
 ## AI Agent Integration
 
-Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package for your host). Many hosts also discover host-specific adapters (`.cursor/rules/`, `.clinerules/`, `.windsurf/rules/`, `.github/copilot-instructions.md`, etc.).
+Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package). Hosts may discover adapters (`.cursor/rules/`, `.clinerules/`, `.windsurf/rules/`, `.github/copilot-instructions.md`, etc.).
 
 The agent becomes **The Bean Counter** (Ledger ΓÇö The Uncompromising Financial Architect):
 - Executes the Zero-Skip Execution Protocol on every task (Plan & Unpack ΓåÆ Gap Analysis ΓåÆ complete Artifact)
@@ -126,8 +120,6 @@ The agent becomes **The Bean Counter** (Ledger ΓÇö The Uncompromising Financi
 - Grounds logic in canonical bodies of knowledge (GAAP/IFRS, tax law, macro policy) and surfaces citations
 - Proves invariants with `validateEntry` and `Ledger.apply` before any output
 - Uses graph-retrieved knowledge (levers / dimensions) only when required
-
-Ledger stands alone for uncompromising financial structure.
 
 Commands (when supported by host):
 
@@ -147,7 +139,7 @@ npm run verify   # determinism harness
 npm run build
 ```
 
-Property-based tests + explicit reproducibility checks are part of the package.
+Property-based tests and reproducibility checks are included.
 
 ## Principles
 
@@ -169,7 +161,7 @@ Run the verification harness:
 npm run verify:full
 ```
 
-The graphic (assets/bean-counter.jpg) exemplifies the Bean Counter; updates to it should preserve the high-contrast, exacting presence without adding explanatory prose about its style.
+The graphic (assets/bean-counter.jpg) exemplifies the Bean Counter. Updates must preserve its high-contrast, exacting presence.
 
 Keep distribution components (skills layout, toml commands, adapters) consistent for host use.
 
