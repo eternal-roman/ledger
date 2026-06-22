@@ -4,7 +4,7 @@ import { Money } from '../../src/core/money.js';
 import { Account, AccountType } from '../../src/core/account.js';
 import { JournalEntry, makeLine, createFxConversion, createEntry, validateEntry } from '../../src/core/journal.js';
 import { emptyLedger } from '../../src/core/ledger.js';
-import { verifyDeterminism } from '../../src/verify/index.js';
+import { verifyDeterminism, validateCanonicalArtifact } from '../../src/verify/index.js';
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Owner Equity', AccountType.Equity);
@@ -206,6 +206,22 @@ describe('Ledger (immutable append + projections)', () => {
     expect(res.ledger.entries.length).toBe(2);
   });
 
+  it('auditHash is stable and changes with entries (for proof bundles)', () => {
+    let l = emptyLedger().apply(capEntry('1000')).ledger;
+    const h1 = l.auditHash();
+    expect(h1.length).toBeGreaterThan(0);
+    const e2 = new JournalEntry('d2', '2026-01-02', [
+      makeLine(equity, Money.from('100', 'USD'), 'debit'),
+      makeLine(cash, Money.from('100', 'USD'), 'credit')
+    ], 'draw');
+    l = l.apply(e2).ledger;
+    const h2 = l.auditHash();
+    expect(h2).not.toBe(h1);
+    // replay must match
+    const l2 = emptyLedger().apply(capEntry('1000')).ledger.apply(e2).ledger;
+    expect(l2.auditHash()).toBe(h2);
+  });
+
   it('applies compound and FX split entries via Ledger and preserves invariants', () => {
     // Compound
     const rev = new Account('400', 'Revenue', AccountType.Income);
@@ -228,6 +244,23 @@ describe('Ledger (immutable append + projections)', () => {
     expect(l.verifyFundamentalEquation()).toBe(true);
     expect(l.balance(eur).toString()).toBe('50.00 EUR');
     expect(l.balance(cash).toString()).toBe('46.00 USD'); // 100-54
+  });
+
+  it('Canonical Financial Artifact validator enforces Zero-Skip structure', () => {
+    const good = {
+      scope: 'capital contribution',
+      assumptions: ['date=2026-06-21', 'currency=USD'],
+      citations: ['ifrs-cf-2018'],
+      kernelPlan: 'Money.from + makeLine + createEntry + Ledger.apply + verifyFundamentalEquation',
+      proof: 'equation holds',
+      reproducibility: 'inputs:1000'
+    };
+    expect(validateCanonicalArtifact(good).ok).toBe(true);
+
+    const bad = { scope: 'x' };
+    const res = validateCanonicalArtifact(bad);
+    expect(res.ok).toBe(false);
+    expect(res.violations.length).toBeGreaterThan(0);
   });
 
   it('incomeStatement/balanceSheet/summarize use primary non-USD currency from ledger (no USD hard default)', () => {

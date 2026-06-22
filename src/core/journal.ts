@@ -41,16 +41,11 @@ export interface ValidationResult {
 }
 
 export function makeLine(account: Account, amount: Money, side: Side, tags?: Record<string, string>): JournalEntryLine {
-  if (amount.toDecimal().lte(0)) {
-    throw new Error('Amount must be strictly positive. Use side (debit/credit) to indicate direction.');
-  }
+  if (amount.toDecimal().lte(0)) throw new Error('Amount must be > 0 (use side for direction)');
   return { account, amount, side, tags: tags ? { ...tags } : undefined };
 }
 
-/**
- * Convenience helper: create a balanced two-line JournalEntry.
- * Automatically validates and throws on invariant failure.
- */
+/** Balanced 2-line entry. Throws on validation failure. */
 export function createBalancedEntry(
   id: string,
   effectiveDate: string,
@@ -68,10 +63,7 @@ export function createBalancedEntry(
   return createEntry(id, effectiveDate, lines, description, citations, tags);
 }
 
-/**
- * General entry creator for compound (N-line) or custom balanced entries.
- * Validates via kernel and throws on failure. Use makeLine for each leg.
- */
+/** Compound or custom balanced entry. Validates + throws on failure. */
 export function createEntry(
   id: string,
   effectiveDate: string,
@@ -89,9 +81,8 @@ export function createEntry(
 }
 
 /**
- * FX spot conversion using split per-currency balanced entries (core forbids mixed-curr entries).
- * Returns two validated JournalEntry (foreign leg + domestic leg) using caller-supplied clearing accounts.
- * Attach rateSource as citation. Use with Ledger.apply on each.
+ * FX conversion: two balanced per-currency entries (foreign + domestic).
+ * Caller provides clearing accounts. Attach rate source as citation.
  */
 export function createFxConversion(
   idBase: string,

@@ -57,6 +57,7 @@ describe('Knowledge Graph (dimension fetch)', () => {
   it('supports new seeds (revenue, expense, liability) and edges', () => {
     let g = createGraph();
     g = loadSeed(g, ifrsSeed);
+    g = loadSeed(g, gaapSeed);
 
     const rev = fetch(g, 'revenue', { standard_family: ['IFRS'] });
     expect(rev.nodes.some(n => n.id.includes('revenue'))).toBe(true);
@@ -76,5 +77,8 @@ describe('Knowledge Graph (dimension fetch)', () => {
 
     const inv = fetch(g, 'inventory', { standard_family: ['IFRS'] });
     expect(inv.nodes.some(n => n.id.includes('ias2'))).toBe(true);
+
+    const gaap = fetch(g, 'gaap', { standard_family: ['GAAP'] });
+    expect(gaap.nodes.some(n => n.id.includes('gaap'))).toBe(true);
   });
 });

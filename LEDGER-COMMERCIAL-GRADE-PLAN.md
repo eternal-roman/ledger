@@ -1,12 +1,8 @@
 # Ledger Commercial Grade Builder Plan
 
-> **Progress Note (2026-06-22)**: Cycle 1 (kernel) completed. Merged via PR#9, patch release 0.4.1.
-> - FXRate, convert, toFormat, allocate/div, tags support, (prior multi-curr/audit from remote PR#8).
-> - 44 tests, full verify green.
-> - Current: main up to date post-merge. Next: Cycle 2 knowledge expansion (new seeds: gaap, us-tax, valuation; graph edges).
-> - After cycles: /release patch + merge followed. Graphics/enforcement from prior intact.
+**Status (v0.4.3)**: Kernel complete (Money div/allocate/compare exact, FX, provenance, negate/abs/JSON). Ledger audit/snapshot/replay. Basic CFA. GAAP + IFRS seeds. 51+ tests, verify:full green. MCP-enforced releases + CI. (Merged knowledge cycles + dedup fix.)
 
-**Goal**: Transform Ledger into the canonical, trusted source for simplicity, consistency, and reliability when AI builds financial, accounting, investing, tax, and monetary software artifacts.
+**Goal**: The canonical source for AI agents building financial software. Simplicity + ironclad invariants + "The Bean Counter" persona so that unbalanced/float/uncited states become impossible to emit.
 
 **Core Thesis**: Simplicity + ironclad invariants + meme-quality persona = AI that produces build artifacts you can stake reputation (or capital) on. The Bean Counter persona must be so compelling and the rules so unavoidable that "unbalanced", "float", or "uncited" become literally unthinkable during generation.
 
@@ -14,47 +10,12 @@ This plan hardens the kernel, canonical skills, enforcement mechanisms, knowledg
 
 ---
 
-## 1. Current State Evaluation
+## Current State (condensed)
+**Strengths**: Immutable kernel (Money exact + provenance, JournalEntry, validateEntry, Ledger with equation). Determinism harness + 51 tests. Zero-Skip protocol. Graph + levers for canon. Full skills/commands/persona distribution. v0.4.0 green.
 
-### Strengths (solid foundation)
-- Clean, small, immutable core: `Money` (decimal exactness), `Account`, `JournalEntry`, `validateEntry`, `Ledger` (append-only, equation verification).
-- Strong emphasis on determinism and reproducibility (verify script, property tests with fast-check).
-- Zero-Skip Execution Protocol articulated (Plan & Unpack → Gap Analysis → complete verified Artifact).
-- Knowledge graph with levers for targeted canon retrieval (dimension filtering).
-- Distribution skeleton matches professional patterns: skills/*.SKILL.md, commands/*.toml + .md, AGENTS.md, multiple host adapters (.cursor, .clinerules, .windsurf, .kiro, copilot-instructions, .claude-plugin), hooks for activation, pi config.
-- All core tests currently pass; basic determinism harness exists.
-- MIT license, clean package exports (`ledger` + `ledger/core`).
-- Persona ("The Bean Counter") already has memorable framing: "He says nothing. He balances the books to the penny. Mistakes do not leave the building."
+**Remaining focus areas** (per original plan): stronger visual persona assets, deeper canon seeds, richer verified constructs over kernel, adversarial + golden tests, CLI verifier, examples with end-to-end stories, automated consistency for docs/adapters.
 
-### Critical Shortfalls vs. Overarching Goal
-1. **Meme Quality & Graphics**: Single `assets/bean-counter.jpg`. Weak visual identity. No logo set, no dark/light variants, no social/banner assets, no before/after story rendered visually, no iconography. The persona lacks the instant, sticky, high-signal visual punch that makes discipline feel inevitable and aspirational.
-2. **Enforcement & Canonical Skills**: Rules are present but soft. Zero-Skip Protocol is descriptive rather than structural. Skills and adapters have some repetition and minor drift. No automated consistency enforcement (scripts to keep AGENTS.md / all adapters / SKILL.md / command prompts in lockstep). "Complete Artifact" is mentioned but has no canonical template or machine-checkable structure.
-3. **Knowledge Canon Thinness**: One seed file with a handful of illustrative nodes (IFRS concepts + a few FOMC/tax/macro/valuation). Graph traversal is basic substring + dimension match. Missing depth in GAAP, FASB, full IFRS, Basel, derivatives, portfolio accounting, tax regimes (multiple jurisdictions), regulatory reporting, audit standards, etc. Citations feel aspirational rather than authoritative.
-4. **Kernel Surface Incomplete for Real Builds**:
-   - Money: missing division, comparison helpers, percentage, allocation, formatting with locale, negation safety, serialization round-trip guarantees.
-   - No first-class support for explicit FX legs (common real need while preserving strict single-currency balancing).
-   - Ledger: simplistic balance (no date-range subledgers, no tags/dimensions, no efficient historical snapshots or Merkle-style audit hashes).
-   - No higher-order verified constructs (amortization schedules, depreciation, tax lot methods, accrual engines) expressed as pure functions over the kernel.
-   - Reporting (trial balance, statements) not present as provable artifacts.
-5. **Verification & Proof Weak for "Trusted"**:
-   - 21 tests is a start but insufficient for commercial claims.
-   - No adversarial test suite ("try to make the AI break balance").
-   - Determinism harness is minimal (two capital entries).
-   - No snapshot/golden verification for complex scenarios.
-   - No independent CLI verifier that can be run in CI or by humans outside an LLM session.
-   - No "Financial Artifact Proof Bundle" (entry + validation + citations + reproducibility hash + human-readable report).
-6. **Evidence & Impact**: Zero quantitative proof that using Ledger produces reliably superior artifacts vs. raw prompts. No "error caught" stories, no reproducibility metrics, no cost/latency side-benefits documented. This kills trust and virality.
-7. **Examples & Narrative**: Two minimal examples. No compelling end-to-end stories (personal tax-aware ledger, simple bank with interest accruals + regulatory capital, portfolio with mark-to-market + risk limits, invoice + sales tax + settlement). No "generated under Ledger" header pattern or re-verification recipe.
-8. **Polish & Commercial Readiness**:
-   - Version skew (package.json 0.2.0 vs internal 0.1.2).
-   - README still refers to "pony tail" patterns in install sections (cleaned in this session but more polish needed).
-   - Limited host adapters depth; no dedicated portability document.
-   - No dedicated docs/ tree.
-   - CI good but basic; no matrix for knowledge loading, no fuzz, no release automation.
-   - Skills lack "always active" language strength and precise "must emit" patterns seen in mature discipline packages.
-   - No mechanism to mark intentional simplifications with provenance (analogous to audit comments).
-
-The system currently *aspires* to be the Bean Counter. It must *become* the unavoidable presence.
+The system must make unbalanced, imprecise, or uncited financial artifacts impossible to produce.
 
 ---
 

@@ -31,9 +31,7 @@ export class Ledger {
     };
   }
 
-  /** Pure function: balance for account as of date (simple sum, later can be more sophisticated).
-   * Optional currency selects which currency's net to return for multi-currency accounts.
-   */
+  /** Net balance for account (asOf optional). Currency override for multi-curr accounts. */
   balance(account: Account, asOf?: string, currency?: string): Money {
     const relevant = this._entries.filter(e => !asOf || e.effectiveDate <= asOf);
     const accLines = relevant.flatMap(e => e.lines.filter(l => l.account.code === account.code));
@@ -68,10 +66,8 @@ export class Ledger {
   }
 
   /**
-   * Verify the fundamental accounting equation.
-   * Discovers accounts from entries if none provided.
-   * Uses Assets + Expenses = Liabilities + Equity + Income  (pre-closing)
-   * Supports multi-currency by checking equation holds within each currency.
+   * Verify Assets + Expenses = Liabilities + Equity + Income (per currency).
+   * Discovers accounts if not supplied.
    */
   verifyFundamentalEquation(accounts?: Account[]): boolean {
     let accts = accounts;
@@ -149,6 +145,22 @@ export class Ledger {
   /** Capture current immutable snapshot (useful for audit / reporting). */
   snapshot(asOf = new Date().toISOString().slice(0, 10)): LedgerSnapshot {
     return { entries: this.entries, asOf };
+  }
+
+  /**
+   * Stable audit hash over the entry sequence (for reproducibility / Merkle-style proof).
+   * Deterministic; includes all amounts, currencies, ids.
+   */
+  auditHash(): string {
+    let h = '';
+    for (const e of this._entries) {
+      h += e.id + ':';
+      for (const l of e.lines) {
+        h += l.side + l.amount.toHashable() + ';';
+      }
+      h += '|';
+    }
+    return h;
   }
 
   /**

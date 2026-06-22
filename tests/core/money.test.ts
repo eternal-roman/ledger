@@ -23,7 +23,6 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const m2 = m1.add(Money.from('1', 'USD'));
     expect(m1.toString()).toBe('5.00 USD');
     expect(m2.toString()).toBe('6.00 USD');
-    // Different instances
     expect(m1).not.toBe(m2);
   });
 
@@ -33,7 +32,6 @@ describe('Money - exact arithmetic (no floats ever)', () => {
   });
 
   it('from number is converted exactly via string path', () => {
-    // Protect against accidental float
     const m = Money.from('0.1', 'USD');
     expect(m.toString()).toMatch(/^0\.1/);
   });
@@ -104,10 +102,24 @@ describe('Money - exact arithmetic (no floats ever)', () => {
       cash, equity,
       total, 'Capital split'
     );
-    // Note: the entry uses full total; allocate is used for downstream logic
-    // Here we prove allocated parts are exact and can be used in balances
     expect(validateEntry(entry).ok).toBe(true);
     const sumAlloc = owner.add(partner);
     expect(sumAlloc.equals(total)).toBe(true);
+  });
+
+  it('negate and abs preserve value and currency', () => {
+    const m = Money.from('42.5', 'USD');
+    expect(m.negate().toString()).toBe('-42.50 USD');
+    expect(m.negate().negate().equals(m)).toBe(true);
+    expect(m.abs().toString()).toBe('42.50 USD');
+  });
+
+  it('toJSON/fromJSON roundtrip exact, with version', () => {
+    const m = Money.from('123.45', 'EUR', '2026-06-21', 'source');
+    const j = m.toJSON();
+    expect(j.v).toBe('1');
+    const m2 = Money.fromJSON(j);
+    expect(m2.equals(m)).toBe(true);
+    expect(m2.asOf).toBe('2026-06-21');
   });
 });

@@ -1,27 +1,20 @@
-// decimal.js ESM interop shim (ensures constructable at TS compile + runtime)
+// decimal.js interop (ESM default or namespace)
 import * as DecimalModule from 'decimal.js';
 const Decimal: any = (DecimalModule as any).default || DecimalModule;
 
-// Common currency decimal scales (minor units)
 const DEFAULT_SCALE = 2;
 const CURRENCY_SCALES: Record<string, number> = {
-  USD: 2,
-  EUR: 2,
-  GBP: 2,
-  JPY: 0,
-  CNY: 2,
-  KRW: 0,
-  // add more as needed; falls back to 2
+  USD: 2, EUR: 2, GBP: 2, JPY: 0, CNY: 2, KRW: 0,
 };
 
 /**
- * FXRate for explicit currency conversion with citation/provenance.
- * Used for multi-currency legs in journal entries.
+ * FXRate(from, to, rate, asOf?, source?). Rate is conversion factor (not monetary amount).
+ * Used only for explicit multi-currency legs.
  */
 export class FXRate {
   public readonly from: string;
   public readonly to: string;
-  public readonly rate: number; // exact factor e.g. 1.1 for 1 USD = 1.1 EUR
+  public readonly rate: number;
   public readonly asOf?: string;
   public readonly source?: string;
 
@@ -54,17 +47,14 @@ export class Money {
   }
 
   /**
-   * Create Money. Always goes through string to avoid float precision traps.
-   * value can be string or number (number is coerced safely via toString but prefer string literals).
-   * scale can be provided to override (e.g. 3 for some exotic currencies).
+   * Money.from(value, currency). String coercion prevents float traps. Optional scale override.
    */
   static from(value: string | number, currency: string, asOf?: string, provenance?: string, scale?: number): Money {
-    // Force string coercion to protect from caller passing raw floats
     const dec = new Decimal(String(value));
     return new Money(dec, currency, scale, asOf, provenance);
   }
 
-  /** Zero value for a currency. Preferred over Money.from(0, ...) for clarity and consistency. */
+  /** Zero for currency (preferred over from(0)). */
   static zero(currency: string, asOf?: string, provenance?: string): Money {
     return Money.from(0, currency, asOf, provenance);
   }
@@ -73,111 +63,92 @@ export class Money {
     return this.currency === other.currency && this._amount.eq(other._amount);
   }
 
-  /** True if amount is exactly zero for the currency. */
-  isZero(): boolean {
-    return this._amount.isZero();
-  }
+  isZero(): boolean { return this._amount.isZero(); }
 
   add(other: Money): Money {
     if (this.currency !== other.currency) {
       throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
     }
-    const asOf = this.asOf ?? other.asOf;
-    const prov = this.provenance && other.provenance && this.provenance !== other.provenance ? `${this.provenance}|${other.provenance}` : (this.provenance ?? other.provenance);
-    return new Money(this._amount.add(other._amount), this.currency, this.scale, asOf, prov);
+    return new Money(
+      this._amount.add(other._amount),
+      this.currency,
+      this.scale,
+      this.asOf ?? other.asOf,
+      Money.combineProvenance(this.provenance, other.provenance)
+    );
   }
 
   sub(other: Money): Money {
     if (this.currency !== other.currency) {
       throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
     }
-    const asOf = this.asOf ?? other.asOf;
-    const prov = this.provenance && other.provenance && this.provenance !== other.provenance ? `${this.provenance}|${other.provenance}` : (this.provenance ?? other.provenance);
-    return new Money(this._amount.sub(other._amount), this.currency, this.scale, asOf, prov);
+    return new Money(
+      this._amount.sub(other._amount),
+      this.currency,
+      this.scale,
+      this.asOf ?? other.asOf,
+      Money.combineProvenance(this.provenance, other.provenance)
+    );
   }
 
-  /** Multiply by a scalar (rounding mode is passed through to decimal.js). */
+  /** mul(scalar) — roundingMode passed to toDecimalPlaces if provided. */
   mul(scalar: string | number, roundingMode?: number): Money {
-    let result = this._amount.mul(new Decimal(String(scalar)));
-    if (roundingMode !== undefined) {
-      result = result.toDecimalPlaces(this.scale, roundingMode);
-    }
-    return new Money(result, this.currency, this.scale, this.asOf, this.provenance);
+    let r = this._amount.mul(new Decimal(String(scalar)));
+    if (roundingMode !== undefined) r = r.toDecimalPlaces(this.scale, roundingMode);
+    return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
 
-  /** Divide by a scalar (rounding mode optional). */
+  /** div(scalar) — optional roundingMode. */
   div(scalar: string | number, roundingMode?: number): Money {
-    let result = this._amount.div(new Decimal(String(scalar)));
-    if (roundingMode !== undefined) {
-      result = result.toDecimalPlaces(this.scale, roundingMode);
-    }
-    return new Money(result, this.currency, this.scale, this.asOf, this.provenance);
+    let r = this._amount.div(new Decimal(String(scalar)));
+    if (roundingMode !== undefined) r = r.toDecimalPlaces(this.scale, roundingMode);
+    return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
 
-  /**
-   * Convert using explicit FXRate. Returns Money in target currency with provenance from rate.
-   */
+  /** Convert via explicit FXRate (target currency + provenance). */
   convert(rate: FXRate): Money {
-    if (this.currency !== rate.from) {
-      throw new Error(`FX from-currency mismatch: ${this.currency} vs ${rate.from}`);
-    }
-    const newAmount = this._amount.times(rate.rate);
-    const prov = rate.source || this.provenance;
-    return new Money(newAmount, rate.to, undefined, rate.asOf, prov);
+    if (this.currency !== rate.from) throw new Error(`FX mismatch: ${this.currency} vs ${rate.from}`);
+    const amt = this._amount.times(rate.rate);
+    return new Money(amt, rate.to, undefined, rate.asOf, rate.source || this.provenance);
   }
 
-  /**
-   * Format with optional decimals and symbol.
-   */
+  /** toFormat({decimals?, symbol?}). */
   toFormat(opts: { decimals?: number; symbol?: string } = {}): string {
-    const decs = opts.decimals ?? this.scale;
-    const formatted = this._amount.toFixed(decs);
-    const sym = opts.symbol ? opts.symbol + ' ' : '';
-    return `${sym}${formatted} ${this.currency}`;
+    const d = opts.decimals ?? this.scale;
+    const s = opts.symbol ? opts.symbol + ' ' : '';
+    return `${s}${this._amount.toFixed(d)} ${this.currency}`;
   }
 
   /**
-   * Allocate this amount into parts by ratios (e.g. [1, 2, 1] for 25/50/25 split).
-   * Returns array of Money that sum exactly to this (remainder to last part).
-   * Ratios may be numbers or strings; handled exactly via Decimal.
-   * Guarantees exact sum to original.
+   * allocate(ratios) — exact split, remainder to last. Supports string|number ratios.
+   * Always sums to original (kernel invariant).
    */
   allocate(ratios: (string | number)[]): Money[] {
     if (ratios.length === 0) return [];
-    const parts = ratios.map(r => new Decimal(String(r)));
-    const totalParts = parts.reduce((a, b) => a.add(b), new Decimal(0));
-    if (totalParts.isZero()) {
-      return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
-    }
-    const results: Money[] = [];
-    let allocated = new Decimal(0);
-    for (let i = 0; i < parts.length; i++) {
-      let share: any;
-      if (i === parts.length - 1) {
-        share = this._amount.sub(allocated); // ensure exact sum
-      } else {
-        share = this._amount.mul(parts[i]).div(totalParts);
-        share = share.toDecimalPlaces(this.scale, 1); // 1 = ROUND_DOWN for exact floor, deterministic
-      }
+    const ps = ratios.map(r => new Decimal(String(r)));
+    const tot = ps.reduce((a, b) => a.add(b), new Decimal(0));
+    if (tot.isZero()) return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
+
+    const res: Money[] = [];
+    let alloc = new Decimal(0);
+    for (let i = 0; i < ps.length; i++) {
+      const share = (i === ps.length - 1)
+        ? this._amount.sub(alloc)
+        : this._amount.mul(ps[i]).div(tot).toDecimalPlaces(this.scale, 1);
       const m = new Money(share, this.currency, this.scale, this.asOf, this.provenance);
-      results.push(m);
-      allocated = allocated.add(share);
+      res.push(m);
+      alloc = alloc.add(share);
     }
-    return results;
+    return res;
   }
 
   toString(): string {
-    // Use the currency's scale for accurate, deterministic display
-    const formatted = this._amount.toFixed(this.scale);
-    return `${formatted} ${this.currency}`;
+    return `${this._amount.toFixed(this.scale)} ${this.currency}`;
   }
 
-  /** Return the raw Decimal for internal controlled use only (exact) */
-  toDecimal(): any {
-    return this._amount;
-  }
+  toDecimal(): any { return this._amount; }
 
-  /** For hashing / determinism checks */
+  /** Hash for determinism verification. */
   toHashable(): string {
     return `${this._amount.toString()}:${this.currency}:${this.scale}:${this.asOf ?? ''}`;
   }
@@ -188,6 +159,39 @@ export class Money {
       throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
     }
     return this._amount.cmp(other._amount);
+  }
+
+  /** Negated copy (sign flip). */
+  negate(): Money {
+    return new Money(this._amount.neg(), this.currency, this.scale, this.asOf, this.provenance);
+  }
+
+  /** Absolute value copy. */
+  abs(): Money {
+    return new Money(this._amount.abs(), this.currency, this.scale, this.asOf, this.provenance);
+  }
+
+  /** Simple serializable form for roundtrips. */
+  toJSON() {
+    return {
+      v: '1',
+      a: this._amount.toString(),
+      c: this.currency,
+      s: this.scale,
+      asOf: this.asOf,
+      p: this.provenance,
+    };
+  }
+
+  /** Rehydrate from toJSON. */
+  static fromJSON(j: any): Money {
+    return Money.from(j.a, j.c, j.asOf, j.p, j.s);
+  }
+
+  /** Combine provenance strings for add/sub (internal, exact, no mutation). */
+  private static combineProvenance(a?: string, b?: string): string | undefined {
+    if (a && b && a !== b) return `${a}|${b}`;
+    return a ?? b;
   }
 }
 
