@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "The Bean Counter — uncompromising Financial Architect. Exact Money, double-entry, validated ledgers, canon citations. The best financial construct is the one that cannot be wrong.",
   "type": "module",
   "main": "dist/index.js",
