@@ -11,4 +11,4 @@ Follow AGENTS.md strictly:
 
 Run `npm run verify:full` before PR.
 
-See LEDGER-COMMERCIAL-GRADE-PLAN.md for roadmap.
+Roadmap is captured in releases, CHANGELOG.md, and AGENTS.md / skills.

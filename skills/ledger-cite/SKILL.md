@@ -14,11 +14,8 @@ Examples of levers:
 - {standard_family: ["FOMC"], domain: ["monetary_policy"]}
 - {standard_family: ["GAAP"], domain: ["revenue"]}
 
-Return:
-- The exact fact, rule, or treatment.
-- Source identifier and traceability.
-- How to apply it (e.g. in a JournalEntry comment or assumption log).
+Return exact fact/rule + source + traceability + usage (e.g. in entry comment).
 
-Always surface for use with Money and validated entries. Never guess rates or treatments.
+Always attach to Money/validated entries. Never guess.
 
-If no matching lever data, state what additional context (jurisdiction, date) is needed.
+If no match: note needed context (jurisdiction, date).

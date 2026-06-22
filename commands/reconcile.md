@@ -12,4 +12,4 @@ Given free-text assumptions or a scenario:
 6. Make all rates/jurisdictions/time explicit and traceable.
 7. Output the entries + proof + sources. Never allow unbalanced state.
 
-Example flow: assumptions about inflation or tax rate -> cite exact policy -> construct balanced entry(s) with provenance.
+Example: assumptions (inflation/tax) → cite policy → balanced entries with provenance.

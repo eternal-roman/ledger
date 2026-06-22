@@ -9,19 +9,19 @@ license: MIT
 
 Perform a whole-project financial hygiene and invariants audit.
 
-Scan the entire tree (or specified scope) for:
-- Monetary literals or native numbers instead of Money.from.
-- JournalEntry or transaction constructs not validated with validateEntry / Ledger.apply.
-- Unbalanced debits/credits or violations of the fundamental accounting equation.
-- Assumptions, rates, jurisdictions without explicit canon citations (use knowledge levers).
-- Any mutation of ledgers or values.
-- Missing determinism (unseeded scenarios).
+Scan tree/scope for:
+- Non-`Money.from` monetary values.
+- Unvalidated JournalEntry/apply.
+- Unbalanced or equation violations.
+- Hidden assumptions/rates without citations.
+- Mutation.
+- Unseeded/non-deterministic work.
 
-Rank findings by severity/impact. For each: location, what violates, the exact required primitive or citation fix.
+Rank by severity. For each: location + violation + required kernel/citation fix.
 
-End with summary: number of violations, whether the repo would "balance" under full application of the kernel.
+Summary: violation count + "would balance?" 
 
-If none: "Repo passes ledger audit. All financial constructs provably sound."
+Clean: "Repo passes ledger audit."
 
 Scope: financial value, accounts, recognition, measurement. One-shot report.
 

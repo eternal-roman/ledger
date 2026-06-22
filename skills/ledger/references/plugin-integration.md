@@ -24,6 +24,6 @@ This skill is designed to work alongside installed plugins for rigorous developm
 - **commit-commands**:
   - Prefer `commit-push-pr` for changes that touch core.
 
-When in doubt: superpowers plan first → implement with ledger kernel → ledger-verify → pr-review agents → security review → commit.
+When in doubt: superpowers → kernel → verify → pr-review → security → commit.
 
-See also: CLAUDE.md and AGENTS.md "When Developing This Library" section.
+See CLAUDE.md and AGENTS.md.
