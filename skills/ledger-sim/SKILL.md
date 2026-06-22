@@ -7,14 +7,13 @@ license: MIT
 
 # ledger-sim
 
-Run the requested scenario:
-- Use only ledger core for all values and state (Money, JournalEntry, Ledger).
-- Make every assumption explicit (date, rates, jurisdiction, sources).
-- Seed any random/probabilistic elements; log the seed.
-- For every step: construct entries, validate, apply, prove equation.
-- Output full trace (inputs, steps, final balances) + proof artifacts.
-- End with "Deterministic replay hash: ... " or equivalent.
+Run scenario using only core (Money, JournalEntry, Ledger):
+- Explicit assumptions (date, rates, jurisdiction, sources) + citations.
+- Seed stochastic elements; log seed.
+- Per step: build/validate/apply/prove equation.
+- Output trace + final balances + proof.
+- "Deterministic replay hash: ..."
 
-If the scenario touches policy or recognition, fetch and attach citations.
+Attach citations for policy/recognition.
 
-Non-deterministic or unprovable results are invalid. "stop ledger-sim" reverts.
+Invalid if non-deterministic or unprovable.

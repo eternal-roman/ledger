@@ -7,13 +7,11 @@ license: MIT
 
 # ledger-reconcile
 
-Given assumptions or a scenario description:
-- Identify all value movements.
-- Construct balanced JournalEntry(s) using only core primitives: Money.from, makeLine or equivalent, createBalancedEntry pattern.
-- Apply validateEntry / Ledger.apply and prove balance + accounting equation.
-- Attach canon citations (from ledger-cite or graph) for every rate, assumption, recognition decision.
-- Output the entries + proof + sources.
+Given assumptions/scenario:
+- Identify value movements.
+- Build balanced JournalEntry(s) with core: Money.from + createBalancedEntry.
+- validateEntry + Ledger.apply + prove equation.
+- Attach citations (via ledger-cite/graph) for rates/assumptions.
+- Output entries + proof + sources.
 
-Never leave implicit values or un-cited rates. Every entry must be reproducible and provable.
-
-Example output structure: the code for the entries, then "Validated. Balance: X. Citations: ... "
+No implicit values or uncited rates. Must be reproducible/provable.

@@ -1,15 +1,10 @@
 # /ledger-review
 
-Full financial + engineering review combining:
+Full review: Ledger invariants + superpowers + pr-review-toolkit agents + security.
 
-- Ledger kernel invariants (`/ledger-verify`, `/ledger-audit`)
-- Superpowers structured verification
-- pr-review-toolkit specialized agents
-- Security guidance
+**Usage**: "run ledger-review on this diff" or "full bean counter review before PR".
 
-**Usage**: Ask the agent to "run ledger-review on this diff" or "perform full bean counter review before PR".
+Recommended gate for value/account/financial changes.
 
-This is the recommended gate before any commit that touches value, accounts, or financial logic.
-
-See `skills/ledger-review/SKILL.md` for the detailed protocol.
+See `skills/ledger-review/SKILL.md`.
 

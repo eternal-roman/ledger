@@ -11,4 +11,4 @@ Usage in supported hosts:
 6. At end: report final balances, equation verification, full citation list, and the exact seed + assumptions used.
 7. "Was this lazy? Is this mathematically and structurally undeniable?"
 
-All sims must pass determinism harness when re-run with same seed.
+All sims must pass determinism harness on re-run with same seed.

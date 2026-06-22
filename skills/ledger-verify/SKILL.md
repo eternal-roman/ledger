@@ -16,7 +16,7 @@ The agent must:
 4. Flag any violations with exact proof (unbalanced lines, float usage, missing citations, mutation).
 5. Surface canon context or knowledge graph citations if rates, policy, or recognition rules apply.
 
-Output format: location + issue + required fix (e.g. "L12: float: use Money.from(100, 'USD') instead of 100. Report balance status and whether invariants hold.
+Output: location + issue + fix (e.g. "L12: float — use Money.from(100, 'USD')"). Report balance + invariant status.
 
 Never allow an unverified or unbalanced financial state to pass. If clean: "Ledger clean. Invariants hold."
 

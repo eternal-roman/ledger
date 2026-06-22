@@ -1,9 +1,8 @@
 # /ledger-audit
 
-Whole-project financial hygiene review per the Bean Counter / Uncompromising Financial Architect doctrine.
+Whole-project financial hygiene review (Bean Counter doctrine).
 
-Usage in supported hosts:
-Ask the agent to audit the current workspace, diff, or PR for:
+In supported hosts, audit workspace/diff/PR for:
 1. All monetary values constructed exclusively via `Money.from(...)` (no native number/float/parseFloat for amounts).
 2. Every transaction path uses `JournalEntry`, `validateEntry`, `createBalancedEntry`, `Ledger.apply` (never mutate).
 3. Invariants proven: double-entry balance, fundamental accounting equation via `ledger.verifyFundamentalEquation()`.
