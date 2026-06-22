@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.7.0] - 2026-06-21
+## [0.6.1] - 2026-06-21
 
 ### Added / Changed (repo hygiene + plugin)
 - Cleanup: removed internal planning doc, design specs, release artifacts, risky `.claude/settings.json`.
