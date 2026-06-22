@@ -55,7 +55,7 @@ export const gaapSeed = {
       },
       confidence: 1.0
     }
-  ] as KnowledgeNode[],
+  ] satisfies KnowledgeNode[],
   edges: [
     { from: "gaap-revenue-606", to: "gaap-matching-principle", type: "requires" as const },
     { from: "gaap-asset-recognition", to: "gaap-revenue-606", type: "applies_to" as const }

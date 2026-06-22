@@ -37,6 +37,27 @@ function matchesDimensions(node: KnowledgeNode, levers: DimensionSet, asOf?: str
   return true;
 }
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * A query term matches a node when it is an id token (id split on non-alphanumeric) or
+ * a whole word in the node's content. Whole-word matching prevents false positives like
+ * "tax" matching "syntax".
+ */
+function nodeMatchesQuery(node: KnowledgeNode, query: string): boolean {
+  // Split only on a whitespace-delimited " OR " or a literal "|" — never the substring
+  // "or", which would shatter words like "inventory" (invent|or|y).
+  const terms = query.toLowerCase().trim().split(/\s+or\s+|\s*\|\s*/i).filter(Boolean);
+  if (terms.length === 0) return false;
+  const idTokens = node.id.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const contentStr = JSON.stringify(node.content).toLowerCase();
+  return terms.some(t =>
+    idTokens.includes(t) || new RegExp(`\\b${escapeRegExp(t)}\\b`, 'i').test(contentStr)
+  );
+}
+
 export function fetch(
   graph: KnowledgeGraph,
   query: string,
@@ -44,28 +65,21 @@ export function fetch(
   asOf?: string,
   maxDepth = 3
 ): Subgraph {
-  // Find by id or content match + dims, limited traversal. Dedup by id.
+  // Find by id token or whole-word content match + dims, limited traversal. Dedup by id.
   const matched: KnowledgeNode[] = [];
   const seen = new Set<string>();
   const usedEdges: KnowledgeEdge[] = [];
-  const citations: string[] = [];
 
   for (const node of graph.nodes.values()) {
-    const contentStr = JSON.stringify(node.content).toLowerCase();
-    const qLower = query.toLowerCase();
-    // Support simple compound queries like "foo OR bar" or "foo|bar"
-    const terms = qLower.split(/\s*(?:OR|\|)\s*/i).filter(Boolean);
-    const matchesQuery = terms.some(t => node.id.toLowerCase().includes(t) || contentStr.includes(t)) || node.id.includes(query) || contentStr.includes(qLower);
-    if (matchesQuery && matchesDimensions(node, levers, asOf)) {
+    if (nodeMatchesQuery(node, query) && matchesDimensions(node, levers, asOf)) {
       if (!seen.has(node.id)) {
         seen.add(node.id);
         matched.push(node);
-        citations.push(`${node.provenance.source_id} ${node.provenance.locator}`);
       }
     }
   }
 
-  // BFS-style limited traversal
+  // BFS-style limited traversal over relation edges
   let current = [...matched];
   for (let d = 0; d < maxDepth; d++) {
     const next: KnowledgeNode[] = [];
@@ -78,7 +92,6 @@ export function fetch(
           seen.add(toNode.id);
           next.push(toNode);
           usedEdges.push(edge);
-          citations.push(`${toNode.provenance.source_id} ${toNode.provenance.locator}`);
         }
       }
     }
@@ -86,11 +99,11 @@ export function fetch(
     current = next;
   }
 
-  return {
-    nodes: matched,
-    edges: usedEdges,
-    citations: [...new Set(citations)]
-  };
+  // Rank by confidence (desc), then id (asc) — deterministic and confidence-aware.
+  matched.sort((a, b) => b.confidence - a.confidence || a.id.localeCompare(b.id));
+  const citations = [...new Set(matched.map(n => `${n.provenance.source_id} ${n.provenance.locator}`))];
+
+  return { nodes: matched, edges: usedEdges, citations };
 }
 
 // Load from JSON seed (for package, can embed or load user)

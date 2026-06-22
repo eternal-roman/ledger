@@ -6,25 +6,39 @@ const DEFAULT_SCALE = 2;
 const CURRENCY_SCALES: Record<string, number> = {
   USD: 2, EUR: 2, GBP: 2, JPY: 0, CNY: 2, KRW: 0,
 };
+const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
+
+function scaleFor(currency: string): number {
+  return CURRENCY_SCALES[currency.toUpperCase()] ?? DEFAULT_SCALE;
+}
 
 /**
- * FXRate(from, to, rate, asOf?, source?). Rate is conversion factor (not monetary amount).
- * Used only for explicit multi-currency legs.
+ * FXRate(from, to, rate, asOf?, source?). Rate is an exact conversion factor (not a monetary amount).
+ * Stored exactly as a decimal string — never a float, never parseFloat — so high-precision rates
+ * survive intact. Used only for explicit multi-currency legs.
  */
 export class FXRate {
   public readonly from: string;
   public readonly to: string;
-  public readonly rate: number;
+  public readonly rate: string; // exact canonical decimal string (no float)
+  private readonly _rate: any;  // Decimal instance
   public readonly asOf?: string;
   public readonly source?: string;
 
   constructor(from: string, to: string, rate: number | string, asOf?: string, source?: string) {
     this.from = from.toUpperCase();
     this.to = to.toUpperCase();
-    this.rate = typeof rate === 'string' ? parseFloat(rate) : rate;
+    if (typeof rate === 'number' && !Number.isFinite(rate)) {
+      throw new Error(`FXRate: non-finite rate ${rate}`);
+    }
+    this._rate = new Decimal(String(rate)); // exact; String() captures full digits, no parseFloat
+    this.rate = this._rate.toString();
     this.asOf = asOf;
     this.source = source;
   }
+
+  /** Exact Decimal form of the rate, for exact multiplication. */
+  rateDecimal(): any { return this._rate; }
 
   toString(): string {
     return `1 ${this.from} = ${this.rate} ${this.to}${this.asOf ? ' @ ' + this.asOf : ''}`;
@@ -50,6 +64,11 @@ export class Money {
    * Money.from(value, currency). String coercion prevents float traps. Optional scale override.
    */
   static from(value: string | number, currency: string, asOf?: string, provenance?: string, scale?: number): Money {
+    if (typeof value === 'number' && !Number.isInteger(value)) {
+      // A non-integer JS number may already carry IEEE-754 error (e.g. 0.1 + 0.2).
+      // Force exact input: pass a string for any fractional amount.
+      throw new Error(`Money.from: non-integer number ${value} risks float imprecision — pass a string (e.g. "${value}")`);
+    }
     const dec = new Decimal(String(value));
     return new Money(dec, currency, scale, asOf, provenance);
   }
@@ -105,11 +124,12 @@ export class Money {
     return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
 
-  /** Convert via explicit FXRate (target currency + provenance). */
-  convert(rate: FXRate): Money {
+  /** Convert via explicit FXRate. Exact multiply, then round to the target currency scale. */
+  convert(rate: FXRate, roundingMode: number = ROUND_HALF_UP): Money {
     if (this.currency !== rate.from) throw new Error(`FX mismatch: ${this.currency} vs ${rate.from}`);
-    const amt = this._amount.times(rate.rate);
-    return new Money(amt, rate.to, undefined, rate.asOf, rate.source || this.provenance);
+    const targetScale = scaleFor(rate.to);
+    const amt = this._amount.times(rate.rateDecimal()).toDecimalPlaces(targetScale, roundingMode);
+    return new Money(amt, rate.to, targetScale, rate.asOf, rate.source || this.provenance);
   }
 
   /** toFormat({decimals?, symbol?}). */
