@@ -96,6 +96,48 @@ See `examples/personal-ledger.ts`.
 - Knowledge: `loadDefaultKnowledge()` + levers for GAAP/IFRS.
 - Prove with `validateEntry` + equation before use.
 
+## Investing & Financial Services
+
+A trading, portfolio, and crypto-exchange layer built entirely on the kernel — a coin
+or share is just a non-fiat "currency" (`BTC`@8, `ETH`@18, `AAPL`@4), a trade is a
+two-legged FX-style conversion, and the fundamental equation already holds per asset.
+Everything stays exact, immutable, double-entry, and deterministic.
+
+```ts
+import {
+  Money, emptyLedger, defaultAssetRegistry, installAssetScales,
+  depositToEntry, fillToEntries, realizedPnL, PriceBook, valuePortfolio,
+  planRebalance, timeWeightedReturn, moneyWeightedReturn,
+} from 'ledger';
+
+installAssetScales(defaultAssetRegistry()); // teach Money the asset scales (fiat unchanged)
+
+let l = emptyLedger();
+l = l.apply(depositToEntry('d1', '2026-06-22', 'KRAKEN', Money.from('100000', 'USD'))).ledger;
+for (const e of fillToEntries({
+  id: 'b1', effectiveDate: '2026-06-22', venue: 'KRAKEN', base: 'BTC', quote: 'USD',
+  side: 'buy', quantity: Money.from('1', 'BTC'), price: Money.from('60000', 'USD'),
+  fee: Money.from('30', 'USD'), liquidity: 'taker',
+})) l = l.apply(e).ledger;
+
+realizedPnL(l, 'BTC', 'FIFO');                       // cost-basis lots → realized gains
+valuePortfolio(l, priceBook, 'USD');                 // mark-to-market into a reporting currency (cited)
+```
+
+- **`instruments/`** — `AssetRegistry` / `AssetSpec` feeding per-asset decimal scales;
+  `installAssetScales` is the single additive hook into `Money` (fiat behavior is unchanged).
+- **`trading/`** — `Fill` → balanced kernel entries (`fillToEntries`), with custody/cash/clearing
+  account conventions, taker fees (expensed) and maker rebates (income); `depositToEntry`/`withdrawalToEntry`.
+- **`portfolio/`** — cost-basis lot relief (FIFO/LIFO/HIFO), `realizedPnL`/`unrealizedPnL`, and
+  `PriceBook`/`valuePortfolio` consolidation — fail-closed on any unmarked asset.
+- **`investing/`** — `timeWeightedReturn`, `moneyWeightedReturn` (IRR, deterministic with an explicit
+  `converged` flag), allocation drift, and `planRebalance` (plan only; execute via `fillToEntries`).
+- **`crypto/`** — per-venue exchange charts and inter-exchange transfers (one-shot or two-phase
+  in-transit), network fees burned.
+
+Cost basis rides in the kernel's audit-hashed line `tags`, so lots and P&L are reproducible from the
+ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `examples/returns.ts`.
+
 ## AI Agent Integration
 
 Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Many hosts discover adapters (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).

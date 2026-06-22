@@ -55,7 +55,13 @@
     "exact-arithmetic",
     "ai-skill",
     "financial-systems",
-    "bean-counter"
+    "bean-counter",
+    "investing",
+    "portfolio",
+    "trading",
+    "cost-basis",
+    "crypto",
+    "cex"
   ],
   "author": "eternal-roman",
   "license": "MIT",
