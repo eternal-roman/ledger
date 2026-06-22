@@ -1,4 +1,4 @@
-import { KnowledgeNode, KnowledgeEdge } from '../types.js';
+import { KnowledgeNode } from '../types.js';
 
 export const gaapSeed = {
   nodes: [
