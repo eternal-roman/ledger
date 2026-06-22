@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.0] - 2026-06-21
+
+### Added / Changed (repo hygiene + plugin)
+- Major cleanup: removed internal planning document (LEDGER-COMMERCIAL-GRADE-PLAN.md), design specs under docs/superpowers, release build artifacts, and risky local .claude/settings.json.
+- Kept/restored IDE adapter references (cursor, clinerules, etc.) and the ADAPTERS list in persona checker as helpful for enforcement.
+- Updated .gitignore to prevent future bloat (planning, release artifacts, local IDE settings).
+- Persona consistency and verify:full maintained.
+- Continued project customization for recommended plugins.
 
 ### Added / Changed (dev experience + plugin integration)
 - Switched to bash-first hooks for Claude Code / compatible hosts: extensionless `hooks/ledger-activate` + polyglot `run-hook.cmd` wrapper (modeled on superpowers patterns for cross-platform Git Bash support on Windows). Eliminates pwsh friction for hooks and agent commands.
