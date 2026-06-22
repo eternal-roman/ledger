@@ -165,15 +165,9 @@ export class Ledger {
     return { entries: this.entries, asOf };
   }
 
-  /**
-   * Stable audit hash over the entry sequence (for reproducibility / Merkle-style proof).
-   * Deterministic; includes all amounts, currencies, ids.
-   */
+  /** Stable SHA-256 audit hash (tamper-evident chain over all entries/fields). */
   auditHash(): string {
-    // Real tamper-evidence: a SHA-256 hash chain over every material field of every
-    // entry (id, date, description, and each line's side/account/amount/tags, plus
-    // entry tags/citations). Each field is length-prefixed so delimiters cannot be
-    // forged, and each entry's hash folds in the previous chain value.
+    // length-prefixed fields + prev chain for forgery resistance
     let chain = createHash('sha256').update('ledger-audit-v1').digest('hex');
     for (const e of this._entries) {
       const fields: string[] = [e.id, e.effectiveDate, e.description];

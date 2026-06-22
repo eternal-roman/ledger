@@ -1,6 +1,6 @@
 # Ledger Commercial Grade Builder Plan
 
-**Status (v0.4.3)**: Kernel complete (Money div/allocate/compare exact, FX, provenance, negate/abs/JSON). Ledger audit/snapshot/replay. Basic CFA. GAAP + IFRS seeds. 51+ tests, verify:full green. MCP-enforced releases + CI. (Merged knowledge cycles + dedup fix.)
+**Status (v0.4.4)**: Kernel complete + auditHash (tamper-evident), improved exact FX/multi-currency. 80 tests, verify:full + persona check green. Output Contract + CFA validator live in SKILL + commands. check:persona wired. MCP releases + CI on feature/fix branches.
 
 **Goal**: The canonical source for AI agents building financial software. Simplicity + ironclad invariants + "The Bean Counter" persona so that unbalanced/float/uncited states become impossible to emit.
 
@@ -260,19 +260,14 @@ Parallelize where possible: graphics + skills hardening can start immediately; k
 
 ---
 
-## 7. Immediate Next Actions (Start Today)
+## 7. Current Focus (plan largely executed)
 
-1. Accept this plan. Create tracking issue or project board.
-2. Commission or generate Phase 1 graphics (use the character brief above).
-3. Implement `scripts/check-rule-copies.js` + wire into CI and `verify:full`.
-4. Rewrite `skills/ledger/SKILL.md` into its final crisp form + propagate to AGENTS.md and one adapter as pilot.
-5. Expand Money with `div`, `allocate`, `compare` + tests.
-6. Add first two additional knowledge seeds (gaap + us-tax core).
-7. Define the CFA interface in `src/verify/artifact.ts`.
-8. Update README hero + numbers section with new graphics once ready.
-9. Add one rich example (simple-bank with accrual) exercising new surface + CFA.
+- Maintain 80+ tests + determinism + persona enforcement in CI.
+- Strengthen CFA emission in examples/commands + adversarial cases.
+- Compress AI layer + docs for logic density (this iteration).
+- Keep kernel minimal; every addition must prove necessity via tests + example.
 
-Run `npm run verify:full` after every change batch.
+Run `npm run verify:full` after every batch. Historical phases complete or in maintenance.
 
 ---
 
