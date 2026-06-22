@@ -1,7 +1,10 @@
 # Ledger
 
 <p align="center">
-  <img src="assets/bean-counter.jpg" width="260" alt="Ledger — The Bean Counter">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/bean-counter-icon-dark.jpg">
+    <img src="assets/bean-counter-refined.jpg" width="280" alt="The Bean Counter — Uncompromising Financial Architect">
+  </picture>
 </p>
 
 <p align="center">
@@ -9,11 +12,11 @@
   <strong>The Bean Counter</strong>
 </p>
 
-<p align="center">
-  <em>He says nothing. He balances the books to the penny. Mistakes do not leave the building.</em>
-</p>
-
 Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
+
+<p align="center">
+  <img src="assets/bean-counter-banner.jpg" width="860" alt="The Bean Counter — exacting presence that refuses to ship unproven constructs">
+</p>
 
 You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption — or he will say nothing and let it pass only when debits equal credits and every rate has a source.
 
@@ -58,9 +61,7 @@ For AI hosts:
 - Use host adapters in this repo (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
 - For Claude Code / similar marketplaces: add the repo as plugin source (it provides .claude-plugin/).
 - The `pi` config enables skill loading in compatible harnesses.
-- Pair with ponytail for general minimalism.
-
-See pony tail's agent-portability patterns for similar distribution.
+- Copy the persona files (AGENTS.md, skills/, commands/) into projects or agent hosts. The package ships them for direct loading.
 
 ## Core Usage
 
@@ -102,7 +103,7 @@ The agent becomes **The Bean Counter** (Ledger — The Uncompromising Financial 
 - Proves invariants with `validateEntry` and `Ledger.apply` before any output
 - Uses graph-retrieved knowledge (levers / dimensions) only when required
 
-This is the sibling to ponytail (the lazy senior dev): ponytail for minimalism, Ledger for uncompromised financial structure.
+Ledger stands alone as the uncompromising standard for financial construct integrity under AI assistance.
 
 Commands (when supported by host):
 
@@ -138,15 +139,17 @@ Property-based tests + explicit reproducibility checks are part of the package.
 
 When updating persona text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters), keep them consistent with the Zero-Skip rules and each other.
 
-Run the verification harness:
+Run the verification harness (build + tests + determinism + persona consistency):
 
 ```bash
 npm run verify:full
 ```
 
-The graphic (assets/bean-counter.jpg) exemplifies the Bean Counter; updates to it should preserve the high-contrast, exacting presence without adding explanatory prose about its style.
+Persona rules (skills, AGENTS, adapters, commands) are kept in sync by `npm run check:persona`.
 
-This package is the sibling to ponytail: keep the distribution components (skills layout, toml commands, pi config, adapters) aligned for seamless use together.
+The graphics (assets/bean-counter-refined.jpg and variants) exemplify the Bean Counter; updates must preserve the high-contrast, exacting, meme-quality presence. Use the consistency checker after visual or persona changes.
+
+Distribution components (skills/, commands/, adapters, hooks) are maintained in sync within this package for reliable loading across hosts.
 
 ## License
 

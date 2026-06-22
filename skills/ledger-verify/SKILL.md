@@ -20,4 +20,4 @@ Output format: location + issue + required fix (e.g. "L12: float: use Money.from
 
 Never allow an unverified or unbalanced financial state to pass. If clean: "Ledger clean. Invariants hold."
 
-Boundaries: financial structure and value integrity only. Pair with correctness reviews or ponytail for general concerns. "stop ledger-verify" to revert.
+Boundaries: financial structure and value integrity only. "stop ledger-verify" to revert.
