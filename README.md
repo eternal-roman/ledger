@@ -1,11 +1,11 @@
 # Ledger
 
 <p align="center">
-  <img src="assets/bean-counter.jpg" width="260" alt="Ledger — The Bean Counter">
+  <img src="assets/bean-counter.jpg" width="260" alt="Ledger ΓÇö The Bean Counter">
 </p>
 
 <p align="center">
-  <strong>Ledger — The Uncompromising Financial Architect</strong><br>
+  <strong>Ledger ΓÇö The Uncompromising Financial Architect</strong><br>
   <strong>The Bean Counter</strong>
 </p>
 
@@ -17,21 +17,34 @@
   <img src="assets/bean-counter-logo.jpg" width="120" alt="Bean Counter logo icon">
 </p>
 
-Ledger is the canonical library and AI guardrails for building exact financial, accounting, and tax components.
+Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
 
-It enforces structural integrity that cannot be violated by accident: exact decimal arithmetic (no floats), double-entry with the accounting equation, immutable ledgers, determinism, and canon grounding. The Zero-Skip protocol and Bean Counter persona make "good enough" impossible.
+You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption ΓÇö or he will say nothing and let it pass only when debits equal credits and every rate has a source.
+
+Where other systems cut corners, Ledger builds vaults. It guarantees every component is structurally sound, mathematically deterministic, and anchored in institutional-grade best practices.
+
+It makes structural and functional integrity **impossible to violate** by accident:
+
+- Exact decimal arithmetic (never floats)
+- Enforced double-entry + accounting equation (GAAP/IFRS)
+- Immutable append-only ledgers with full audit
+- Deterministic, reproducible by default
+- Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact (build plan) before any production code
+- Grounded in canonical bodies of knowledge: Accounting & Banking, Finance & Capital Management, Economics & Public Policy, Tax & Estate Law
+- Graph-theory knowledge retrieval: levers fetch only the required rules and canon on demand
+- The agent *is* the Bean Counter: exacting, silent until the numbers prove themselves
 
 ## How it works
 
-Every financial task follows the **Zero-Skip Execution Protocol** (see AGENTS.md):
+Before any financial modeling, recognition, or code, the agent runs the **Zero-Skip Execution Protocol**:
 
-1. Touches value, accounts, recognition, measurement, or risk?
-2. Expressible with the kernel?
-3. Canon fact or citation?
-4. Deterministic and reproducible?
-5. Invariants proven by `validateEntry` + equation?
+1. Does this touch value, accounts, recognition, measurement, or risk pricing?
+2. Can it be expressed with the immutable kernel? (`Money.from`, `JournalEntry`, `Ledger.apply`)
+3. Is there a canon fact or graph-retrieved knowledge that governs it? Cite the source.
+4. Is the result deterministic and reproducible?
+5. Do `validateEntry` and the ledger prove the invariants (balance, accounting equation)?
 
-The Bean Counter persona refuses to ship unproven work.
+The graphic of the Bean Counter ΓÇö eyeshade, ledger, red pencil ΓÇö embodies the presence that refuses to ship anything unproven.
 
 ## Install
 
@@ -86,18 +99,55 @@ let ledger = emptyLedger().apply(contribution).ledger;
 console.log(ledger.balance(cash).toString()); // "10000.00 USD"
 ```
 
-All operations are pure and immutable. The kernel refuses any unbalanced state.
+All operations are pure and immutable. The kernel will refuse any unbalanced state.
 
-See `examples/personal-ledger.ts` for a complete example.
+See `examples/personal-ledger.ts` for a complete working example.
 
 ## Common Patterns
-- `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)` — `Money.from` rejects non-integer JS numbers (use strings for fractions); `FXRate` is exact, `convert` rounds to scale.
-- `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion(..., rate?)`.
-- `validateEntry(entry)` (balance, scale, ISO dates, currency) + `ledger.apply(entry)`.
-- `ledger.balance(account[, asOf, currency])`, `balancesByCurrency`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`. `balance()` fails closed on multi-currency accounts.
-- `ledger.auditHash()` — SHA-256 chain over entries for tamper detection; `verifyDeterminism` compares hashes.
-- Knowledge: `loadDefaultKnowledge()` + levers for GAAP/IFRS citations.
-- Always prove with `validateEntry` + equation before use.
+- `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)`
+  - `Money.from` rejects non-integer JS numbers (pass strings for fractional amounts); `FXRate` keeps rates exact (no floats), and `convert` rounds to the target currency scale.
+- `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion(..., rate?)` (rate-checked)
+- `validateEntry(entry)` (kernel gate: balance, positive + at-scale amounts, ISO dates, currency) + `ledger.apply(entry)`
+- `ledger.balance(account[, asOf, currency])`, `balancesByCurrency(account)`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`
+  - `balance()` fails closed on a multi-currency account unless you pass a currency ΓÇö it never silently drops one.
+- `ledger.auditHash()` ΓÇö a SHA-256 hash chain over every entry field (account, date, memo, amounts), so tampering is detectable; `verifyDeterminism(entries)` rebuilds twice and compares hashes.
+- Knowledge: `loadDefaultKnowledge()` + lever queries for GAAP/IFRS citations
+- Always prove with `validateEntry` + accounting equation before use.
+
+
+
+## AI Agent Integration
+
+Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package for your host). Many hosts also discover host-specific adapters (`.cursor/rules/`, `.clinerules/`, `.windsurf/rules/`, `.github/copilot-instructions.md`, etc.).
+
+The agent becomes **The Bean Counter** (Ledger ΓÇö The Uncompromising Financial Architect):
+- Executes the Zero-Skip Execution Protocol on every task (Plan & Unpack ΓåÆ Gap Analysis ΓåÆ complete Artifact)
+- Uses `Money` and `JournalEntry` exclusively; never floats
+- Grounds logic in canonical bodies of knowledge (GAAP/IFRS, tax law, macro policy) and surfaces citations
+- Proves invariants with `validateEntry` and `Ledger.apply` before any output
+- Uses graph-retrieved knowledge (levers / dimensions) only when required
+
+Ledger stands alone for uncompromising financial structure.
+
+Commands (when supported by host):
+
+| Command            | What it does |
+|--------------------|--------------|
+| `/ledger-verify`   | Check diff/snippet for invariants, Money usage, balanced entries, citations |
+| `/ledger-audit`    | Whole-project financial hygiene and structural integrity audit |
+| `/ledger-cite`     | Retrieve canon-backed facts using knowledge levers (GAAP/IFRS, policy, tax) |
+| `/ledger-reconcile`| Turn assumptions and rates into validated double-entry with citations |
+| `/ledger-sim`      | Run seeded deterministic scenarios with full assumption trace and proof |
+
+## Determinism & Verification
+
+```bash
+npm test
+npm run verify   # determinism harness
+npm run build
+```
+
+Property-based tests + explicit reproducibility checks are part of the package.
 
 ## Principles
 
@@ -108,30 +158,6 @@ See `examples/personal-ledger.ts` for a complete example.
 - Graph-theory knowledge retrieval for targeted canon
 - Fail closed. The Final Verification: "Was this lazy? Is this mathematically and structurally undeniable?"
 - Minimal surface that still protects integrity
-
-## AI Agent Integration
-
-Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Host adapters provided.
-
-The agent becomes the Bean Counter:
-
-- Executes Zero-Skip on every task
-- Uses `Money` and `JournalEntry` exclusively (never floats)
-- Grounds logic in canonical bodies of knowledge (GAAP/IFRS, tax, policy) and surfaces citations
-- Proves invariants with `validateEntry` and `Ledger.apply` before output
-- Uses graph-retrieved knowledge (levers) only when required
-
-See commands in AGENTS.md.
-
-## Verification
-
-```bash
-npm test
-npm run verify
-npm run verify:full
-```
-
-See AGENTS.md for development rules and persona updates.
 
 ## Development
 
