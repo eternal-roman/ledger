@@ -23,4 +23,4 @@ End with summary: number of violations, whether the repo would "balance" under f
 
 If none: "Repo passes ledger audit. All financial constructs provably sound."
 
-Scope: financial value, accounts, recognition, measurement, and structural integrity only. One-shot report.
+Scope: financial value, accounts, recognition, measurement. One-shot report.

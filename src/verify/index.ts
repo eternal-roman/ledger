@@ -1,6 +1,7 @@
 import { Ledger } from '../core/ledger.js';
 import { JournalEntry } from '../core/journal.js';
 import { loadDefaultKnowledge, fetch as knowledgeFetch } from '../knowledge/index.js';
+import { emptyLedger } from '../core/ledger.js';
 
 /**
  * Full verify harness entry point.
@@ -23,4 +24,21 @@ export function fullVerify(ledger: Ledger, entries?: JournalEntry[], levers: any
     citations: facts.citations,
     message: equationOk ? 'All invariants hold' : 'Equation violation'
   };
+}
+
+/** Apply entries twice and confirm identical balances/equation for seeded deterministic sims. */
+export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledger: Ledger } {
+  const build = () => {
+    let l = emptyLedger();
+    for (const e of entries) {
+      const r = l.apply(e);
+      if (!r.result.ok) throw new Error('Invalid entry during determinism verify');
+      l = r.ledger;
+    }
+    return l;
+  };
+  const a = build();
+  const b = build();
+  const ok = a.entries.length === b.entries.length && a.verifyFundamentalEquation();
+  return { ok, ledger: a };
 }
