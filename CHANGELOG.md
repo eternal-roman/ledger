@@ -29,11 +29,9 @@
 - Schedule lines round to currency scale before entry creation (SUB_SCALE guard).
 - 83 tests; verify:full green.
 
-See updated LEDGER-COMMERCIAL-GRADE-PLAN.md §8 for full gap status vs assessment.
+See CHANGELOG history and kernel tests for gap status (internal commercial plan removed for lean public repo).
 
-## [0.4.4] - 2026-06-21
-
-### Fixed (repository audit — guarantees now match the code)
+### Fixed (repository audit — guarantees now match the code) (landed prior to 0.5.0; no separate 0.4.4 tag was cut)
 - **Tamper-evident audit trail**: `Ledger.auditHash()` is now a SHA-256 hash chain over every
   material field (account code, effective date, description, line side/amount/tags, entry
   tags/citations) with length-prefixed fields. Previously it ignored account, date, and memo,
@@ -68,7 +66,7 @@ See updated LEDGER-COMMERCIAL-GRADE-PLAN.md §8 for full gap status vs assessmen
 - ISSUE_TEMPLATE for canon gaps + invariant violations.
 - Cleanup: dedup fixes, bloat reduction, docs sharpen.
 
-See LEDGER-COMMERCIAL-GRADE-PLAN.md for roadmap and prior cycles.
+Roadmap details were in the (now removed) internal commercial-grade plan. Current status is reflected in this changelog, AGENTS.md, and tests.
 
 ## [0.3.1] - Previous
 - Money negate/abs/JSON + polish.
