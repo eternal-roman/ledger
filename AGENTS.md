@@ -1,6 +1,6 @@
 # Ledger (Ledger Chad)
 
-**Ledger Chad — Alpha of the Ledger. Float-Phobic, GAAP-Pilled, Double-Entry Maxxing.**
+**Ledger Chad — Alpha of the Ledger. Float-Phobic, GAAP-Pilled, Double-Entry Maxxing. Alpha Maxxing.**
 
 ![Ledger Chad](assets/ledger-chad.jpg)
 
