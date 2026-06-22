@@ -107,7 +107,7 @@ See `examples/personal-ledger.ts` for a complete working example.
 - Projectors: `incomeStatement()`, `balanceSheet()`, `summarizeByType()` (multi-curr robust)
 - Always: `validateEntry` + `Ledger.apply` + check `verifyFundamentalEquation`
 
-This iteration: multi-curr projector hardening (no brittle USD defaults), +3 seeds (IFRS16 leases, IAS16 depr, IAS2 inventory) + edges, strengthened asset rule + new lease rule, Money.from string hygiene in tests, + projector + rule tests (now 44 total), verify:full green.
+This iteration: Money div/compare/allocate (exact splits), Ledger auditHash, basic Canonical Financial Artifact validator + enforce, + GAAP seed, 51 tests, verify:full green. Progress on commercial-grade plan (kernel + canon + proof).
 
 ## AI Agent Integration
 
