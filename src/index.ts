@@ -3,5 +3,6 @@ export * from './knowledge/index.js';
 export * from './rules/index.js';
 export * from './verify/index.js';
 
-export const VERSION = '0.4.0';
-export const DESCRIPTION = 'Ledger — The Bean Counter. Exact Money, double-entry, validated ledgers, canon citations.';
+// Full verify harness, rules, knowledge integrated.
+export const VERSION = '0.4.3';
+export const DESCRIPTION = 'Ledger — The Bean Counter (Uncompromising Financial Architect). Exact Money arithmetic, double-entry, validated ledgers and canon citations. Mistakes do not ship.';

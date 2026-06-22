@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createGraph, loadSeed, fetch } from '../../src/knowledge/graph.js';
+import { createGraph, loadSeed, fetch, loadDefaultKnowledge } from '../../src/knowledge/index.js';
 import { ifrsSeed } from '../../src/knowledge/seeds/ifrs.js';
 import { gaapSeed } from '../../src/knowledge/seeds/gaap.js';
 
