@@ -5,8 +5,6 @@ import { Account, AccountType, ChartOfAccounts } from '../../src/core/account.js
 import { JournalEntry, makeLine, createFxConversion, createEntry, validateEntry, createBalancedEntry } from '../../src/core/journal.js';
 import { emptyLedger, Ledger } from '../../src/core/ledger.js';
 import { verifyDeterminism, validateCanonicalArtifact } from '../../src/verify/index.js';
-import { periods, presentValueOfAnnuity } from '../../src/time/index.js';
-import { buildAmortizationSchedule } from '../../src/standards/measure/index.js';
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Owner Equity', AccountType.Equity);
@@ -322,39 +320,6 @@ describe('Ledger (immutable append + projections)', () => {
     // serialize roundtrip for CoA
     const coa2 = ChartOfAccounts.fromJSON(coa.toJSON());
     expect(coa2.list().length).toBe(2);
-  });
-
-  it('M0 time + schedule (IFRS engine foundation): PV exact, schedule emits kernel-validated entries, equation holds', () => {
-    // Canonical Financial Artifact
-    // Scope: PV + amort schedule for IFRS16 lease liability measurement/recognition (M0)
-    // Assumptions: 3 fixed periods, 5% per period, single curr USD, start 2026-01-01, ordinary annuity, PER_PERIOD rate
-    // Citations: IFRS 16.26 (initial liability at PV of pmts), IFRS 16.36 (finance cost = carrying * rate)
-    // Kernel Plan: Money.from + periods + presentValueOfAnnuity + buildAmortizationSchedule + make/createEntry + validateEntry + Ledger.apply + verifyFundamentalEquation
-    // Proof: computed PV matches hand approx to scale; generated entries all validate; final applied ledger eq holds; hashes deterministic
-    // Reproducibility: all string inputs + fixed n/rate; replay same schedule + same entries
-    const pmt = Money.from('1000', 'USD');
-    const n = 3;
-    const rate = '0.05';
-    const pv = presentValueOfAnnuity(pmt, n, rate);
-    expect(pv.toString()).toMatch(/2723\./); // 2723.25 range for ordinary 3p 5%
-
-    const start = '2026-01-01';
-    const sched = buildAmortizationSchedule('LEASE_LIABILITY', pv, pmt, rate, n, start, 'MONTHLY', ['IFRS 16.26', 'IFRS 16.36']);
-    expect(sched.lines.length).toBeGreaterThan(0);
-    expect(sched.currency).toBe('USD');
-
-    // kernel proof
-    const liab = new Account('2100', 'LeaseLiability', AccountType.Liability);
-    const cash = new Account('1000', 'Cash', AccountType.Asset);
-    const entries = sched.toEntries('ifrs16-m0', cash, liab, 'IFRS16 ex');
-    expect(entries.length).toBeGreaterThan(0);
-    let l = emptyLedger();
-    for (const e of entries) {
-      const vr = l.apply(e);
-      expect(vr.result.ok).toBe(true);
-      l = vr.ledger;
-    }
-    expect(l.verifyFundamentalEquation()).toBe(true);
   });
 
   it('incomeStatement/balanceSheet/summarize use primary non-USD currency from ledger (no USD hard default)', () => {

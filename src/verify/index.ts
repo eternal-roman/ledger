@@ -30,17 +30,17 @@ export function validateCanonicalArtifact(artifact: Partial<CanonicalFinancialAr
 
 /**
  * Full verify harness entry point.
- * Runs kernel + equation + optional rule checks + canon citations via graph levers.
- * Supports Zero-Skip / Final Verification mindset: surfaces required knowledge.
+ * Confirms the fundamental equation holds, counts the entries, and surfaces any
+ * matching citations from the default accounting (IFRS/GAAP) seeds.
  */
 export function fullVerify(ledger: Ledger, entries?: JournalEntry[], levers: any = {}) {
   const equationOk = ledger.verifyFundamentalEquation();
   const allEntries = entries || ledger.entries;
   const balancedCount = allEntries.length;
 
-  // Pull relevant canon for citations (graph-theory: only what levers request)
+  // Pull any matching accounting citations from the default IFRS/GAAP seeds.
   const g = loadDefaultKnowledge();
-  const facts = knowledgeFetch(g, 'accounting OR policy OR tax OR macro OR valuation', levers || {});
+  const facts = knowledgeFetch(g, 'accounting OR revenue OR lease OR asset', levers || {});
 
   return {
     ok: equationOk,

@@ -4,10 +4,9 @@ export * from './core/index.js';
 export * from './knowledge/index.js';
 export * from './rules/index.js';
 export * from './verify/index.js';
-export * from './time/index.js';
-export * from './standards/measure/index.js';
 
-// Full verify harness, rules, knowledge integrated.
+// Kernel (Money, Account, JournalEntry, Ledger) + recognition rules, a small
+// IFRS/GAAP citation graph, and the verify harness.
 // Single source of truth: the version is read from package.json (no hardcoded drift).
 const pkg = createRequire(import.meta.url)('../package.json') as { version: string };
 export const VERSION: string = pkg.version;

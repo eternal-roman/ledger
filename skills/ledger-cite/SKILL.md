@@ -1,7 +1,7 @@
 ---
 name: ledger-cite
 description: >
-  Retrieve precise canon-backed facts, rates, policy, or accounting treatments using the knowledge graph levers (standard_family, domain etc.). Returns citable material for attaching to entries or code. Use with "ledger-cite", "find the IFRS rule for", "FOMC citation for", or /ledger-cite.
+  Retrieve precise canon-backed accounting facts using the knowledge graph levers (standard_family, domain etc.). Seeds cover IFRS + US-GAAP. Returns citable material for attaching to entries or code. Use with "ledger-cite", "find the IFRS rule for", "GAAP citation for", or /ledger-cite.
 license: MIT
 ---
 
@@ -9,9 +9,8 @@ license: MIT
 
 Use the ledger knowledge graph to fetch canon facts for a concept.
 
-Examples of levers:
+Examples of levers (current seeds cover IFRS + US-GAAP accounting):
 - {standard_family: ["IFRS"], domain: ["accounting"]}
-- {standard_family: ["FOMC"], domain: ["monetary_policy"]}
 - {standard_family: ["GAAP"], domain: ["revenue"]}
 
 Return exact fact/rule + source + traceability + usage (e.g. in entry comment).

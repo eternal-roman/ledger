@@ -3,9 +3,13 @@ import { Account } from './account.js';
 
 export type Side = 'debit' | 'credit';
 
-// Centralised in time/ for engine + fiscal periods (M0). Re-export keeps public surface stable.
-import { isISODate } from '../time/index.js';
-export { isISODate };
+/** True only for a real calendar date in strict YYYY-MM-DD form. */
+export function isISODate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
 
 export interface JournalEntryLine {
   readonly account: Account;
