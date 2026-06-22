@@ -152,6 +152,22 @@ export class Ledger {
   }
 
   /**
+   * Stable audit hash over the entry sequence (for reproducibility / Merkle-style proof).
+   * Deterministic; includes all amounts, currencies, ids.
+   */
+  auditHash(): string {
+    let h = '';
+    for (const e of this._entries) {
+      h += e.id + ':';
+      for (const l of e.lines) {
+        h += l.side + l.amount.toHashable() + ';';
+      }
+      h += '|';
+    }
+    return h;
+  }
+
+  /**
    * Pick a primary currency for reporting: first non-USD seen, else first, else fallback.
    * Reduces hard-coded USD surprises for non-USD or multi-currency ledgers.
    */

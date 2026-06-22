@@ -1,14 +1,12 @@
 # Ledger Commercial Grade Builder Plan
 
-> **Progress Note (2026-06-21)**: Initial execution of the plan has started concurrently with its creation.
-> - All external persona references removed (self-contained).
-> - Graphics refresh begun: refined hero, icon (light/dark), banner assets added to `assets/`.
-> - README and AGENTS updated to use new refined visuals + stronger slogans.
-> - `skills/ledger/SKILL.md` hardened with mandatory Zero-Skip + Canonical Financial Artifact Output Contract.
-> - New `scripts/check-persona-consistency.ts` + `npm run check:persona` + wired into `verify:full`.
-> - All adapters + commands + AGENTS lightly synced; checker now passes.
-> - `npm run verify:full` green.
-> Next: deeper kernel expansion, more seeds, rich examples, full CLI, evidence benchmarks, and more graphic polish.
+> **Progress Note (2026-06-21)**: Ongoing iterative execution.
+> - Kernel: Money (div, allocate exact, compare), Ledger auditHash.
+> - Proof: basic CFA validator + structure checks.
+> - Canon: GAAP seed added (revenue + matching); loaded by default.
+> - Tests: 51, with allocation + kernel invariants + CFA.
+> - Docs/verify:full green; README updated.
+> Next per plan: more seeds/constructs, CLI verifier, rich examples, adversarial tests.
 
 **Goal**: Transform Ledger into the canonical, trusted source for simplicity, consistency, and reliability when AI builds financial, accounting, investing, tax, and monetary software artifacts.
 

@@ -3,6 +3,31 @@ import { JournalEntry } from '../core/journal.js';
 import { loadDefaultKnowledge, fetch as knowledgeFetch } from '../knowledge/index.js';
 import { emptyLedger } from '../core/ledger.js';
 
+export interface CanonicalFinancialArtifact {
+  scope: string;
+  assumptions: string[];
+  citations: string[];
+  kernelPlan: string; // e.g. "Money.from + makeLine + createEntry + Ledger.apply + verify"
+  proof: string; // e.g. "equation holds per currency"
+  reproducibility: string; // seed or inputs
+}
+
+/**
+ * Minimal validator for Canonical Financial Artifact (Zero-Skip output contract).
+ * Checks presence of required sections.
+ */
+export function validateCanonicalArtifact(artifact: Partial<CanonicalFinancialArtifact>): { ok: boolean; violations: string[] } {
+  const violations: string[] = [];
+  if (!artifact.scope) violations.push('scope required');
+  if (!artifact.assumptions || artifact.assumptions.length === 0) violations.push('assumptions required');
+  if (!artifact.citations || artifact.citations.length === 0) violations.push('citations required');
+  if (!artifact.kernelPlan || !/Money\.from|createEntry|Ledger\.apply|validateEntry/.test(artifact.kernelPlan)) {
+    violations.push('kernelPlan must reference core primitives');
+  }
+  if (!artifact.proof) violations.push('proof required');
+  return { ok: violations.length === 0, violations };
+}
+
 /**
  * Full verify harness entry point.
  * Runs kernel + equation + optional rule checks + canon citations via graph levers.
