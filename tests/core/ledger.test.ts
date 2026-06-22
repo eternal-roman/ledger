@@ -45,7 +45,7 @@ describe('Ledger (immutable append + projections)', () => {
 
   it('rejects invalid entry and does not mutate', () => {
     let ledger = emptyLedger();
-    const badLines = [makeLine(cash, Money.from(100, 'USD'), 'debit')]; // unbalanced
+    const badLines = [makeLine(cash, Money.from('100', 'USD'), 'debit')]; // unbalanced
     const badEntry = new JournalEntry('bad', '2026-01-01', badLines, 'bad');
 
     const { ledger: stillOld, result } = ledger.apply(badEntry);
@@ -73,7 +73,7 @@ describe('Ledger (immutable append + projections)', () => {
         fc.array(fc.integer({ min: 100, max: 10000 }), { minLength: 1, maxLength: 6 }),
         (amounts) => {
           let ledger = emptyLedger();
-          let netCash = Money.from(0, 'USD');
+          let netCash = Money.from('0', 'USD');
 
           for (const amt of amounts) {
             const e = capEntry(String(amt));
@@ -105,10 +105,12 @@ describe('Ledger (immutable append + projections)', () => {
           let ledger = emptyLedger();
           const rev = new Account('400', 'Rev', AccountType.Income);
           for (const amt of amts) {
+            const rev80 = Math.floor((amt * 4) / 5);
+            const rest = amt - rev80;
             const lines = [
               makeLine(cash, Money.from(String(amt), 'USD'), 'debit'),
-              makeLine(rev, Money.from(String(Math.floor(amt * 0.8)), 'USD'), 'credit'),
-              makeLine(equity, Money.from(String(amt - Math.floor(amt * 0.8)), 'USD'), 'credit')
+              makeLine(rev, Money.from(String(rev80), 'USD'), 'credit'),
+              makeLine(equity, Money.from(String(rest), 'USD'), 'credit')
             ];
             const e = new JournalEntry('pc' + amt, '2026-01-01', lines, 'prop compound');
             if (!validateEntry(e).ok) return false;
@@ -226,5 +228,32 @@ describe('Ledger (immutable append + projections)', () => {
     expect(l.verifyFundamentalEquation()).toBe(true);
     expect(l.balance(eur).toString()).toBe('50.00 EUR');
     expect(l.balance(cash).toString()).toBe('46.00 USD'); // 100-54
+  });
+
+  it('incomeStatement/balanceSheet/summarize use primary non-USD currency from ledger (no USD hard default)', () => {
+    const asset = new Account('100', 'CashEUR', AccountType.Asset);
+    const eq = new Account('300', 'EqEUR', AccountType.Equity);
+    const inc = new Account('400', 'IncEUR', AccountType.Income);
+    const exp = new Account('500', 'ExpEUR', AccountType.Expense);
+    let l = emptyLedger();
+    l = l.apply(new JournalEntry('e1','2026-01-01',[
+      makeLine(asset, Money.from('1000','EUR'),'debit'), makeLine(eq, Money.from('1000','EUR'),'credit')
+    ],'cap')).ledger;
+    l = l.apply(new JournalEntry('e2','2026-01-02',[
+      makeLine(asset, Money.from('200','EUR'),'debit'), makeLine(inc, Money.from('200','EUR'),'credit')
+    ],'rev')).ledger;
+    l = l.apply(new JournalEntry('e3','2026-01-03',[
+      makeLine(exp, Money.from('50','EUR'),'debit'), makeLine(asset, Money.from('50','EUR'),'credit')
+    ],'exp')).ledger;
+    const is = l.incomeStatement();
+    expect(is.totalIncome.toString()).toBe('200.00 EUR');
+    expect(is.totalExpenses.toString()).toBe('50.00 EUR');
+    expect(is.netIncome.toString()).toBe('150.00 EUR');
+    const bs = l.balanceSheet();
+    expect(bs.balanced).toBe(true);
+    expect(bs.left.toString()).toBe('1200.00 EUR'); // asset 1150 + exp 50
+    expect(bs.right.toString()).toBe('1200.00 EUR');
+    const sums = l.summarizeByType();
+    expect(sums.some(s => s.type === AccountType.Income && s.total.toString() === '200.00 EUR')).toBe(true);
   });
 });

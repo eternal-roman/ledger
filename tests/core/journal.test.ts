@@ -39,7 +39,7 @@ describe('JournalEntry + validateEntry (double-entry kernel)', () => {
     const eur = new Account('1100', 'EUR Bank', AccountType.Asset);
     const lines: JournalEntryLine[] = [
       makeLine(cash, usd(100), 'debit'),
-      makeLine(eur, Money.from(85, 'EUR'), 'credit'),
+      makeLine(eur, Money.from('85', 'EUR'), 'credit'),
     ];
     const entry = new JournalEntry('e3', '2026-06-21', lines, 'Mixed currency attempt');
     const result = validateEntry(entry);

@@ -184,6 +184,61 @@ export const ifrsSeed = {
         domain: ["accounting", "liabilities"]
       },
       confidence: 1.0
+    },
+    // IFRS 16 Leases (for recognition of right-of-use asset + liability)
+    {
+      id: "ifrs16-lease-recognition",
+      type: "Rule",
+      content: {
+        statement: "IFRS 16 requires lessees to recognize a right-of-use asset and a lease liability for most leases. Initial measurement at present value of lease payments; subsequent depreciation of ROU asset and interest on liability."
+      },
+      provenance: {
+        source_id: "ifrs-16",
+        locator: "IFRS 16 Leases, paras 22-47",
+        effective_from: "2019-01",
+        jurisdiction: ["IFRS"]
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "leases", "assets", "liabilities"]
+      },
+      confidence: 1.0
+    },
+    // IAS 16 / depreciation (measurement and allocation)
+    {
+      id: "ias16-depreciation-systematic",
+      type: "Rule",
+      content: {
+        statement: "The depreciable amount of PPE is allocated on a systematic basis over its useful life. Method (straight-line, diminishing, units) reflects pattern of consumption of future economic benefits. Review useful life and residual at least annually."
+      },
+      provenance: {
+        source_id: "ias-16",
+        locator: "IAS 16 Property, Plant and Equipment, paras 48-62",
+        effective_from: "2003-as-revised"
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "assets", "depreciation", "measurement"]
+      },
+      confidence: 1.0
+    },
+    // IAS 2 Inventories
+    {
+      id: "ias2-inventory-lower-of-cost-nrv",
+      type: "Rule",
+      content: {
+        statement: "Inventories measured at the lower of cost and net realizable value (NRV). Cost includes purchase, conversion, and other costs to bring to present location/condition. NRV is estimated selling price less completion and selling costs."
+      },
+      provenance: {
+        source_id: "ias-2",
+        locator: "IAS 2 Inventories, paras 9-33",
+        effective_from: "2003-as-revised"
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "assets", "inventory", "measurement"]
+      },
+      confidence: 1.0
     }
   ] as KnowledgeNode[],
   edges: [
@@ -193,6 +248,10 @@ export const ifrsSeed = {
     { from: "ifrs-cf-2018-elements-asset-4.3", to: "double-entry-principle", type: "derives_from" },
     { from: "ifrs15-revenue-recognition-5step", to: "double-entry-principle", type: "requires" },
     { from: "ifrs-liability-definition", to: "double-entry-principle", type: "requires" },
-    { from: "expense-recognition-accrual", to: "ifrs15-revenue-recognition-5step", type: "interacts_with" }
+    { from: "expense-recognition-accrual", to: "ifrs15-revenue-recognition-5step", type: "interacts_with" },
+    { from: "ifrs16-lease-recognition", to: "double-entry-principle", type: "requires" },
+    { from: "ifrs16-lease-recognition", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
+    { from: "ias16-depreciation-systematic", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
+    { from: "ias2-inventory-lower-of-cost-nrv", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" }
   ] as KnowledgeEdge[]
 };

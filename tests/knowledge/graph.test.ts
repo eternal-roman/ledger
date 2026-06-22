@@ -65,5 +65,15 @@ describe('Knowledge Graph (dimension fetch)', () => {
 
     const liab = fetch(g, 'liability', { standard_family: ['IFRS'] });
     expect(liab.nodes.some(n => n.id.includes('liability'))).toBe(true);
+
+    // New seeds: leases, depreciation, inventory for fuller financial system coverage
+    const lease = fetch(g, 'lease', { standard_family: ['IFRS'] });
+    expect(lease.nodes.some(n => n.id.includes('ifrs16'))).toBe(true);
+
+    const depr = fetch(g, 'depreciation', { standard_family: ['IFRS'] });
+    expect(depr.nodes.some(n => n.id.includes('ias16'))).toBe(true);
+
+    const inv = fetch(g, 'inventory', { standard_family: ['IFRS'] });
+    expect(inv.nodes.some(n => n.id.includes('ias2'))).toBe(true);
   });
 });

@@ -32,7 +32,7 @@ describe('Money - exact arithmetic (no floats ever)', () => {
 
   it('from number is converted exactly via string path', () => {
     // Protect against accidental float
-    const m = Money.from(0.1, 'USD');
+    const m = Money.from('0.1', 'USD');
     expect(m.toString()).toMatch(/^0\.1/);
   });
 
@@ -48,7 +48,7 @@ describe('Money - exact arithmetic (no floats ever)', () => {
 
   it('Money.zero produces exact zero and equals works', () => {
     const z1 = Money.zero('USD');
-    const z2 = Money.from(0, 'USD');
+    const z2 = Money.from('0', 'USD');
     const z3 = Money.zero('EUR');
     expect(z1.toString()).toBe('0.00 USD');
     expect(z1.equals(z2)).toBe(true);

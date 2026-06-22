@@ -1,7 +1,7 @@
 /**
  * Stub for small bank ledger example using rules + knowledge.
  */
-import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateAssetRecognition, validateLiabilityRecognition, loadDefaultKnowledge } from '../src/index.js';
+import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateAssetRecognition, validateLiabilityRecognition, validateLeaseRecognition, loadDefaultKnowledge } from '../src/index.js';
 
 const loans = new Account('120', 'Loans Receivable', AccountType.Asset);
 const deposits = new Account('200', 'Customer Deposits', AccountType.Liability);
@@ -19,6 +19,10 @@ export function buildBasicBank() {
 
   const liabCheck = validateLiabilityRecognition(entry, g);
   console.log('Liab rule ok:', liabCheck.ok);
+
+  // Demonstrate new lease rule (IFRS16 seed)
+  const leaseCheck = validateLeaseRecognition(entry, g);
+  console.log('Lease rule citations:', leaseCheck.citations.length);
 
   console.log('Trial balance accounts:', ledger.trialBalance().length);
   console.log('Summarize by type count:', ledger.summarizeByType().length);

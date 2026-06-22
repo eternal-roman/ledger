@@ -39,10 +39,9 @@ export class Ledger {
     const accLines = relevant.flatMap(e => e.lines.filter(l => l.account.code === account.code));
 
     if (accLines.length === 0) {
-      // No activity for this account yet: zero using a currency already present in the ledger (if any)
-      // to avoid surprising cross-currency default. USD fallback for brand new ledgers.
+      // No activity: prefer explicit currency, else any present in ledger, else USD (brand new empty only).
       const anyCurr = this._entries[0]?.lines[0]?.amount.currency;
-      const zcurr = currency || anyCurr || 'USD';
+      const zcurr = currency || anyCurr || this.pickCurrency('USD');
       return Money.zero(zcurr);
     }
 
@@ -153,37 +152,52 @@ export class Ledger {
   }
 
   /**
+   * Pick a primary currency for reporting: first non-USD seen, else first, else fallback.
+   * Reduces hard-coded USD surprises for non-USD or multi-currency ledgers.
+   */
+  private pickCurrency(fallback = 'USD'): string {
+    for (const e of this._entries) {
+      for (const l of e.lines) {
+        if (l.amount.currency !== 'USD') return l.amount.currency;
+      }
+    }
+    return this._entries[0]?.lines[0]?.amount.currency || fallback;
+  }
+
+  /**
    * Minimal pre-closing income statement view (Income vs Expenses).
-   * Returns nets using a consistent currency (prefers first non-USD seen).
-   * Net = Income - Expenses (per normal balances in trial).
+   * Uses primary currency from ledger content (non-USD preferred) or fallback.
    */
   incomeStatement(): { totalIncome: Money; totalExpenses: Money; netIncome: Money } {
     const sums = this.summarizeByType();
-    const pick = (t: AccountType) => sums.find(s => s.type === t)?.total || Money.zero('USD');
-    let inc = pick(AccountType.Income);
-    let exp = pick(AccountType.Expense);
-    const curr = inc.currency !== 'USD' ? inc.currency : (exp.currency || 'USD');
-    inc = inc.currency === curr ? inc : Money.zero(curr);
-    exp = exp.currency === curr ? exp : Money.zero(curr);
+    const curr = this.pickCurrency();
+    const pick = (t: AccountType) => {
+      const s = sums.find(s => s.type === t)?.total;
+      return s && s.currency === curr ? s : Money.zero(curr);
+    };
+    const inc = pick(AccountType.Income);
+    const exp = pick(AccountType.Expense);
     return { totalIncome: inc, totalExpenses: exp, netIncome: inc.sub(exp) };
   }
 
   /**
    * Minimal balance sheet view (Assets + Expenses vs Liabilities + Equity + Income).
-   * Returns left and right sides for the accounting equation check.
+   * Uses primary currency; reports balanced status per equation.
    */
   balanceSheet(): { left: Money; right: Money; balanced: boolean } {
     const sums = this.summarizeByType();
-    const get = (t: AccountType) => sums.find(s => s.type === t)?.total || Money.zero('USD');
-    let assets = get(AccountType.Asset);
-    let expenses = get(AccountType.Expense);
-    let liab = get(AccountType.Liability);
-    let equity = get(AccountType.Equity);
-    let income = get(AccountType.Income);
-    const curr = [assets, liab, equity, income, expenses].find(m => m.currency !== 'USD')?.currency || 'USD';
-    const toC = (m: Money) => m.currency === curr ? m : Money.zero(curr);
-    const left = toC(assets).add(toC(expenses));
-    const right = toC(liab).add(toC(equity)).add(toC(income));
+    const curr = this.pickCurrency();
+    const get = (t: AccountType) => {
+      const s = sums.find(s => s.type === t)?.total;
+      return s && s.currency === curr ? s : Money.zero(curr);
+    };
+    const assets = get(AccountType.Asset);
+    const expenses = get(AccountType.Expense);
+    const liab = get(AccountType.Liability);
+    const equity = get(AccountType.Equity);
+    const income = get(AccountType.Income);
+    const left = assets.add(expenses);
+    const right = liab.add(equity).add(income);
     return { left, right, balanced: left.toDecimal().eq(right.toDecimal()) };
   }
 }

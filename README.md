@@ -96,13 +96,14 @@ See `examples/personal-ledger.ts` for a complete working example.
 - Trial balance: `ledger.trialBalance()`, `summarizeByType()`
 - Snapshot: `ledger.snapshot()`
 - Deterministic sim: `verifyDeterminism(entries)`
-- Rules + citations: `validateAssetRecognition`, `validateLiabilityRecognition`, `validateValuation`, `validateRevenueRecognition`
+- Rules + citations: `validateAssetRecognition`, `validateLiabilityRecognition`, `validateValuation`, `validateRevenueRecognition`, `validateExpenseRecognition`, `validateLeaseRecognition`
 - Knowledge: `loadDefaultKnowledge()`, fetch with levers (now supports OR queries)
 - FX/compound: `createEntry`, `createFxConversion`
 - Money: `zero()`, `equals()`, `isZero()`
+- Projectors: `incomeStatement()`, `balanceSheet()`, `summarizeByType()` (multi-curr robust)
 - Always: `validateEntry` + `Ledger.apply` + check `verifyFundamentalEquation`
 
-This iteration: graph query hardening + more seeds/edges, revenue rule, more projectors, multi-curr balance, isZero, extensive integration tests (36 tests total), probes green.
+This iteration: multi-curr projector hardening (no brittle USD defaults), +3 seeds (IFRS16 leases, IAS16 depr, IAS2 inventory) + edges, strengthened asset rule + new lease rule, Money.from string hygiene in tests, + projector + rule tests (now 44 total), verify:full green.
 
 ## AI Agent Integration
 
