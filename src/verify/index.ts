@@ -44,7 +44,6 @@ export function fullVerify(ledger: Ledger, entries?: JournalEntry[], levers: any
 
   return {
     ok: equationOk,
-    equationOk,
     balancedCount,
     citations: facts.citations,
     message: equationOk ? 'All invariants hold' : 'Equation violation'
