@@ -45,4 +45,16 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     expect(usd.scale).toBe(2);
     expect(usd.toString()).toBe('1234.56 USD');
   });
+
+  it('Money.zero produces exact zero and equals works', () => {
+    const z1 = Money.zero('USD');
+    const z2 = Money.from(0, 'USD');
+    const z3 = Money.zero('EUR');
+    expect(z1.toString()).toBe('0.00 USD');
+    expect(z1.equals(z2)).toBe(true);
+    expect(z1.equals(z3)).toBe(false);
+    expect(z1.equals(Money.from('0.00', 'USD'))).toBe(true);
+    expect(z1.isZero()).toBe(true);
+    expect(Money.from('1', 'USD').isZero()).toBe(false);
+  });
 });

@@ -1,7 +1,7 @@
 /**
  * Stub for small bank ledger example using rules + knowledge.
  */
-import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateAssetRecognition, loadDefaultKnowledge } from '../src/index.js';
+import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateAssetRecognition, validateLiabilityRecognition, loadDefaultKnowledge } from '../src/index.js';
 
 const loans = new Account('120', 'Loans Receivable', AccountType.Asset);
 const deposits = new Account('200', 'Customer Deposits', AccountType.Liability);
@@ -17,8 +17,14 @@ export function buildBasicBank() {
   const ruleCheck = validateAssetRecognition(entry, g);
   console.log('Rule check ok:', ruleCheck.ok, 'citations:', ruleCheck.citations.length);
 
+  const liabCheck = validateLiabilityRecognition(entry, g);
+  console.log('Liab rule ok:', liabCheck.ok);
+
+  console.log('Trial balance accounts:', ledger.trialBalance().length);
+  console.log('Summarize by type count:', ledger.summarizeByType().length);
+  console.log('Income stmt net:', ledger.incomeStatement().netIncome.toString());
   console.log('Verify equation:', ledger.verifyFundamentalEquation());
   return ledger;
 }
 
-if (import.meta.main) buildBasicBank();
+buildBasicBank();

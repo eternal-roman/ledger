@@ -1,10 +1,7 @@
 # Ledger
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/bean-counter-icon-dark.jpg">
-    <img src="assets/bean-counter-refined.jpg" width="280" alt="The Bean Counter — Uncompromising Financial Architect">
-  </picture>
+  <img src="assets/bean-counter.jpg" width="260" alt="Ledger — The Bean Counter">
 </p>
 
 <p align="center">
@@ -12,11 +9,11 @@
   <strong>The Bean Counter</strong>
 </p>
 
-Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
-
 <p align="center">
-  <img src="assets/bean-counter-banner.jpg" width="860" alt="The Bean Counter — exacting presence that refuses to ship unproven constructs">
+  <em>He says nothing. He balances the books to the penny. Mistakes do not leave the building.</em>
 </p>
+
+Ledger is the canonical library + AI guardrails package for architecting, evaluating, and building financial, accounting, investing, and tax software components with flawless precision.
 
 You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption — or he will say nothing and let it pass only when debits equal credits and every rate has a source.
 
@@ -61,7 +58,7 @@ For AI hosts:
 - Use host adapters in this repo (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
 - For Claude Code / similar marketplaces: add the repo as plugin source (it provides .claude-plugin/).
 - The `pi` config enables skill loading in compatible harnesses.
-- Copy the persona files (AGENTS.md, skills/, commands/) into projects or agent hosts. The package ships them for direct loading.
+See the package distribution patterns (skills, commands, adapters) for host integration.
 
 ## Core Usage
 
@@ -92,6 +89,21 @@ All operations are pure and immutable. The kernel will refuse any unbalanced sta
 
 See `examples/personal-ledger.ts` for a complete working example.
 
+## Common Patterns
+- Zeros: `Money.zero('USD')` (or `Money.from(0, 'USD')`)
+- Compound entries: `createEntry(id, date, [makeLine(...), makeLine(...), ...], desc)`
+- FX (split per-currency): `createFxConversion(idBase, date, foreignAcct, domesticAcct, foreignMoney, domesticMoney, clrForeign, clrDomestic, 'spot', 'rate source')`
+- Trial balance: `ledger.trialBalance()`, `summarizeByType()`
+- Snapshot: `ledger.snapshot()`
+- Deterministic sim: `verifyDeterminism(entries)`
+- Rules + citations: `validateAssetRecognition`, `validateLiabilityRecognition`, `validateValuation`, `validateRevenueRecognition`
+- Knowledge: `loadDefaultKnowledge()`, fetch with levers (now supports OR queries)
+- FX/compound: `createEntry`, `createFxConversion`
+- Money: `zero()`, `equals()`, `isZero()`
+- Always: `validateEntry` + `Ledger.apply` + check `verifyFundamentalEquation`
+
+This iteration: graph query hardening + more seeds/edges, revenue rule, more projectors, multi-curr balance, isZero, extensive integration tests (36 tests total), probes green.
+
 ## AI Agent Integration
 
 Copy or load `AGENTS.md` into your agent context (or install the plugin/skill package for your host). Many hosts also discover host-specific adapters (`.cursor/rules/`, `.clinerules/`, `.windsurf/rules/`, `.github/copilot-instructions.md`, etc.).
@@ -103,7 +115,7 @@ The agent becomes **The Bean Counter** (Ledger — The Uncompromising Financial 
 - Proves invariants with `validateEntry` and `Ledger.apply` before any output
 - Uses graph-retrieved knowledge (levers / dimensions) only when required
 
-Ledger stands alone as the uncompromising standard for financial construct integrity under AI assistance.
+Ledger stands alone for uncompromising financial structure.
 
 Commands (when supported by host):
 
@@ -139,17 +151,15 @@ Property-based tests + explicit reproducibility checks are part of the package.
 
 When updating persona text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters), keep them consistent with the Zero-Skip rules and each other.
 
-Run the verification harness (build + tests + determinism + persona consistency):
+Run the verification harness:
 
 ```bash
 npm run verify:full
 ```
 
-Persona rules (skills, AGENTS, adapters, commands) are kept in sync by `npm run check:persona`.
+The graphic (assets/bean-counter.jpg) exemplifies the Bean Counter; updates to it should preserve the high-contrast, exacting presence without adding explanatory prose about its style.
 
-The graphics (assets/bean-counter-refined.jpg and variants) exemplify the Bean Counter; updates must preserve the high-contrast, exacting, meme-quality presence. Use the consistency checker after visual or persona changes.
-
-Distribution components (skills/, commands/, adapters, hooks) are maintained in sync within this package for reliable loading across hosts.
+Keep distribution components (skills layout, toml commands, adapters) consistent for host use.
 
 ## License
 

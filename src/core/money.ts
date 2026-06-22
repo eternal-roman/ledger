@@ -40,24 +40,36 @@ export class Money {
     return new Money(dec, currency, scale, asOf, provenance);
   }
 
+  /** Zero value for a currency. Preferred over Money.from(0, ...) for clarity and consistency. */
+  static zero(currency: string, asOf?: string, provenance?: string): Money {
+    return Money.from(0, currency, asOf, provenance);
+  }
+
+  equals(other: Money): boolean {
+    return this.currency === other.currency && this._amount.eq(other._amount);
+  }
+
+  /** True if amount is exactly zero for the currency. */
+  isZero(): boolean {
+    return this._amount.isZero();
+  }
+
   add(other: Money): Money {
     if (this.currency !== other.currency) {
       throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
     }
-    return new Money(
-      this._amount.add(other._amount),
-      this.currency,
-      this.scale,
-      this.asOf ?? other.asOf,
-      this.provenance ?? other.provenance
-    );
+    const asOf = this.asOf ?? other.asOf;
+    const prov = this.provenance && other.provenance && this.provenance !== other.provenance ? `${this.provenance}|${other.provenance}` : (this.provenance ?? other.provenance);
+    return new Money(this._amount.add(other._amount), this.currency, this.scale, asOf, prov);
   }
 
   sub(other: Money): Money {
     if (this.currency !== other.currency) {
       throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
     }
-    return new Money(this._amount.sub(other._amount), this.currency, this.scale, this.asOf, this.provenance);
+    const asOf = this.asOf ?? other.asOf;
+    const prov = this.provenance && other.provenance && this.provenance !== other.provenance ? `${this.provenance}|${other.provenance}` : (this.provenance ?? other.provenance);
+    return new Money(this._amount.sub(other._amount), this.currency, this.scale, asOf, prov);
   }
 
   /** Multiply by a scalar (rounding mode is passed through to decimal.js). */

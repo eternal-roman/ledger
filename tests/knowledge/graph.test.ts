@@ -39,4 +39,31 @@ describe('Knowledge Graph (dimension fetch)', () => {
     const r2 = fetch(g, 'asset', { standard_family: ['IFRS'] });
     expect(r1.nodes.map(n => n.id)).toEqual(r2.nodes.map(n => n.id));
   });
+
+  it('traverses edges for related concepts and avoids duplicates', () => {
+    let g = createGraph();
+    g = loadSeed(g, ifrsSeed);
+
+    // 'asset' matches asset node; traversal via derives_from should pull objective (depth allows)
+    const res = fetch(g, 'asset', { standard_family: ['IFRS'], domain: ['accounting'] }, undefined, 2);
+    const ids = res.nodes.map(n => n.id);
+    expect(ids).toContain('ifrs-cf-2018-elements-asset-4.3');
+    expect(ids).toContain('ifrs-cf-2018-objective-1.2'); // via edge
+    expect(ids.length).toBe(new Set(ids).size); // no dups
+    expect(res.edges.length).toBeGreaterThan(0);
+  });
+
+  it('supports new seeds (revenue, expense, liability) and edges', () => {
+    let g = createGraph();
+    g = loadSeed(g, ifrsSeed);
+
+    const rev = fetch(g, 'revenue', { standard_family: ['IFRS'] });
+    expect(rev.nodes.some(n => n.id.includes('revenue'))).toBe(true);
+
+    const exp = fetch(g, 'expense', { standard_family: ['IFRS', 'GAAP'] });
+    expect(exp.nodes.length).toBeGreaterThan(0);
+
+    const liab = fetch(g, 'liability', { standard_family: ['IFRS'] });
+    expect(liab.nodes.some(n => n.id.includes('liability'))).toBe(true);
+  });
 });

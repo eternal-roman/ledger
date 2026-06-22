@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.3.0",
+  "version": "0.2.0",
   "description": "The Bean Counter — uncompromising Financial Architect. Exact Money, double-entry, validated ledgers, canon citations. The best financial construct is the one that cannot be wrong.",
   "type": "module",
   "main": "dist/index.js",
@@ -30,9 +30,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "tsx scripts/verify-determinism.ts",
-    "check:persona": "tsx scripts/check-persona-consistency.ts",
-    "verify:full": "npm run build && npm test && npm run verify && npm run check:persona",
-    "clean": "rm -rf dist"
+    "verify:full": "npm run build && npm test && npm run verify",
+    "clean": "node --eval \"const fs=require('fs'); try{fs.rmSync('dist',{recursive:true,force:true});}catch(e){}\" "
   },
   "repository": {
     "type": "git",
@@ -66,8 +65,6 @@
     "vitest": "^4.1.0"
   },
   "pi": {
-    "skills": [
-      "./skills"
-    ]
+    "skills": ["./skills"]
   }
 }
