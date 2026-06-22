@@ -1,11 +1,12 @@
 # Ledger Commercial Grade Builder Plan
 
-> **Progress Note (2026-06-21)**: Ongoing iterative execution.
-> - Kernel: Money (div, allocate exact, compare), Ledger auditHash.
+> **Progress Note (2026-06-21)**: Ongoing iterative execution + patch release 0.3.1.
+> - Kernel: Money (div, allocate exact, compare), Ledger auditHash, convert/toFormat.
 > - Proof: basic CFA validator + structure checks.
 > - Canon: GAAP seed added (revenue + matching); loaded by default.
-> - Tests: 51, with allocation + kernel invariants + CFA.
-> - Docs/verify:full green; README updated.
+> - Tests: 51+, with allocation + kernel invariants + CFA.
+> - Release: changes committed via PR #10 (4C), merged to main, patch bumped to 0.3.1 in all places (package, src, plugin), verify:full + tag v0.3.1.
+> - Docs/plan updated.
 > Next per plan: more seeds/constructs, CLI verifier, rich examples, adversarial tests.
 
 **Goal**: Transform Ledger into the canonical, trusted source for simplicity, consistency, and reliability when AI builds financial, accounting, investing, tax, and monetary software artifacts.

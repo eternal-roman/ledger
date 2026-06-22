@@ -107,7 +107,7 @@ See `examples/personal-ledger.ts` for a complete working example.
 - Projectors: `incomeStatement()`, `balanceSheet()`, `summarizeByType()` (multi-curr robust)
 - Always: `validateEntry` + `Ledger.apply` + check `verifyFundamentalEquation`
 
-This iteration: Money div/compare/allocate (exact splits), Ledger auditHash, basic Canonical Financial Artifact validator + enforce, + GAAP seed, 51 tests, verify:full green. Progress on commercial-grade plan (kernel + canon + proof).
+This iteration: completed gap closure (Money div/compare/allocate, auditHash, CFA validator, GAAP seed, 51+ tests). Committed via PR #10 (4C), merged, CI (verify:full) green, patch 0.3.1 incremented in all places following /release. v0.3.1 tagged. Plan progress updated.
 
 ## AI Agent Integration
 
