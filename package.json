@@ -20,10 +20,14 @@
     "README.md",
     "LICENSE",
     "AGENTS.md",
+    "CLAUDE.md",
+    ".claude-plugin",
     "examples",
     "skills",
     "commands",
-    "assets"
+    "hooks",
+    "assets",
+    "docs/claude-plugins.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -33,6 +37,8 @@
     "verify": "tsx scripts/verify-determinism.ts",
     "check:persona": "tsx scripts/check-persona-consistency.ts",
     "verify:full": "npm run build && npm run typecheck && npm test && npm run verify && npm run check:persona",
+    "bash": "bash",
+    "with-bash": "bash scripts/with-git-bash.sh || echo 'On Windows use: .\\scripts\\with-git-bash.cmd \"your command\"'",
     "clean": "node --eval \"const fs=require('fs'); try{fs.rmSync('dist',{recursive:true,force:true});}catch(e){}\" ",
     "prepublishOnly": "npm run clean && npm run verify:full"
   },

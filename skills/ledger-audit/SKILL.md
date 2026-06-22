@@ -24,3 +24,6 @@ End with summary: number of violations, whether the repo would "balance" under f
 If none: "Repo passes ledger audit. All financial constructs provably sound."
 
 Scope: financial value, accounts, recognition, measurement. One-shot report.
+
+## Plugin Usage
+Complements `/ledger-review`. After audit, run pr-review-toolkit agents and security review on findings. Use with superpowers verification-before-completion.

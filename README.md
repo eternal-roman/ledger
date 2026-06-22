@@ -62,6 +62,16 @@ For AI hosts:
 - Use host adapters in this repo (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
 - For Claude Code / similar marketplaces: add the repo as plugin source (it provides .claude-plugin/).
 - The `pi` config enables skill loading in compatible harnesses.
+
+**Shell note**: Hooks and development are bash-first (see `hooks/README.md` and `docs/claude-plugins.md`). Git Bash recommended on Windows to eliminate pwsh.
+
+When developing *this* package in Claude Code, a curated set of plugins is recommended and pre-installed at project scope (see CLAUDE.md and .claude/settings.json):
+- superpowers (structured dev)
+- pr-review-toolkit (specialized reviews)
+- skill-creator + plugin-dev (for evolving skills/commands)
+- security-guidance, hookify, commit-commands, claude-md-management, etc.
+
+See `.claude/`, `CLAUDE.md`, `AGENTS.md` ("When Developing This Library"), and `skills/ledger/references/` for the integrated workflow.
 See the package distribution patterns (skills, commands, adapters) for host integration.
 
 ## Core Usage

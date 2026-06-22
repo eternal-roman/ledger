@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(src/**)",
+      "Write(tests/**)",
+      "Write(skills/**)",
+      "Write(commands/**)",
+      "Write(docs/**)",
+      "Write(examples/**)",
+      "Write(assets/**)",
+      "Write(scripts/**)",
+      "Write(AGENTS.md)",
+      "Write(CLAUDE.md)",
+      "Write(README.md)",
+      "Write(CHANGELOG.md)",
+      "Bash(npm **)",
+      "Bash(npx **)",
+      "Bash(git **)",
+      "Bash(tsx **)",
+      "Bash(bash **)",
+      "Bash(./hooks/**)",
+      "Bash(scripts/**)"
+    ],
+    "deny": [
+      "Write(node_modules/**)",
+      "Write(dist/**)",
+      "Write(package-lock.json)",
+      "Write(.git/**)"
+    ]
+  },
+  "includeCoT": false,
+  "model": null
+}

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# ledger-activate — bash activation hook for Ledger (The Bean Counter)
+# Primary rules come from AGENTS.md + skills/ledger/SKILL.md
+#
+# This is the recommended bash version.
+# Works with Git Bash on Windows, and native bash on macOS/Linux.
+#
+# Compatible with the run-hook.cmd polyglot wrapper for cross-platform support.
+
+set -euo pipefail
+
+echo 'Ledger (Bean Counter) active.'
+echo 'Rules: Zero-Skip ladder + Canonical Financial Artifact + no floats + double-entry proof.'
+echo 'Plugins recommended in this workspace: superpowers, pr-review-toolkit, skill-creator, plugin-dev, security-guidance.'
+echo 'Use /ledger-verify, /ledger-audit, /ledger-review before shipping. Balance the books.'
+
+exit 0

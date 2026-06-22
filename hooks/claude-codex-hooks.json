@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/hooks/ledger-activate.js\" || echo 'Ledger rules via AGENTS.md and skills/ledger/SKILL.md'",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" ledger-activate",
             "timeout": 5,
             "statusMessage": "Loading Ledger (Bean Counter) financial integrity rules..."
           }
