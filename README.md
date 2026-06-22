@@ -165,6 +165,4 @@ Keep distribution components (skills layout, toml commands, adapters) consistent
 
 ## License
 
-MIT
-
-Built so that financial mistakes simply do not happen. Balance the books.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
