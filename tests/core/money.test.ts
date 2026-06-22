@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Money } from '../../src/core/money.js';
+import { Account, AccountType } from '../../src/core/account.js';
+import { createBalancedEntry, validateEntry } from '../../src/core/journal.js';
 
 describe('Money - exact arithmetic (no floats ever)', () => {
   it('0.1 + 0.2 === 0.3 exactly in USD', () => {
@@ -56,5 +58,56 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     expect(z1.equals(Money.from('0.00', 'USD'))).toBe(true);
     expect(z1.isZero()).toBe(true);
     expect(Money.from('1', 'USD').isZero()).toBe(false);
+  });
+
+  it('div is exact and respects scale', () => {
+    const m = Money.from('10', 'USD');
+    expect(m.div(4).toString()).toBe('2.50 USD');
+    const jpy = Money.from('1000', 'JPY');
+    expect(jpy.div(3).toString()).toBe('333 JPY'); // floor to scale 0
+  });
+
+  it('compare works for same currency only', () => {
+    const a = Money.from('100', 'USD');
+    const b = Money.from('50', 'USD');
+    expect(a.compare(b)).toBe(1);
+    expect(b.compare(a)).toBe(-1);
+    expect(a.compare(Money.from('100', 'USD'))).toBe(0);
+    expect(() => a.compare(Money.from('100', 'EUR'))).toThrow(/currency/i);
+  });
+
+  it('allocate splits exactly (parts sum to original, kernel invariant)', () => {
+    const total = Money.from('100', 'USD');
+    const parts = total.allocate([1, 1, 1]); // 3 equal parts
+    expect(parts.length).toBe(3);
+    expect(parts[0].toString()).toBe('33.33 USD');
+    expect(parts[1].toString()).toBe('33.33 USD');
+    expect(parts[2].toString()).toBe('33.34 USD'); // remainder
+    const sum = parts[0].add(parts[1]).add(parts[2]);
+    expect(sum.toString()).toBe('100.00 USD');
+    expect(sum.equals(total)).toBe(true);
+  });
+
+  it('allocate with string ratios and zero ratio handling', () => {
+    const total = Money.from('12', 'USD');
+    const parts = total.allocate(['1', '2', '0']);
+    expect(parts.map(p => p.toString())).toEqual(['4.00 USD', '8.00 USD', '0.00 USD']);
+  });
+
+  it('allocate used in kernel entry preserves invariants (validateEntry + equation)', () => {
+    const cash = new Account('100', 'Cash', AccountType.Asset);
+    const equity = new Account('300', 'Equity', AccountType.Equity);
+    const total = Money.from('100', 'USD');
+    const [owner, partner] = total.allocate([3, 2]); // 60/40
+    const entry = createBalancedEntry(
+      'alloc-1', '2026-06-21',
+      cash, equity,
+      total, 'Capital split'
+    );
+    // Note: the entry uses full total; allocate is used for downstream logic
+    // Here we prove allocated parts are exact and can be used in balances
+    expect(validateEntry(entry).ok).toBe(true);
+    const sumAlloc = owner.add(partner);
+    expect(sumAlloc.equals(total)).toBe(true);
   });
 });

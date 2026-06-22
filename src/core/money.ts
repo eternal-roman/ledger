@@ -137,23 +137,33 @@ export class Money {
   }
 
   /**
-   * Allocate this Money into parts per the given ratios (weights 0-1 or any positive).
-   * Guarantees exact sum to original (remainder to last).
+   * Allocate this amount into parts by ratios (e.g. [1, 2, 1] for 25/50/25 split).
+   * Returns array of Money that sum exactly to this (remainder to last part).
+   * Ratios may be numbers or strings; handled exactly via Decimal.
+   * Guarantees exact sum to original.
    */
-  allocate(ratios: number[]): Money[] {
-    if (!ratios || ratios.length === 0) return [];
-    const total = ratios.reduce((a, b) => a + b, 0);
-    if (total <= 0) return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
-    const parts: Money[] = [];
-    let remaining = this._amount;
-    for (let i = 0; i < ratios.length - 1; i++) {
-      const share = this._amount.times(ratios[i] / total);
-      const rounded = share.toDecimalPlaces(this.scale, Decimal.ROUND_DOWN);
-      parts.push(new Money(rounded, this.currency, this.scale, this.asOf, this.provenance));
-      remaining = remaining.minus(rounded);
+  allocate(ratios: (string | number)[]): Money[] {
+    if (ratios.length === 0) return [];
+    const parts = ratios.map(r => new Decimal(String(r)));
+    const totalParts = parts.reduce((a, b) => a.add(b), new Decimal(0));
+    if (totalParts.isZero()) {
+      return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
     }
-    parts.push(new Money(remaining, this.currency, this.scale, this.asOf, this.provenance));
-    return parts;
+    const results: Money[] = [];
+    let allocated = new Decimal(0);
+    for (let i = 0; i < parts.length; i++) {
+      let share: any;
+      if (i === parts.length - 1) {
+        share = this._amount.sub(allocated); // ensure exact sum
+      } else {
+        share = this._amount.mul(parts[i]).div(totalParts);
+        share = share.toDecimalPlaces(this.scale, 1); // 1 = ROUND_DOWN for exact floor, deterministic
+      }
+      const m = new Money(share, this.currency, this.scale, this.asOf, this.provenance);
+      results.push(m);
+      allocated = allocated.add(share);
+    }
+    return results;
   }
 
   toString(): string {
@@ -170,6 +180,14 @@ export class Money {
   /** For hashing / determinism checks */
   toHashable(): string {
     return `${this._amount.toString()}:${this.currency}:${this.scale}:${this.asOf ?? ''}`;
+  }
+
+  /** Compare to other (same currency required). Returns -1, 0, or 1. */
+  compare(other: Money): -1 | 0 | 1 {
+    if (this.currency !== other.currency) {
+      throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
+    }
+    return this._amount.cmp(other._amount);
   }
 }
 
