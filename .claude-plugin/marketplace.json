@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ledger",
-  "description": "The Bean Counter — the uncompromising Financial Architect. Forces exact Money arithmetic, double-entry balance, GAAP/IFRS grounding, Zero-Skip protocol, and canon citations on every financial value and construct.",
+  "description": "Ledger Chad — Alpha of the Ledger (Alpha Maxxing). Exact Money (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip. The alpha bookkeeper. Mistakes do not ship.",
   "owner": {
     "name": "eternal-roman",
     "url": "https://github.com/eternal-roman/ledger"
@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "ledger",
-      "description": "Uncompromising financial integrity. Money.from always, validated JournalEntry + Ledger.apply, citations required, no floats, provable balance.",
+      "description": "Ledger Chad: Money.from always, validated JournalEntry + Ledger.apply, citations, no floats, provable balance + invariants. Alpha Maxxing. Double-Entry or Get Beta. No unbalanced state.",
       "source": "./",
       "category": "productivity"
     }

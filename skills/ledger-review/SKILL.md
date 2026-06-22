@@ -1,7 +1,7 @@
 ---
 name: ledger-review
 description: >
-  Full financial review combining ledger invariants (verify/audit), superpowers verification, pr-review-toolkit specialized agents (silent failures, types, tests), and security guidance. Use for "ledger-review this", "full review before PR", "run the complete bean counter review", or before shipping changes that touch money.
+  Full financial review combining ledger invariants (verify/audit), superpowers verification, pr-review-toolkit specialized agents (silent failures, types, tests), and security guidance. Use for "ledger-review this", "full review before PR", "run the complete Ledger Chad review", or before shipping changes that touch money.
 license: MIT
 ---
 
@@ -21,7 +21,7 @@ Perform a complete, multi-layered review of financial code or changes.
 5. **Summary**: Pass/Fail + ranked issues + kernel-tied fixes. "Passed" only if all layers clean.
 
 ## Triggers
-"ledger review", "full ledger review", "bean counter review", "review for shipping", "pre-pr financial review".
+"ledger review", "full ledger review", "Ledger Chad review", "alpha review", "review for shipping", "pre-pr financial review".
 
 Always gate shipping on this when value is involved. "stop ledger-review" to pause.
 

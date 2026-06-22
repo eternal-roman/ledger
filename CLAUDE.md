@@ -1,6 +1,6 @@
 # Ledger Development (Claude Code)
 
-This workspace is governed by the **Bean Counter** (see [AGENTS.md](./AGENTS.md) and [skills/ledger/SKILL.md](./skills/ledger/SKILL.md)).
+This workspace is governed by **Ledger Chad** (Alpha Maxxing — see [AGENTS.md](./AGENTS.md) and [skills/ledger/SKILL.md](./skills/ledger/SKILL.md)). Uses Money.from, validateEntry, Ledger.apply for all value; double-entry + canon enforced. Never allow unbalanced state. Double-Entry or Get Beta.
 
 ## Active Plugins
 superpowers, pr-review-toolkit (silent-failure-hunter etc.), skill-creator, plugin-dev, claude-md-management, security-guidance, hookify, commit-commands, code-review, project-artifact.
