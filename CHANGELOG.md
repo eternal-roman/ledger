@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.5] - 2026-06-21
+## [0.5.0] - 2026-06-22
 
 ### Added (gap closure on docs/ifrs-15-16-engine-scope per commercial plan + assessment)
 - **Persistence (gap #1 closed)**: `JournalEntry.toJSON/fromJSON`, `Ledger.toJSON/fromJSON`, `ChartOfAccounts.toJSON/fromJSON`, `Account.toJSON/fromJSON`. Deterministic roundtrips preserve `auditHash`, `verifyFundamentalEquation`, balances, and immutability.
