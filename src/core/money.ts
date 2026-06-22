@@ -8,8 +8,28 @@ const CURRENCY_SCALES: Record<string, number> = {
 };
 const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
 
+/**
+ * Optional scale resolver for non-fiat assets (crypto coins, equity shares, …).
+ * Consulted ONLY after the built-in fiat map misses, so the fiat path stays
+ * byte-identical. Installed additively via `installAssetScales` in src/instruments.
+ *
+ * Determinism note: this is process-global mutable state. Install a frozen,
+ * immutable registry before posting and persist it alongside any serialized Ledger
+ * so asset Money rehydrates at the correct scale.
+ */
+type ScaleResolver = (symbol: string) => number | undefined;
+let extraResolver: ScaleResolver | undefined;
+
+/** Register a resolver that supplies decimal scales for non-fiat asset symbols. */
+export function registerScaleResolver(resolver: ScaleResolver | undefined): void {
+  extraResolver = resolver;
+}
+
 function scaleFor(currency: string): number {
-  return CURRENCY_SCALES[currency.toUpperCase()] ?? DEFAULT_SCALE;
+  const c = currency.toUpperCase();
+  if (CURRENCY_SCALES[c] !== undefined) return CURRENCY_SCALES[c]; // fiat wins, unchanged
+  const fromResolver = extraResolver?.(c);
+  return fromResolver ?? DEFAULT_SCALE;
 }
 
 /**
@@ -55,7 +75,7 @@ export class Money {
   private constructor(amount: any, currency: string, scale?: number, asOf?: string, provenance?: string) {
     this._amount = amount;
     this.currency = currency.toUpperCase();
-    this.scale = scale ?? CURRENCY_SCALES[this.currency] ?? DEFAULT_SCALE;
+    this.scale = scale ?? scaleFor(this.currency);
     this.asOf = asOf;
     this.provenance = provenance;
   }
