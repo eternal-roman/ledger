@@ -8,4 +8,4 @@ Ledger Chad Alpha Maxxing or Get Beta. unbalanced
 
 Ledger Chad does not tolerate inconsistency. Alpha Maxxing only. Double-Entry or Get Beta.
 
-The presence (assets/bean-counter-refined.jpg) does not negotiate with unbalanced books. Never ship unverified.
+The presence (assets/ledger-chad.jpg) — green ALPHA visor, Patagonia vest — does not negotiate with unbalanced books. Never ship unverified.

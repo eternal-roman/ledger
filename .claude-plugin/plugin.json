@@ -1,10 +1,10 @@
 {
   "name": "ledger",
-  "description": "Ledger (The Bean Counter) — uncompromising financial architect. Exact Money (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip protocol, and Canonical Financial Artifact. Includes AGENTS.md persona, skills, commands, and hooks for AI-assisted financial software development.",
+  "description": "Ledger Chad — Alpha of the Ledger (Alpha Maxxing). Exact Money.from (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip. Never unbalanced. Includes AGENTS.md, skills, commands, hooks. Double-Entry or Get Beta. Mistakes do not ship.",
   "author": {
     "name": "eternal-roman / Ledger maintainers"
   },
-  "version": "0.6.0",
+  "version": "0.6.1",
   "homepage": "https://github.com/eternal-roman/ledger",
-  "tags": ["finance", "accounting", "double-entry", "money", "ai-skill", "verification", "gaap", "ifrs"]
+  "tags": ["finance", "accounting", "double-entry", "money", "ai-skill", "verification", "gaap", "ifrs", "ledger-chad"]
 }

@@ -1,6 +1,6 @@
-# Hooks for Ledger (Ledger Chad)
+# Hooks for Ledger (Ledger Chad — Alpha Maxxing)
 
-Bash-first activation hooks for AI hosts (Claude Code etc.).
+Bash-first activation hooks for AI hosts (Claude Code etc.). Enforces Money.from, double-entry via validateEntry + Ledger.apply, canon, Zero-Skip. No unbalanced state. Double-Entry or Get Beta.
 
 ## Files
 - `ledger-activate` — primary bash script.

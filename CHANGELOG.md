@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased (harden + consistency)
+- Hardened `check:persona`: split CORE_REQUIRED from BRAND_PHRASES; pointer adapters + short manifests/docs now require only core+key Chad phrases (prevents sync fragility and cascade red merges on branding changes).
+- Expanded surfaces: now covers CLAUDE.md, .claude-plugin/*.json, .claude/agents/*, hooks/README.md, README (phrases + graphics).
+- Added graphic/asset consistency enforcement (no stale bean-counter in active files) and package/manifest alignment checks.
+- Fixed remaining Prod gaps from rushed prior merges: updated plugin.json + marketplace (Chad + v0.6.1), CLAUDE.md, agent (renamed + Chad text), .kiro + copilot adapters (image to ledger-chad.jpg), package keywords, review skill/cmd.
+- CI: `fail-fast: false` in matrix for complete reporting.
+- Release skill: mandatory pre-merge `pull_request_read:get_check_runs` + local `verify:full` gate; explicit forbid on red PRs; ties to subagents.
+- All persona surfaces now pass check; no mixed branding or version skews.
+
 ## [0.6.1] - 2026-06-21
 
 ### Added / Changed (repo hygiene + plugin)
