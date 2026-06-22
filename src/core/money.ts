@@ -161,31 +161,43 @@ export class Money {
     return this._amount.cmp(other._amount);
   }
 
-  /** Negated copy (sign flip). */
+  /** Negate the amount (sign flip), preserve currency, scale, asOf, provenance. */
   negate(): Money {
-    return new Money(this._amount.neg(), this.currency, this.scale, this.asOf, this.provenance);
+    return new Money(this._amount.negated(), this.currency, this.scale, this.asOf, this.provenance);
   }
 
-  /** Absolute value copy. */
+  /** Absolute value, preserve currency, scale, asOf, provenance. */
   abs(): Money {
     return new Money(this._amount.abs(), this.currency, this.scale, this.asOf, this.provenance);
   }
 
-  /** Simple serializable form for roundtrips. */
-  toJSON() {
+  /**
+   * Serialize to plain object for roundtrips, persistence, hashing.
+   * v: version for forward compat.
+   */
+  toJSON(): { v: string; a: string; c: string; asOf?: string; provenance?: string } {
     return {
       v: '1',
       a: this._amount.toString(),
       c: this.currency,
-      s: this.scale,
       asOf: this.asOf,
-      p: this.provenance,
+      provenance: this.provenance,
     };
   }
 
-  /** Rehydrate from toJSON. */
+  /**
+   * Reconstruct Money from the toJSON shape.
+   * Accepts loose keys for flexibility (a/amount, c/currency, provenance/p).
+   */
   static fromJSON(j: any): Money {
-    return Money.from(j.a, j.c, j.asOf, j.p, j.s);
+    if (!j || typeof j !== 'object') throw new Error('Money.fromJSON expects object');
+    const amt = j.a ?? j.amount;
+    const cur = j.c ?? j.currency;
+    const prov = j.provenance ?? j.p;
+    if (amt == null || !cur) {
+      throw new Error('Money.fromJSON missing amount or currency');
+    }
+    return Money.from(amt, cur, j.asOf, prov);
   }
 
   /** Combine provenance strings for add/sub (internal, exact, no mutation). */
