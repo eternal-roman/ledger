@@ -107,7 +107,7 @@ See `examples/personal-ledger.ts` for a complete working example.
 - Projectors: `incomeStatement()`, `balanceSheet()`, `summarizeByType()` (multi-curr robust)
 - Always: `validateEntry` + `Ledger.apply` + check `verifyFundamentalEquation`
 
-This iteration: completed gap closure (Money div/compare/allocate, auditHash, CFA validator, GAAP seed, 51+ tests). Committed via PR #10 (4C), merged, CI (verify:full) green, patch 0.3.1 incremented in all places following /release. v0.3.1 tagged. Plan progress updated.
+This iteration: more kernel (Money negate/abs/JSON), docs (SECURITY.md etc, issue template), plan progress. Feature branch, 4C PR, merge, patch 0.3.2 bump, verify:full, tag. Following /release fully.
 
 ## AI Agent Integration
 

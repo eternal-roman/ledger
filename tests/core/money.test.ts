@@ -110,4 +110,20 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const sumAlloc = owner.add(partner);
     expect(sumAlloc.equals(total)).toBe(true);
   });
+
+  it('negate and abs preserve value and currency', () => {
+    const m = Money.from('42.5', 'USD');
+    expect(m.negate().toString()).toBe('-42.50 USD');
+    expect(m.negate().negate().equals(m)).toBe(true);
+    expect(m.abs().toString()).toBe('42.50 USD');
+  });
+
+  it('toJSON/fromJSON roundtrip exact, with version', () => {
+    const m = Money.from('123.45', 'EUR', '2026-06-21', 'source');
+    const j = m.toJSON();
+    expect(j.v).toBe('1');
+    const m2 = Money.fromJSON(j);
+    expect(m2.equals(m)).toBe(true);
+    expect(m2.asOf).toBe('2026-06-21');
+  });
 });

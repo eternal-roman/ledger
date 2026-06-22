@@ -8,6 +8,7 @@
 > - Release: changes committed via PR #10 (4C), merged to main, patch bumped to 0.3.1 in all places (package, src, plugin), verify:full + tag v0.3.1.
 > - Docs/plan updated.
 > Next per plan: more seeds/constructs, CLI verifier, rich examples, adversarial tests.
+> This iteration (patch): added Money negate/abs/toJSON/fromJSON, SECURITY/CONTRIBUTING/CHANGELOG + issue template. Will PR and patch bump.
 
 **Goal**: Transform Ledger into the canonical, trusted source for simplicity, consistency, and reliability when AI builds financial, accounting, investing, tax, and monetary software artifacts.
 
