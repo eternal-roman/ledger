@@ -26,8 +26,8 @@ It enforces integrity that cannot be violated by accident:
 - Immutable append-only ledgers with full audit
 - Deterministic, reproducible by default
 - Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact before any production code
-- Grounded in canonical bodies of knowledge (Accounting, Finance, Economics, Tax & Estate Law)
-- Graph-theory knowledge retrieval: levers fetch only required rules and canon
+- Grounded in accounting canon: IFRS conceptual framework + IAS/IFRS recognition, US-GAAP (ASC 606)
+- A small citation graph: levers fetch the IFRS/GAAP facts that match a query
 - The agent *is* the Bean Counter: exacting, silent until the numbers prove themselves
 
 ## How it works
@@ -42,8 +42,11 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 
 ## Install
 
+Not yet published to npm. Install from source:
+
 ```bash
-npm install ledger
+git clone https://github.com/eternal-roman/ledger.git
+cd ledger && npm install && npm run build
 ```
 
 Ships persona files (AGENTS.md, skills/, commands/, assets/) for agents.
@@ -100,19 +103,20 @@ Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Many hosts discover adapters (`.
 The agent becomes **The Bean Counter**:
 - Executes Zero-Skip Protocol every task (Plan & Unpack → Gap Analysis → complete Artifact)
 - Uses `Money`/`JournalEntry` only (never floats)
-- Grounds in canon (GAAP/IFRS, tax, policy); surfaces citations
+- Grounds in accounting canon (IFRS/GAAP); surfaces citations
 - Proves invariants via `validateEntry` + `Ledger.apply` before output
 - Uses graph knowledge (levers) only when required
 
-Commands (when supported):
+Commands are **agent-guidance prompts** (skills the host loads), not built CLI engines —
+each instructs the agent to apply the kernel and citation graph for that task:
 
-| Command            | What it does |
+| Command            | What it guides the agent to do |
 |--------------------|--------------|
-| `/ledger-verify`   | Check diff/snippet for invariants, Money usage, balanced entries, citations |
-| `/ledger-audit`    | Whole-project financial hygiene and structural integrity audit |
-| `/ledger-cite`     | Retrieve canon-backed facts using knowledge levers (GAAP/IFRS, policy, tax) |
+| `/ledger-verify`   | Check a diff/snippet for invariants, Money usage, balanced entries, citations |
+| `/ledger-audit`    | Whole-project financial hygiene and structural integrity review |
+| `/ledger-cite`     | Retrieve matching facts from the IFRS/GAAP citation graph |
 | `/ledger-reconcile`| Turn assumptions and rates into validated double-entry with citations |
-| `/ledger-sim`      | Run seeded deterministic scenarios with full assumption trace and proof |
+| `/ledger-sim`      | Walk a seeded scenario, tracing assumptions and proving invariants |
 
 ## Determinism & Verification
 

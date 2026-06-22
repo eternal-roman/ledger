@@ -3,8 +3,8 @@ export * from './graph.js';
 export { ifrsSeed } from './seeds/ifrs.js';
 export { gaapSeed } from './seeds/gaap.js';
 
-// Convenience: load default seeds (expanded canon covering Accounting/IFRS + GAAP, FOMC/monetary policy,
-// Tax & Estate, Macro/Economics, Finance valuation per the Uncompromising Financial Architect doctrine).
+// Convenience: load the default citation seeds. Current canon covers accounting only:
+// IFRS (conceptual framework + IAS/IFRS recognition) and US-GAAP (ASC 606 + matching).
 import { createGraph, loadSeed } from './graph.js';
 import { ifrsSeed } from './seeds/ifrs.js';
 import { gaapSeed } from './seeds/gaap.js';
