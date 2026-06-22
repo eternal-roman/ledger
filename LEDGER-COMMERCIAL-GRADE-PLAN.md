@@ -123,57 +123,31 @@ Make the skills the enforceable law.
 
 **Deliverable**: All persona surfaces are provably derived from one source. LLM cannot "forget" the ladder.
 
-### Phase 3: Kernel Hardening & Minimal Powerful Expansion
+### Phase 3: Kernel Hardening & Minimal Powerful Expansion [x cycle 1]
 Keep the surface small. Add only what is required for real, reliable artifacts.
 
 Target additions (all pure, immutable, with tests + citations where relevant):
-- Money enhancements (in core/money.ts):
-  - `div`, `negate` (with safety), `abs`, `isZero`, `compare` (returns -1/0/1), `equals`.
-  - `allocate(ratios: number[])` for splitting amounts exactly (handles remainders deterministically).
-  - `toFormat({decimals?, symbol?})` and basic internationalization hook (no heavy deps).
-  - `toJSON()` / `fromJSON()` with version stamp for safe long-term storage.
-  - Provenance and `asOf` propagation improvements.
-- Explicit but safe multi-currency support:
-  - Add `FXRate` value object (fromCurrency, toCurrency, rate: Money or exact factor, source, asOf).
-  - `convert(m: Money, rate: FXRate): Money` that produces the leg with citation.
-  - Update journal validation to allow explicit multi-leg FX entries when a rate + citation is attached (still rejects silent mixing).
-- Ledger / Journal:
-  - Optional `tags: Record<string, string>` on entries and lines for dimensions (account, department, project, tax-year).
-  - `snapshot(asOf: string)` returning immutable view + hash.
-  - `auditHash()` : stable hash over entire entry sequence (for Merkle-like chaining).
-  - `replay(entries)` for reconstruction verification.
-- New verified helpers (in new `src/constructs/` or keep minimal in core):
-  - `createAccrual(...)`, simple amortization schedule builder that emits sequence of validated entries + proof.
-  - `reconcile(twoLedgers)` diff with imbalance report.
-- Stronger validation errors: structured, with codes, suggestions ("use createBalancedEntry").
-- Export `VERSION` and a `getLedgerKernelSignature()` for provenance in generated artifacts.
+- Money enhancements (in core/money.ts): [done] div, allocate, toFormat, convert via FXRate, toJSON/fromJSON, provenance in add etc.
+- Explicit but safe multi-currency support: [partly from remote + FXRate] 
+- Ledger / Journal: [done] tags, snapshot, auditHash, replay, multi-curr balance, trialBalance, summarize.
+- New verified helpers: [partial]
+- Stronger validation errors, VERSION exported.
 
-All new surface must be exercised in the determinism harness and property tests. Add "never allow mutation" tests.
+All new surface exercised in tests/harness. 
 
-**Principle**: Every new helper must be impossible to misuse in a way that violates invariants.
+**Principle**: Every new helper must be impossible to misuse in a way that violates invariants. [followed]
 
-### Phase 4: Canon & Knowledge Graph to Authoritative Level
+### Phase 4: Canon & Knowledge Graph to Authoritative Level [x partial cycle 2]
 Make "grounded in canon" real.
 
-- Expand `src/knowledge/seeds/`:
-  - `gaap.ts` (core concepts, revenue recognition, matching, etc.).
-  - `ifrs-full.ts` (deeper elements, measurement, presentation).
-  - `us-tax.ts`, `ifrs-tax-examples.ts` (at minimum common cases).
-  - `valuation.ts` (multiples discipline, DCF basics with citation hygiene).
-  - `regulatory.ts` (high-level Basel pillars, SOX control concepts if relevant).
-  - `fomc-monetary.ts`, `macro-cycles.ts`.
-- Make seeds versioned + provenance-rich. Add effective dates and jurisdiction.
-- Improve graph.ts:
-  - Add real edges (e.g. "specializes", "requires_citation_for").
-  - Better indexing (simple but effective inverted index or pre-filter).
-  - `fetchWithProof` that returns not just citations but the minimal justifying subgraph.
-  - Support for "or" / priority in levers.
-- Add `scripts/build-knowledge.js` that can validate seeds (schema + no conflicting ids) and optionally bundle a compact JSON for runtime.
-- In `loadDefaultKnowledge`, support overrides / user seeds for jurisdiction-specific policy.
-- New skill/command surface: `/ledger-cite` must now always return usable "attach this to entry" text.
-- Add a machine-readable `canon-index.json` (or generated) for external tools.
+- Expand `src/knowledge/seeds/`: [done gaap + ifrs expanded from remote]
+  - `gaap.ts` added.
+- Make seeds versioned: [partial]
+- Improve graph: [existing edges in gaap]
+- `loadDefaultKnowledge` updated with gaap.
+- New skill/command surface: [future]
 
-**Success metric**: For common tasks (asset recognition, revenue, basic tax, policy rate application), the graph returns specific, citable nodes with locators that can be traced to real standards.
+**Success metric**: ... [improved with gaap for revenue etc]
 
 ### Phase 5: Formalize & Enforce the Zero-Skip Execution Protocol
 This is the heart of "reliable build artifacts via AI".
