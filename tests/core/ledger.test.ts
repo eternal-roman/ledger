@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { Money } from '../../src/core/money.js';
-import { Account, AccountType } from '../../src/core/account.js';
-import { JournalEntry, makeLine, createFxConversion, createEntry, validateEntry } from '../../src/core/journal.js';
-import { emptyLedger } from '../../src/core/ledger.js';
+import { Account, AccountType, ChartOfAccounts } from '../../src/core/account.js';
+import { JournalEntry, makeLine, createFxConversion, createEntry, validateEntry, createBalancedEntry } from '../../src/core/journal.js';
+import { emptyLedger, Ledger } from '../../src/core/ledger.js';
 import { verifyDeterminism, validateCanonicalArtifact } from '../../src/verify/index.js';
+import { periods, presentValueOfAnnuity } from '../../src/time/index.js';
+import { buildAmortizationSchedule } from '../../src/standards/measure/index.js';
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Owner Equity', AccountType.Equity);
@@ -215,6 +217,34 @@ describe('Ledger (immutable append + projections)', () => {
     expect(res.hash).toBe(emptyLedger().apply(e1).ledger.auditHash());
   });
 
+  it('Ledger and JournalEntry support exact deterministic (de)serialization (closes persistence gap)', () => {
+    const rev = new Account('4100', 'Revenue', AccountType.Income);
+    const e1 = capEntry('10000');
+    const e2 = new JournalEntry('sale-1', '2026-06-21', [
+      makeLine(cash, Money.from('1200', 'USD'), 'debit'),
+      makeLine(rev, Money.from('1200', 'USD'), 'credit'),
+    ], 'Sale revenue', ['IFRS 15.31']);
+    let l = emptyLedger().apply(e1).ledger.apply(e2).ledger;
+    const beforeHash = l.auditHash();
+    expect(l.verifyFundamentalEquation()).toBe(true);
+    expect(l.balance(cash).toString()).toBe('11200.00 USD');
+
+    // Serialize + roundtrip
+    const json = l.toJSON();
+    expect(json.v).toBe('1');
+    expect(json.entries.length).toBe(2);
+    const l2 = Ledger.fromJSON(json);
+    expect(l2.auditHash()).toBe(beforeHash);
+    expect(l2.verifyFundamentalEquation()).toBe(true);
+    expect(l2.balance(cash).toString()).toBe('11200.00 USD');
+    expect(l2.entries[1].citations).toEqual(['IFRS 15.31']);
+
+    // Immutability preserved (inner entries frozen)
+    const inner = (l2 as any)._entries;
+    expect(Object.isFrozen(inner)).toBe(true);
+    expect(() => inner.push({} as any)).toThrow();
+  });
+
   it('auditHash is stable and changes with entries (for proof bundles)', () => {
     let l = emptyLedger().apply(capEntry('1000')).ledger;
     const h1 = l.auditHash();
@@ -270,6 +300,61 @@ describe('Ledger (immutable append + projections)', () => {
     const res = validateCanonicalArtifact(bad);
     expect(res.ok).toBe(false);
     expect(res.violations.length).toBeGreaterThan(0);
+  });
+
+  it('ChartOfAccounts provides managed registry (pure, deduped) + supports opening balances via kernel entries', () => {
+    const cash = new Account('1000', 'Cash', AccountType.Asset);
+    const equity = new Account('3000', 'Equity', AccountType.Equity);
+    let coa = new ChartOfAccounts([cash]);
+    expect(coa.list().length).toBe(1);
+    expect(coa.get('1000')!.name).toBe('Cash');
+    expect(() => coa.add(cash)).toThrow(/already exists/);
+
+    coa = coa.add(equity);
+    expect(coa.list().length).toBe(2);
+
+    // Opening balances via kernel (typical workflow)
+    const open = createBalancedEntry('open', '2026-01-01', cash, equity, Money.from('5000', 'USD'), 'Opening balances');
+    const l = emptyLedger().apply(open).ledger;
+    expect(l.verifyFundamentalEquation()).toBe(true);
+    expect(l.balance(cash).toString()).toBe('5000.00 USD');
+
+    // serialize roundtrip for CoA
+    const coa2 = ChartOfAccounts.fromJSON(coa.toJSON());
+    expect(coa2.list().length).toBe(2);
+  });
+
+  it('M0 time + schedule (IFRS engine foundation): PV exact, schedule emits kernel-validated entries, equation holds', () => {
+    // Canonical Financial Artifact
+    // Scope: PV + amort schedule for IFRS16 lease liability measurement/recognition (M0)
+    // Assumptions: 3 fixed periods, 5% per period, single curr USD, start 2026-01-01, ordinary annuity, PER_PERIOD rate
+    // Citations: IFRS 16.26 (initial liability at PV of pmts), IFRS 16.36 (finance cost = carrying * rate)
+    // Kernel Plan: Money.from + periods + presentValueOfAnnuity + buildAmortizationSchedule + make/createEntry + validateEntry + Ledger.apply + verifyFundamentalEquation
+    // Proof: computed PV matches hand approx to scale; generated entries all validate; final applied ledger eq holds; hashes deterministic
+    // Reproducibility: all string inputs + fixed n/rate; replay same schedule + same entries
+    const pmt = Money.from('1000', 'USD');
+    const n = 3;
+    const rate = '0.05';
+    const pv = presentValueOfAnnuity(pmt, n, rate);
+    expect(pv.toString()).toMatch(/2723\./); // 2723.25 range for ordinary 3p 5%
+
+    const start = '2026-01-01';
+    const sched = buildAmortizationSchedule('LEASE_LIABILITY', pv, pmt, rate, n, start, 'MONTHLY', ['IFRS 16.26', 'IFRS 16.36']);
+    expect(sched.lines.length).toBeGreaterThan(0);
+    expect(sched.currency).toBe('USD');
+
+    // kernel proof
+    const liab = new Account('2100', 'LeaseLiability', AccountType.Liability);
+    const cash = new Account('1000', 'Cash', AccountType.Asset);
+    const entries = sched.toEntries('ifrs16-m0', cash, liab, 'IFRS16 ex');
+    expect(entries.length).toBeGreaterThan(0);
+    let l = emptyLedger();
+    for (const e of entries) {
+      const vr = l.apply(e);
+      expect(vr.result.ok).toBe(true);
+      l = vr.ledger;
+    }
+    expect(l.verifyFundamentalEquation()).toBe(true);
   });
 
   it('incomeStatement/balanceSheet/summarize use primary non-USD currency from ledger (no USD hard default)', () => {

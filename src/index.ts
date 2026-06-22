@@ -4,6 +4,8 @@ export * from './core/index.js';
 export * from './knowledge/index.js';
 export * from './rules/index.js';
 export * from './verify/index.js';
+export * from './time/index.js';
+export * from './standards/measure/index.js';
 
 // Full verify harness, rules, knowledge integrated.
 // Single source of truth: the version is read from package.json (no hardcoded drift).

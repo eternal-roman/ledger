@@ -271,6 +271,42 @@ Run `npm run verify:full` after every batch. Historical phases complete or in ma
 
 ---
 
+## 8. Honest Assessment & Gap Closure (branch: docs/ifrs-15-16-engine-scope, v0.4.4)
+
+**Question from assessment**: Can AI build sophisticated financial software with main today?  
+**Answer on main (pre-branch fixes)**: No — kernel is a solid guardrail foundation, not a full tool suite.
+
+**What works well (kernel + this branch)**:
+- Exact arithmetic (decimal.js, no IEEE-754). Money.from rejects non-integer numbers.
+- Double-entry enforced at type/kernel (validateEntry cannot be bypassed).
+- Immutable Ledger + pure apply().
+- Chart of accounts (typed categories + normal balance).
+- Basic statements (trial balance, incomeStatement, balanceSheet).
+- Knowledge graph + GAAP/IFRS seeds + citation levers.
+- **Branch fixes delivered**: tamper-evident auditHash (SHA-256 chain, length-prefixed), FXRate exact (string/Decimal never parseFloat), multi-currency balance fails-closed (no silent drop), rules now enforce structural signatures (revenue credits Income, lease has Asset+Liab, etc.).
+
+**Gaps vs sophisticated software (status on this branch after working the plan):**
+
+1. **No persistence** — toJSON/fromJSON only on Money. Ledger/JournalEntry lack full roundtrip. → **In progress (closing)**: adding deterministic serialization for JournalEntry + Ledger.
+2. **No chart of accounts management** — ad-hoc creation only. No registry/hierarchy/opening balances/locking. → **Minimal close**: introduce pure ChartOfAccounts helper (list, lookup, apply openings via kernel entries).
+3. **No period closing / fiscal periods** — dates are validated strings; snapshot is view not close. No retained earnings rollover, period locks. → **Closing via IFRS plan**: M0 introduces validated time/periods (see IFRS 15/16 engine design spec on branch).
+4. **No reporting beyond basics** — single-currency primary views; missing cash flow, aging, subledgers, bank rec, dept P&L. → Basic currency-complete now; full engine to come.
+5. **Rules are shallow (no IFRS 15/16 engine)** — branch improves to signature checks but no 5-step model schedules, lease amortization, depreciation. → **Plan active**: docs/superpowers/specs/2026-06-21-ifrs-15-16-engine-design.md defines M0-M5; implementation starts with time + schedule core.
+6. **No transaction patterns/workflows** — only primitives (makeLine, createBalancedEntry, createFxConversion). No invoicing, payment application, dep runs. → Primitives + CFA guardrails allow composition; higher constructs follow scoped use cases.
+7. **FX on main broken** — floats, silent drops, forgeable hash. → **CLOSED on branch**. FXRate/Money/auditHash/multi-curr all exact + proven in tests.
+8. **No npm publishable package** — dist/build present, package.json exports configured, README says `npm install ledger`. → **Closing**: add prepublishOnly, clean/pack verification, confirm artifact integrity.
+
+**Recommendation executed**: Branch merges the critical fixes (hash, FX, floats, rules). Library is now a stronger guardrail. For full toolkit, the IFRS engine scope + serialization + periods + CoA provide the next concrete layers. Scope to "AI can generate + persist + reconcile IFRS-compliant schedules for leases/revenue" as the target use case.
+
+**Branch work-through of plans**:
+- Commercial plan phases 0-6 largely complete (kernel, CFA, verify:full, 80 tests, persona).
+- IFRS umbrella spec approved; sequencing M0 (time/measure) → M1/M4 first value.
+- All new constructs will use kernel + emit CFA + golden tests reproducing standards examples.
+
+Ledger now lets an AI get farther: serialize state, enforce deeper rules, lay time foundation for real schedules.
+
+---
+
 Ledger's promise is simple: when an AI builds financial things under these rules, the result is correct by construction, cited where it matters, and reproducible forever.
 
 The Bean Counter does not negotiate. This plan makes that presence commercial-grade, unavoidable, and visually unmistakable.

@@ -1,11 +1,16 @@
 import { createHash } from 'node:crypto';
-import { JournalEntry, JournalEntryLine, validateEntry, ValidationResult } from './journal.js';
+import { JournalEntry, JournalEntryLine, validateEntry, ValidationResult, SerializedJournalEntry } from './journal.js';
 import { Money } from './money.js';
 import { Account, AccountType } from './account.js';
 
 export interface LedgerSnapshot {
   readonly entries: readonly JournalEntry[];
   readonly asOf: string;
+}
+
+export interface SerializedLedger {
+  v: string;
+  entries: SerializedJournalEntry[];
 }
 
 export class Ledger {
@@ -163,6 +168,23 @@ export class Ledger {
   /** Capture current immutable snapshot (useful for audit / reporting). */
   snapshot(asOf = new Date().toISOString().slice(0, 10)): LedgerSnapshot {
     return { entries: this.entries, asOf };
+  }
+
+  /** Deterministic serialization for persistence. Roundtrips preserve auditHash + equation. */
+  toJSON(): SerializedLedger {
+    return {
+      v: '1',
+      entries: this._entries.map(e => e.toJSON()),
+    };
+  }
+
+  /** Reconstruct immutable Ledger from serialized form. Each entry validated on reconstruction. */
+  static fromJSON(j: any): Ledger {
+    if (!j || j.v !== '1' || !Array.isArray(j.entries)) {
+      throw new Error('Ledger.fromJSON: invalid or unsupported shape');
+    }
+    const entries = j.entries.map((e: any) => JournalEntry.fromJSON(e));
+    return new Ledger(entries);
   }
 
   /** Stable SHA-256 audit hash (tamper-evident chain over all entries/fields). */
