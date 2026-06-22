@@ -27,16 +27,8 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build
-      run: npm run build
-
-    - name: Run tests
-      run: npm test
-
-    - name: Run determinism verify
-      run: npm run verify
-
-    - name: Full verify
+    - name: Verify (build + typecheck + test + determinism + persona)
       run: npm run verify:full
 
-# Pinned actions + Node 22/24 matrix for stable, current runners. Full verify (build+test+determinism) on push/PR to main.
+# Pinned actions + Node 22/24 matrix for stable, current runners.
+# verify:full = build + typecheck + test + determinism + persona (single source, no duplicated steps).

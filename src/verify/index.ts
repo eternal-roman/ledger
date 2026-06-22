@@ -51,8 +51,12 @@ export function fullVerify(ledger: Ledger, entries?: JournalEntry[], levers: any
   };
 }
 
-/** Apply entries twice and confirm identical balances/equation for seeded deterministic sims. */
-export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledger: Ledger } {
+/**
+ * Build the entry sequence twice and confirm the two runs are byte-for-byte identical
+ * via their audit hashes (not just the same length). `ok` requires hash equality AND a
+ * holding fundamental equation. Returns the audit hash for proof bundles.
+ */
+export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledger: Ledger; hash: string } {
   const build = () => {
     let l = emptyLedger();
     for (const e of entries) {
@@ -64,6 +68,7 @@ export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledge
   };
   const a = build();
   const b = build();
-  const ok = a.entries.length === b.entries.length && a.verifyFundamentalEquation();
-  return { ok, ledger: a };
+  const hash = a.auditHash();
+  const ok = hash === b.auditHash() && a.verifyFundamentalEquation();
+  return { ok, ledger: a, hash };
 }

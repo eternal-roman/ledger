@@ -81,4 +81,26 @@ describe('Knowledge Graph (dimension fetch)', () => {
     const gaap = fetch(g, 'gaap', { standard_family: ['GAAP'] });
     expect(gaap.nodes.some(n => n.id.includes('gaap'))).toBe(true);
   });
+
+  it('matches query terms on word boundaries, not loose substrings', () => {
+    let g = createGraph();
+    g = loadSeed(g, { nodes: [{
+      id: 'note-syntax', type: 'Concept',
+      content: { statement: 'A note about syntax highlighting, nothing to do with money.' },
+      provenance: { source_id: 'misc', locator: 'n/a', effective_from: '2020' },
+      dimensions: { domain: ['misc'] }, confidence: 0.5,
+    }] as any });
+    const res = fetch(g, 'tax', {});
+    expect(res.nodes.some(n => n.id === 'note-syntax')).toBe(false); // 'syntax' must NOT match 'tax'
+  });
+
+  it('orders results by confidence (desc), then id, deterministically', () => {
+    let g = createGraph();
+    g = loadSeed(g, { nodes: [
+      { id: 'b-low', type: 'Fact', content: { k: 'widget' }, provenance: { source_id: 's', locator: 'l', effective_from: '2020' }, dimensions: {}, confidence: 0.5 },
+      { id: 'a-high', type: 'Fact', content: { k: 'widget' }, provenance: { source_id: 's', locator: 'l', effective_from: '2020' }, dimensions: {}, confidence: 0.9 },
+    ] as any });
+    const res = fetch(g, 'widget', {});
+    expect(res.nodes[0].id).toBe('a-high'); // higher confidence ranks first
+  });
 });

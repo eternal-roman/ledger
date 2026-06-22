@@ -186,8 +186,8 @@ describe('Ledger (immutable append + projections)', () => {
     const salary = new Account('400', 'Salary', AccountType.Income);
     const rent = new Account('500', 'Rent', AccountType.Expense);
     let l = emptyLedger();
-    l = l.apply(new JournalEntry('s', 'd', [makeLine(cash, Money.from('5000','USD'),'debit'), makeLine(salary, Money.from('5000','USD'),'credit')], '')).ledger;
-    l = l.apply(new JournalEntry('r', 'd', [makeLine(rent, Money.from('800','USD'),'debit'), makeLine(cash, Money.from('800','USD'),'credit')], '')).ledger;
+    l = l.apply(new JournalEntry('s', '2026-01-01', [makeLine(cash, Money.from('5000','USD'),'debit'), makeLine(salary, Money.from('5000','USD'),'credit')], '')).ledger;
+    l = l.apply(new JournalEntry('r', '2026-01-02', [makeLine(rent, Money.from('800','USD'),'debit'), makeLine(cash, Money.from('800','USD'),'credit')], '')).ledger;
     const is = l.incomeStatement();
     expect(is.totalIncome.toString()).toBe('5000.00 USD');
     expect(is.totalExpenses.toString()).toBe('800.00 USD');
@@ -204,6 +204,15 @@ describe('Ledger (immutable append + projections)', () => {
     const res = verifyDeterminism([e1, e2]);
     expect(res.ok).toBe(true);
     expect(res.ledger.entries.length).toBe(2);
+  });
+
+  it('verifyDeterminism actually compares two runs via audit hash', () => {
+    const e1 = capEntry('1000');
+    const res = verifyDeterminism([e1]);
+    expect(res.ok).toBe(true);
+    expect(res.hash).toMatch(/^[0-9a-f]{64}$/);
+    // The reported hash is the audit hash of an independently-built ledger of the same entries.
+    expect(res.hash).toBe(emptyLedger().apply(e1).ledger.auditHash());
   });
 
   it('auditHash is stable and changes with entries (for proof bundles)', () => {
@@ -288,5 +297,76 @@ describe('Ledger (immutable append + projections)', () => {
     expect(bs.right.toString()).toBe('1200.00 EUR');
     const sums = l.summarizeByType();
     expect(sums.some(s => s.type === AccountType.Income && s.total.toString() === '200.00 EUR')).toBe(true);
+  });
+
+  it('auditHash is tamper-evident: account, date, or description each change it', () => {
+    const fraud = new Account('1999', 'Offshore', AccountType.Asset);
+    const base = new JournalEntry('e1', '2026-06-21', [
+      makeLine(cash, Money.from('100', 'USD'), 'debit'),
+      makeLine(equity, Money.from('100', 'USD'), 'credit'),
+    ], 'Capital to Cash');
+    const diffAccount = new JournalEntry('e1', '2026-06-21', [
+      makeLine(fraud, Money.from('100', 'USD'), 'debit'),
+      makeLine(equity, Money.from('100', 'USD'), 'credit'),
+    ], 'Capital to Cash');
+    const diffDate = new JournalEntry('e1', '1999-01-01', [
+      makeLine(cash, Money.from('100', 'USD'), 'debit'),
+      makeLine(equity, Money.from('100', 'USD'), 'credit'),
+    ], 'Capital to Cash');
+    const diffMemo = new JournalEntry('e1', '2026-06-21', [
+      makeLine(cash, Money.from('100', 'USD'), 'debit'),
+      makeLine(equity, Money.from('100', 'USD'), 'credit'),
+    ], 'TOTALLY DIFFERENT');
+    const h = (e: JournalEntry) => emptyLedger().apply(e).ledger.auditHash();
+    expect(h(diffAccount)).not.toBe(h(base)); // redirected account must change the hash
+    expect(h(diffDate)).not.toBe(h(base));    // back-dating must change the hash
+    expect(h(diffMemo)).not.toBe(h(base));    // rewritten memo must change the hash
+  });
+
+  it('auditHash is a reproducible 64-char hex digest', () => {
+    const h1 = emptyLedger().apply(capEntry('1000')).ledger.auditHash();
+    const h2 = emptyLedger().apply(capEntry('1000')).ledger.auditHash();
+    expect(h1).toBe(h2);
+    expect(h1).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('auditHash chains: changing an earlier entry changes the final hash', () => {
+    const draw = new JournalEntry('b', '2026-01-02', [
+      makeLine(equity, Money.from('100', 'USD'), 'debit'),
+      makeLine(cash, Money.from('100', 'USD'), 'credit'),
+    ], 'draw');
+    const h1 = emptyLedger().apply(capEntry('1000')).ledger.apply(draw).ledger.auditHash();
+    const h2 = emptyLedger().apply(capEntry('2000')).ledger.apply(draw).ledger.auditHash();
+    expect(h1).not.toBe(h2);
+  });
+
+  describe('multi-currency accounts', () => {
+    const multi = new Account('1500', 'Multi', AccountType.Asset);
+    const eq = new Account('3000', 'Owner Equity', AccountType.Equity);
+    function multiLedger() {
+      let l = emptyLedger();
+      l = l.apply(new JournalEntry('x1', '2026-01-01', [makeLine(multi, Money.from('10', 'USD'), 'debit'), makeLine(eq, Money.from('10', 'USD'), 'credit')], 'usd')).ledger;
+      l = l.apply(new JournalEntry('x2', '2026-01-02', [makeLine(multi, Money.from('5', 'EUR'), 'debit'), makeLine(eq, Money.from('5', 'EUR'), 'credit')], 'eur')).ledger;
+      return l;
+    }
+
+    it('balancesByCurrency returns one balance per currency', () => {
+      const bals = multiLedger().balancesByCurrency(multi).map(m => m.toString()).sort();
+      expect(bals).toEqual(['10.00 USD', '5.00 EUR'].sort());
+    });
+
+    it('balance() throws on an ambiguous multi-currency account; explicit currency works', () => {
+      const l = multiLedger();
+      expect(() => l.balance(multi)).toThrow(/multi|currenc|ambiguous/i);
+      expect(l.balance(multi, undefined, 'EUR').toString()).toBe('5.00 EUR');
+      expect(l.balance(multi, undefined, 'USD').toString()).toBe('10.00 USD');
+    });
+
+    it('trialBalance emits a row per currency and equation holds per currency', () => {
+      const l = multiLedger();
+      const multiRows = l.trialBalance().filter(r => r.account.code === '1500');
+      expect(multiRows.length).toBe(2);
+      expect(l.verifyFundamentalEquation()).toBe(true);
+    });
   });
 });

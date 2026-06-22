@@ -1,7 +1,15 @@
-import { Money } from './money.js';
+import { Money, FXRate } from './money.js';
 import { Account } from './account.js';
 
 export type Side = 'debit' | 'credit';
+
+/** True only for a real YYYY-MM-DD calendar date (zero-padded), so lexical date comparison is sound. */
+export function isISODate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
 
 export interface JournalEntryLine {
   readonly account: Account;
@@ -25,12 +33,12 @@ export class JournalEntry {
   ) {
     this.lines = Object.freeze([...lines]);
     this.citations = citations ? Object.freeze([...citations]) : undefined;
-    this.tags = tags ? { ...tags } : undefined;
+    this.tags = tags ? Object.freeze({ ...tags }) : undefined;
   }
 }
 
 export interface ValidationViolation {
-  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT';
+  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE';
   message: string;
   diff?: string;
 }
@@ -42,7 +50,8 @@ export interface ValidationResult {
 
 export function makeLine(account: Account, amount: Money, side: Side, tags?: Record<string, string>): JournalEntryLine {
   if (amount.toDecimal().lte(0)) throw new Error('Amount must be > 0 (use side for direction)');
-  return { account, amount, side, tags: tags ? { ...tags } : undefined };
+  // Deep-freeze the line and its tags so a holder cannot mutate posted state.
+  return Object.freeze({ account, amount, side, tags: tags ? Object.freeze({ ...tags }) : undefined });
 }
 
 /** Balanced 2-line entry. Throws on validation failure. */
@@ -94,9 +103,26 @@ export function createFxConversion(
   clearingForeign: Account,
   clearingDomestic: Account,
   description: string,
-  rateSource?: string
+  rateSource?: string,
+  rate?: FXRate
 ): JournalEntry[] {
   if (foreignAmount.currency === domesticAmount.currency) throw new Error('FX currencies must differ');
+  // When a rate is supplied, prove the two legs are economically consistent with it
+  // (within one minor unit to allow rounding), so inconsistent FX cannot be booked.
+  if (rate) {
+    const expected = foreignAmount.convert(rate);
+    if (expected.currency !== domesticAmount.currency) {
+      throw new Error(`FX rate target ${expected.currency} != domestic ${domesticAmount.currency}`);
+    }
+    const s = domesticAmount.scale;
+    const minorUnit = Money.from(s === 0 ? '1' : '0.' + '0'.repeat(s - 1) + '1', domesticAmount.currency);
+    const diff = expected.sub(domesticAmount).abs();
+    if (diff.compare(minorUnit) > 0) {
+      throw new Error(
+        `FX inconsistent with rate: ${foreignAmount.toString()} @ ${rate.rate} = ${expected.toString()}, but domestic is ${domesticAmount.toString()}`
+      );
+    }
+  }
   const cites = rateSource ? [rateSource] : undefined;
   const legForeign = createEntry(`${idBase}-f`, effectiveDate, [
     makeLine(foreignDebit, foreignAmount, 'debit'),
@@ -130,9 +156,20 @@ export function validateEntry(entry: JournalEntry): ValidationResult {
     violations.push({ type: 'TOO_FEW_LINES', message: 'Journal entry must have at least two lines (double-entry)' });
   }
 
+  if (!isISODate(entry.effectiveDate)) {
+    violations.push({ type: 'INVALID_DATE', message: `effectiveDate must be a valid ISO date (YYYY-MM-DD); got "${entry.effectiveDate}"` });
+  }
+
   for (const line of entry.lines) {
     if (line.amount.toDecimal().lte(0)) {
       violations.push({ type: 'INVALID_AMOUNT', message: 'All line amounts must be strictly positive' });
+    }
+    // Reject precision finer than the currency's minor unit (e.g. 0.001 USD).
+    if (line.amount.toDecimal().decimalPlaces() > line.amount.scale) {
+      violations.push({
+        type: 'SUB_SCALE',
+        message: `Amount ${line.amount.toDecimal().toString()} ${line.amount.currency} is finer than the ${line.amount.scale}-dp currency scale`,
+      });
     }
   }
 

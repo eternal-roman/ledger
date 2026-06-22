@@ -240,7 +240,7 @@ export const ifrsSeed = {
       },
       confidence: 1.0
     }
-  ] as KnowledgeNode[],
+  ] satisfies KnowledgeNode[],
   edges: [
     { from: "ifrs-cf-2018-elements-asset-4.3", to: "ifrs-cf-2018-objective-1.2", type: "derives_from" },
     { from: "ifrs-cf-2018-elements-asset-4.3", to: "valuation-multiple-distinction", type: "interacts_with" },
@@ -253,5 +253,5 @@ export const ifrsSeed = {
     { from: "ifrs16-lease-recognition", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
     { from: "ias16-depreciation-systematic", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
     { from: "ias2-inventory-lower-of-cost-nrv", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" }
-  ] as KnowledgeEdge[]
+  ] satisfies KnowledgeEdge[]
 };

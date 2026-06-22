@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Money } from '../../src/core/money.js';
+import { Money, FXRate } from '../../src/core/money.js';
 import { Account, AccountType } from '../../src/core/account.js';
 import { JournalEntry, JournalEntryLine, validateEntry, makeLine, createEntry, createFxConversion, createBalancedEntry, fxDerivedAmount } from '../../src/core/journal.js';
 
@@ -102,5 +102,68 @@ describe('JournalEntry + validateEntry (double-entry kernel)', () => {
     const usd = fxDerivedAmount(eur100, '1.08', 'USD');
     expect(usd.toString()).toBe('108.00 USD');  // 100 * 1.08 = 108, scale 2
     expect(usd.currency).toBe('USD');
+  });
+
+  it('rejects line amounts finer than the currency scale (sub-cent)', () => {
+    const e = new JournalEntry('sub', '2026-06-21', [
+      makeLine(cash, Money.from('0.001', 'USD'), 'debit'),
+      makeLine(equity, Money.from('0.001', 'USD'), 'credit'),
+    ], 'sub-cent');
+    const res = validateEntry(e);
+    expect(res.ok).toBe(false);
+    expect(res.violations.some(v => v.type === 'SUB_SCALE')).toBe(true);
+  });
+
+  it('rejects a non-ISO effective date', () => {
+    const e = new JournalEntry('bd', 'not-a-date', [
+      makeLine(cash, usd(10), 'debit'), makeLine(equity, usd(10), 'credit'),
+    ], 'bad date');
+    const res = validateEntry(e);
+    expect(res.ok).toBe(false);
+    expect(res.violations.some(v => v.type === 'INVALID_DATE')).toBe(true);
+  });
+
+  it('rejects an impossible calendar date (2026-02-30)', () => {
+    const e = new JournalEntry('bd2', '2026-02-30', [
+      makeLine(cash, usd(10), 'debit'), makeLine(equity, usd(10), 'credit'),
+    ], 'bad cal');
+    expect(validateEntry(e).ok).toBe(false);
+  });
+
+  it('accepts a valid ISO effective date', () => {
+    const e = new JournalEntry('gd', '2026-06-21', [
+      makeLine(cash, usd(10), 'debit'), makeLine(equity, usd(10), 'credit'),
+    ], 'good date');
+    expect(validateEntry(e).ok).toBe(true);
+  });
+
+  it('createFxConversion rejects amounts inconsistent with a supplied rate', () => {
+    const eurCash = new Account('110', 'EUR Cash', AccountType.Asset);
+    const usdCash = new Account('100', 'USD Cash', AccountType.Asset);
+    const clrEur = new Account('900', 'FX Clear EUR', AccountType.Liability);
+    const clrUsd = new Account('901', 'FX Clear USD', AccountType.Liability);
+    // 100 EUR @ 1.08 = 108 USD, but caller passes 200 USD.
+    expect(() => createFxConversion('fxBad', '2026-06-21', eurCash, usdCash,
+      Money.from('100', 'EUR'), Money.from('200', 'USD'), clrEur, clrUsd, 'bad fx', 'rate',
+      new FXRate('EUR', 'USD', '1.08'))).toThrow(/rate|inconsisten/i);
+  });
+
+  it('createFxConversion accepts amounts consistent with a supplied rate', () => {
+    const eurCash = new Account('110', 'EUR Cash', AccountType.Asset);
+    const usdCash = new Account('100', 'USD Cash', AccountType.Asset);
+    const clrEur = new Account('900', 'FX Clear EUR', AccountType.Liability);
+    const clrUsd = new Account('901', 'FX Clear USD', AccountType.Liability);
+    const legs = createFxConversion('fxOk', '2026-06-21', eurCash, usdCash,
+      Money.from('100', 'EUR'), Money.from('108', 'USD'), clrEur, clrUsd, 'ok fx', 'rate',
+      new FXRate('EUR', 'USD', '1.08'));
+    expect(legs.length).toBe(2);
+  });
+
+  it('freezes line and entry tags (deep immutability)', () => {
+    const line = makeLine(cash, usd(10), 'debit', { project: 'X' });
+    expect(() => { (line as any).side = 'credit'; }).toThrow();
+    expect(() => { (line.tags as any).project = 'Y'; }).toThrow();
+    const e = new JournalEntry('t1', '2026-06-21', [line, makeLine(equity, usd(10), 'credit')], 'tags', undefined, { dept: 'A' });
+    expect(() => { (e.tags as any).dept = 'B'; }).toThrow();
   });
 });

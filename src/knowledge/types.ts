@@ -9,7 +9,7 @@ export interface DimensionSet {
 
 export interface KnowledgeNode {
   id: string;
-  type: 'Source' | 'Principle' | 'Rule' | 'Fact' | 'Concept' | 'HistoricalCase' | 'Policy';
+  type: 'Source' | 'Principle' | 'Rule' | 'Fact' | 'Concept' | 'HistoricalCase' | 'Policy' | 'Definition';
   content: Record<string, any>;
   provenance: {
     source_id: string;

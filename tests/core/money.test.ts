@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Money } from '../../src/core/money.js';
+import { Money, FXRate } from '../../src/core/money.js';
 import { Account, AccountType } from '../../src/core/account.js';
 import { createBalancedEntry, validateEntry } from '../../src/core/journal.js';
 
@@ -121,5 +121,48 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const m2 = Money.fromJSON(j);
     expect(m2.equals(m)).toBe(true);
     expect(m2.asOf).toBe('2026-06-21');
+  });
+
+  it('rejects non-integer number input (no silent float capture)', () => {
+    // The float trap: 0.1 + 0.2 === 0.30000000000000004 in IEEE-754.
+    expect(() => Money.from(0.1 + 0.2, 'USD')).toThrow(/string|float|integer/i);
+    expect(() => Money.from(0.1, 'USD')).toThrow(/string|float|integer/i);
+    // Strings (exact) and whole-number integers remain valid.
+    expect(Money.from('0.30', 'USD').toString()).toBe('0.30 USD');
+    expect(Money.from(100, 'USD').toString()).toBe('100.00 USD');
+    expect(Money.from(-5, 'USD').toDecimal().toString()).toBe('-5');
+  });
+});
+
+describe('FXRate - exact conversion (never floats)', () => {
+  it('stores rate exactly without parseFloat precision loss', () => {
+    const r = new FXRate('usd', 'eur', '0.123456789012345678');
+    expect(r.from).toBe('USD');
+    expect(r.to).toBe('EUR');
+    expect(r.rate).toBe('0.123456789012345678'); // exact canonical string, not a float
+  });
+
+  it('convert multiplies exactly and rounds to target currency scale', () => {
+    const usd = Money.from('1000000', 'USD');
+    const r = new FXRate('USD', 'EUR', '0.123456789012345678');
+    const eur = usd.convert(r);
+    expect(eur.currency).toBe('EUR');
+    expect(eur.toString()).toBe('123456.79 EUR'); // HALF_UP to 2dp
+    // No sub-cent dust left in the stored amount.
+    expect(eur.toDecimal().decimalPlaces()).toBeLessThanOrEqual(2);
+  });
+
+  it('convert respects target currency scale (JPY = 0 dp)', () => {
+    const usd = Money.from('100', 'USD');
+    const r = new FXRate('USD', 'JPY', '156.789');
+    const jpy = usd.convert(r);
+    expect(jpy.toString()).toBe('15679 JPY'); // 15678.9 -> 15679 HALF_UP, 0 dp
+    expect(jpy.toDecimal().decimalPlaces()).toBe(0);
+  });
+
+  it('convert rejects a from-currency mismatch', () => {
+    const eur = Money.from('100', 'EUR');
+    const r = new FXRate('USD', 'EUR', '0.9');
+    expect(() => eur.convert(r)).toThrow(/FX|mismatch/i);
   });
 });

@@ -1,4 +1,5 @@
-import { JournalEntry, validateEntry, ValidationResult } from './journal.js';
+import { createHash } from 'node:crypto';
+import { JournalEntry, JournalEntryLine, validateEntry, ValidationResult } from './journal.js';
 import { Money } from './money.js';
 import { Account, AccountType } from './account.js';
 
@@ -31,38 +32,58 @@ export class Ledger {
     };
   }
 
-  /** Net balance for account (asOf optional). Currency override for multi-curr accounts. */
-  balance(account: Account, asOf?: string, currency?: string): Money {
+  /** Lines posted to an account, optionally as of a date. */
+  private accountLines(account: Account, asOf?: string): JournalEntryLine[] {
     const relevant = this._entries.filter(e => !asOf || e.effectiveDate <= asOf);
-    const accLines = relevant.flatMap(e => e.lines.filter(l => l.account.code === account.code));
+    return relevant.flatMap(e => e.lines.filter(l => l.account.code === account.code));
+  }
 
-    if (accLines.length === 0) {
-      // No activity: prefer explicit currency, else any present in ledger, else USD (brand new empty only).
-      const anyCurr = this._entries[0]?.lines[0]?.amount.currency;
-      const zcurr = currency || anyCurr || this.pickCurrency('USD');
-      return Money.zero(zcurr);
+  /** Distinct currencies present in a set of lines, in first-seen order. */
+  private currenciesOf(lines: readonly JournalEntryLine[]): string[] {
+    const seen: string[] = [];
+    for (const l of lines) if (!seen.includes(l.amount.currency)) seen.push(l.amount.currency);
+    return seen;
+  }
+
+  /** Net of an account within a single currency, per its normal balance. */
+  private netInCurrency(account: Account, lines: readonly JournalEntryLine[], currency: string): Money {
+    let debit = Money.zero(currency);
+    let credit = Money.zero(currency);
+    for (const line of lines) {
+      if (line.amount.currency !== currency) continue;
+      if (line.side === 'debit') debit = debit.add(line.amount);
+      else credit = credit.add(line.amount);
     }
+    return account.normalBalance === 'debit' ? debit.sub(credit) : credit.sub(debit);
+  }
 
-    // Determine currency from actual lines for this account (support multi-curr)
-    const targetCurr = currency || accLines[0].amount.currency;
-    let totalDebit = Money.zero(targetCurr);
-    let totalCredit = Money.zero(targetCurr);
+  /** One net balance per currency the account has touched (empty account -> []). */
+  balancesByCurrency(account: Account, asOf?: string): Money[] {
+    const lines = this.accountLines(account, asOf);
+    return this.currenciesOf(lines).map(c => this.netInCurrency(account, lines, c));
+  }
 
-    for (const line of accLines) {
-      if (line.amount.currency !== targetCurr) continue; // skip unexpected mixed for acct
-      if (line.side === 'debit') {
-        totalDebit = totalDebit.add(line.amount);
-      } else {
-        totalCredit = totalCredit.add(line.amount);
-      }
+  /**
+   * Net balance for account (asOf optional). For accounts with activity in more than one
+   * currency you MUST pass `currency`; otherwise this fails closed rather than silently
+   * dropping a currency. Use `balancesByCurrency` to get all currencies at once.
+   */
+  balance(account: Account, asOf?: string, currency?: string): Money {
+    const lines = this.accountLines(account, asOf);
+    if (currency) return this.netInCurrency(account, lines, currency);
+
+    const currencies = this.currenciesOf(lines);
+    if (currencies.length === 0) {
+      // No activity: fall back to a currency present in the ledger, else USD.
+      return Money.zero(this._entries[0]?.lines[0]?.amount.currency || this.pickCurrency('USD'));
     }
-
-    // Return net according to normal balance
-    if (account.normalBalance === 'debit') {
-      return totalDebit.sub(totalCredit);
-    } else {
-      return totalCredit.sub(totalDebit);
+    if (currencies.length > 1) {
+      throw new Error(
+        `Account ${account.code} has multiple currencies (${currencies.join(', ')}); ` +
+        `pass an explicit currency or use balancesByCurrency()`
+      );
     }
+    return this.netInCurrency(account, lines, currencies[0]);
   }
 
   /**
@@ -70,34 +91,20 @@ export class Ledger {
    * Discovers accounts if not supplied.
    */
   verifyFundamentalEquation(accounts?: Account[]): boolean {
-    let accts = accounts;
-    if (!accts || accts.length === 0) {
-      const seen = new Map<string, Account>();
-      for (const e of this._entries) {
-        for (const l of e.lines) {
-          if (!seen.has(l.account.code)) {
-            seen.set(l.account.code, l.account);
-          }
-        }
-      }
-      accts = Array.from(seen.values());
-    }
+    const accts = accounts && accounts.length > 0 ? accounts : this.discoverAccounts();
 
-    // Per-currency sides to support mixed-currency ledgers exactly
+    // Per-currency sides to support mixed-currency ledgers exactly. Every currency an
+    // account touches is counted (not just the first), so nothing is silently ignored.
     const byCurr: Map<string, { debit: Money; credit: Money }> = new Map();
 
     for (const acct of accts) {
-      const bal = this.balance(acct);
-      const c = bal.currency;
-      if (!byCurr.has(c)) {
-        byCurr.set(c, { debit: Money.zero(c), credit: Money.zero(c) });
-      }
-      const s = byCurr.get(c)!;
       const isDebitNormal = acct.type === AccountType.Asset || acct.type === AccountType.Expense;
-      if (isDebitNormal) {
-        s.debit = s.debit.add(bal);
-      } else {
-        s.credit = s.credit.add(bal);
+      for (const bal of this.balancesByCurrency(acct)) {
+        const c = bal.currency;
+        if (!byCurr.has(c)) byCurr.set(c, { debit: Money.zero(c), credit: Money.zero(c) });
+        const s = byCurr.get(c)!;
+        if (isDebitNormal) s.debit = s.debit.add(bal);
+        else s.credit = s.credit.add(bal);
       }
     }
 
@@ -110,18 +117,30 @@ export class Ledger {
     return true;
   }
 
-  /**
-   * Trial balance: discovered accounts + their current net balances.
-   * Useful for reports and AI-assisted verification of full set.
-   */
-  trialBalance(): Array<{ account: Account; balance: Money }> {
+  /** All accounts that appear in the ledger, de-duplicated by code (first-seen). */
+  private discoverAccounts(): Account[] {
     const seen = new Map<string, Account>();
     for (const e of this._entries) {
       for (const l of e.lines) {
         if (!seen.has(l.account.code)) seen.set(l.account.code, l.account);
       }
     }
-    return Array.from(seen.values()).map((account) => ({ account, balance: this.balance(account) }));
+    return Array.from(seen.values());
+  }
+
+  /**
+   * Trial balance: discovered accounts + their current net balances.
+   * Useful for reports and AI-assisted verification of full set.
+   */
+  trialBalance(): Array<{ account: Account; balance: Money }> {
+    const rows: Array<{ account: Account; balance: Money }> = [];
+    for (const account of this.discoverAccounts()) {
+      // One row per currency so multi-currency accounts are reported in full.
+      for (const balance of this.balancesByCurrency(account)) {
+        rows.push({ account, balance });
+      }
+    }
+    return rows;
   }
 
   /**
@@ -129,17 +148,16 @@ export class Ledger {
    * Note: within-currency only for simplicity (multi-curr ledgers group per curr in verify).
    */
   summarizeByType(): Array<{ type: AccountType; total: Money }> {
-    const groups = new Map<AccountType, Money>();
+    // Group by (type, currency) so totals are currency-complete rather than dropping
+    // any currency that differs from the first one seen for a type.
+    const groups = new Map<string, { type: AccountType; total: Money }>();
     for (const { account, balance } of this.trialBalance()) {
-      const t = account.type;
-      const curr = balance.currency;
-      if (!groups.has(t)) groups.set(t, Money.zero(curr));
-      const cur = groups.get(t)!;
-      if (cur.currency === curr) {
-        groups.set(t, cur.add(balance));
-      }
+      const key = `${account.type}|${balance.currency}`;
+      const g = groups.get(key);
+      if (!g) groups.set(key, { type: account.type, total: balance });
+      else g.total = g.total.add(balance);
     }
-    return Array.from(groups.entries()).map(([type, total]) => ({ type, total }));
+    return Array.from(groups.values());
   }
 
   /** Capture current immutable snapshot (useful for audit / reporting). */
@@ -152,15 +170,22 @@ export class Ledger {
    * Deterministic; includes all amounts, currencies, ids.
    */
   auditHash(): string {
-    let h = '';
+    // Real tamper-evidence: a SHA-256 hash chain over every material field of every
+    // entry (id, date, description, and each line's side/account/amount/tags, plus
+    // entry tags/citations). Each field is length-prefixed so delimiters cannot be
+    // forged, and each entry's hash folds in the previous chain value.
+    let chain = createHash('sha256').update('ledger-audit-v1').digest('hex');
     for (const e of this._entries) {
-      h += e.id + ':';
+      const fields: string[] = [e.id, e.effectiveDate, e.description];
       for (const l of e.lines) {
-        h += l.side + l.amount.toHashable() + ';';
+        fields.push(l.side, l.account.code, l.amount.toHashable(), JSON.stringify(l.tags ?? null));
       }
-      h += '|';
+      fields.push(JSON.stringify(e.tags ?? null), JSON.stringify(e.citations ?? null));
+      const h = createHash('sha256').update(chain);
+      for (const f of fields) h.update(`${f.length}:${f}`);
+      chain = h.digest('hex');
     }
-    return h;
+    return chain;
   }
 
   /**
@@ -183,10 +208,8 @@ export class Ledger {
   incomeStatement(): { totalIncome: Money; totalExpenses: Money; netIncome: Money } {
     const sums = this.summarizeByType();
     const curr = this.pickCurrency();
-    const pick = (t: AccountType) => {
-      const s = sums.find(s => s.type === t)?.total;
-      return s && s.currency === curr ? s : Money.zero(curr);
-    };
+    const pick = (t: AccountType) =>
+      sums.find(s => s.type === t && s.total.currency === curr)?.total ?? Money.zero(curr);
     const inc = pick(AccountType.Income);
     const exp = pick(AccountType.Expense);
     return { totalIncome: inc, totalExpenses: exp, netIncome: inc.sub(exp) };
@@ -199,10 +222,8 @@ export class Ledger {
   balanceSheet(): { left: Money; right: Money; balanced: boolean } {
     const sums = this.summarizeByType();
     const curr = this.pickCurrency();
-    const get = (t: AccountType) => {
-      const s = sums.find(s => s.type === t)?.total;
-      return s && s.currency === curr ? s : Money.zero(curr);
-    };
+    const get = (t: AccountType) =>
+      sums.find(s => s.type === t && s.total.currency === curr)?.total ?? Money.zero(curr);
     const assets = get(AccountType.Asset);
     const expenses = get(AccountType.Expense);
     const liab = get(AccountType.Liability);

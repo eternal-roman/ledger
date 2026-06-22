@@ -41,6 +41,10 @@ export function validateLiabilityRecognition(entry: JournalEntry, graph?: Knowle
   if (hasLiab && !validateEntry(entry).ok) {
     violations.push('Liability related entry must pass double-entry kernel');
   }
+  // A line named like a liability must actually be posted to a Liability-type account.
+  if (entry.lines.some(l => /deposit|liability|payable/i.test(l.account.name) && l.account.type !== AccountType.Liability)) {
+    violations.push('Liability recognition should use Liability-type accounts');
+  }
   return { ok: violations.length === 0, citations: facts.citations, violations };
 }
 
@@ -53,6 +57,11 @@ export function validateValuation(entry: JournalEntry, graph?: KnowledgeGraph): 
   // Always surface citations for valuation work; kernel balance still required
   if (!validateEntry(entry).ok) {
     violations.push('Valuation entry must pass double-entry kernel');
+  }
+  // Measurement must be sourced: a valuation entry has to carry an explicit citation
+  // (e.g. the multiple basis / model), never an unstated mark.
+  if (!entry.citations || entry.citations.length === 0) {
+    violations.push('Valuation entries must carry a citation (measurement basis/source)');
   }
   return { ok: violations.length === 0, citations: facts.citations, violations };
 }
@@ -67,6 +76,10 @@ export function validateRevenueRecognition(entry: JournalEntry, graph?: Knowledg
   if (hasRevenue && !validateEntry(entry).ok) {
     violations.push('Revenue related entry must pass double-entry kernel');
   }
+  // IFRS 15 / ASC 606: recognized revenue is a credit to an Income account.
+  if (hasRevenue && !entry.lines.some(l => l.account.type === AccountType.Income && l.side === 'credit')) {
+    violations.push('Revenue recognition must credit an Income account');
+  }
   return { ok: violations.length === 0, citations: facts.citations, violations };
 }
 
@@ -80,6 +93,10 @@ export function validateExpenseRecognition(entry: JournalEntry, graph?: Knowledg
   if (hasExpense && !validateEntry(entry).ok) {
     violations.push('Expense related entry must pass double-entry kernel');
   }
+  // Accrual/matching: a recognized expense is a debit to an Expense account.
+  if (hasExpense && !entry.lines.some(l => l.account.type === AccountType.Expense && l.side === 'debit')) {
+    violations.push('Expense recognition must debit an Expense account');
+  }
   return { ok: violations.length === 0, citations: facts.citations, violations };
 }
 
@@ -89,10 +106,19 @@ export function validateLeaseRecognition(entry: JournalEntry, graph?: KnowledgeG
   const facts = knowledgeFetch(g, 'lease OR ifrs16', { standard_family: ['IFRS'], domain: ['accounting', 'leases'] });
 
   const violations: string[] = [];
-  const hasLease = /lease|right.of.use|rou/i.test(entry.description + ' ' + entry.lines.map(l => l.account.name).join(' ')) ||
-                   entry.lines.some(l => l.account.type === AccountType.Asset || l.account.type === AccountType.Liability);
-  if (hasLease && !validateEntry(entry).ok) {
+  // Detect a lease by its name/description signature — not "any Asset or Liability line",
+  // which would have matched almost everything.
+  const isLease = /lease|right.of.use|\brou\b/i.test(entry.description + ' ' + entry.lines.map(l => l.account.name).join(' '));
+  if (isLease && !validateEntry(entry).ok) {
     violations.push('Lease related entry must pass double-entry kernel');
+  }
+  // IFRS 16: lessee initial recognition records BOTH a right-of-use Asset and a lease Liability.
+  if (isLease) {
+    const hasAsset = entry.lines.some(l => l.account.type === AccountType.Asset);
+    const hasLiability = entry.lines.some(l => l.account.type === AccountType.Liability);
+    if (!hasAsset || !hasLiability) {
+      violations.push('Lease recognition (IFRS 16) must record both a right-of-use Asset and a lease Liability');
+    }
   }
   return { ok: violations.length === 0, citations: facts.citations, violations };
 }

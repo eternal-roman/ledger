@@ -95,9 +95,12 @@ See `examples/personal-ledger.ts` for a complete working example.
 
 ## Common Patterns
 - `Money.zero(currency)`, `from(value, currency)`, `add`/`sub`/`mul`/`div`/`allocate(ratios)`, `compare`, `convert(FXRate)`
-- `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion`
-- `validateEntry(entry)` (kernel gate) + `ledger.apply(entry)`
-- `ledger.balance(account)`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`
+  - `Money.from` rejects non-integer JS numbers (pass strings for fractional amounts); `FXRate` keeps rates exact (no floats), and `convert` rounds to the target currency scale.
+- `makeLine` + `createBalancedEntry` / `createEntry` (compound) / `createFxConversion(..., rate?)` (rate-checked)
+- `validateEntry(entry)` (kernel gate: balance, positive + at-scale amounts, ISO dates, currency) + `ledger.apply(entry)`
+- `ledger.balance(account[, asOf, currency])`, `balancesByCurrency(account)`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`
+  - `balance()` fails closed on a multi-currency account unless you pass a currency — it never silently drops one.
+- `ledger.auditHash()` — a SHA-256 hash chain over every entry field (account, date, memo, amounts), so tampering is detectable; `verifyDeterminism(entries)` rebuilds twice and compares hashes.
 - Knowledge: `loadDefaultKnowledge()` + lever queries for GAAP/IFRS citations
 - Always prove with `validateEntry` + accounting equation before use.
 

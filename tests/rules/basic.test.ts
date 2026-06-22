@@ -22,7 +22,7 @@ describe('Basic Rules (IFRS stub + citations)', () => {
   });
 
   it('provides valuation citations for measurement entries', () => {
-    const entry = createBalancedEntry('val', '2026-06-21', cash, equity, Money.from('10000', 'USD'), 'Valuation');
+    const entry = createBalancedEntry('val', '2026-06-21', cash, equity, Money.from('10000', 'USD'), 'Valuation', ['valuation-multiple-distinction']);
     const res = validateValuation(entry);
     expect(res.ok).toBe(true);
     expect(res.citations.length).toBeGreaterThan(0);
@@ -52,5 +52,35 @@ describe('Basic Rules (IFRS stub + citations)', () => {
     expect(res.ok).toBe(true);
     expect(res.citations.length).toBeGreaterThan(0);
     expect(res.citations.some(c => /ifrs-16|lease/i.test(c))).toBe(true);
+  });
+
+  // Anti-theater: each rule must reject entries that violate the structural signature of
+  // its transaction type, not merely re-check double-entry balance.
+  it('rejects a "revenue" entry that credits no Income account', () => {
+    const entry = createBalancedEntry('rev-bad', '2026-06-21', cash, equity, Money.from('100', 'USD'), 'Recognize revenue from sale');
+    expect(validateRevenueRecognition(entry).ok).toBe(false);
+  });
+
+  it('rejects an "expense" entry that debits no Expense account', () => {
+    const entry = createBalancedEntry('exp-bad', '2026-06-21', cash, equity, Money.from('100', 'USD'), 'Accrue an expense');
+    expect(validateExpenseRecognition(entry).ok).toBe(false);
+  });
+
+  it('rejects a lease entry missing either the ROU asset or the lease liability', () => {
+    const rou = new Account('150', 'Right-of-Use Asset', AccountType.Asset);
+    const otherAsset = new Account('151', 'Other Asset', AccountType.Asset);
+    const entry = createBalancedEntry('lease-bad', '2026-06-21', rou, otherAsset, Money.from('5000', 'USD'), 'Initial lease recognition');
+    expect(validateLeaseRecognition(entry).ok).toBe(false); // Asset present but no Liability
+  });
+
+  it('rejects a valuation entry that carries no citation', () => {
+    const entry = createBalancedEntry('val-bad', '2026-06-21', cash, equity, Money.from('100', 'USD'), 'Mark to model');
+    expect(validateValuation(entry).ok).toBe(false);
+  });
+
+  it('rejects a named-asset line posted to a non-Asset account', () => {
+    const fakeCash = new Account('900', 'Cash Clearing', AccountType.Liability); // "cash" but Liability-typed
+    const entry = createBalancedEntry('asset-bad', '2026-06-21', equity, fakeCash, Money.from('100', 'USD'), 'Buy asset');
+    expect(validateAssetRecognition(entry).ok).toBe(false);
   });
 });
