@@ -19,4 +19,4 @@ export * from './crypto/index.js';
 // Single source of truth: the version is read from package.json (no hardcoded drift).
 const pkg = createRequire(import.meta.url)('../package.json') as { version: string };
 export const VERSION: string = pkg.version;
-export const DESCRIPTION = 'Ledger — The Bean Counter (Uncompromising Financial Architect). Exact Money arithmetic, double-entry, validated ledgers and canon citations. Mistakes do not ship.';
+export const DESCRIPTION = 'Ledger Chad — Alpha of the Ledger. Cool. Calm. Collected. Alpha Maxxing. Exact Money arithmetic, double-entry, validated ledgers and canon citations. Mistakes do not ship, bro.';

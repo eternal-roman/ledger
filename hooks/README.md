@@ -1,4 +1,4 @@
-# Hooks for Ledger (The Bean Counter)
+# Hooks for Ledger (Ledger Chad)
 
 Bash-first activation hooks for AI hosts (Claude Code etc.).
 

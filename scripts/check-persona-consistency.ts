@@ -43,9 +43,12 @@ const REQUIRED_PHRASES = [
   'double-entry',
   'canon',
   'Zero-Skip',
-  'Bean Counter',
+  'Ledger Chad',
+  'Alpha',
   'unbalanced',
   'deterministic',
+  'Alpha Maxxing',
+  'or Get Beta',
 ];
 
 function load(file: string): string {
@@ -126,7 +129,7 @@ function main() {
   if (issues.length > 0) {
     console.error('PERSONA CONSISTENCY FAILURES:');
     issues.forEach(i => console.error('  - ' + i));
-    console.error('\nFix drift. The Bean Counter does not tolerate inconsistency.');
+    console.error('\nFix drift. Ledger Chad does not tolerate inconsistency. Alpha Maxxing only.');
     process.exit(1);
   }
 
