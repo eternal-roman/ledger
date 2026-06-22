@@ -18,6 +18,10 @@ Ledger is the canonical library + AI guardrails package for architecting, evalua
   <img src="assets/bean-counter-banner.jpg" width="860" alt="The Bean Counter — exacting presence that refuses to ship unproven constructs">
 </p>
 
+<p align="center">
+  <img src="assets/bean-counter-logo.jpg" width="120" alt="Bean Counter logo icon">
+</p>
+
 You know him. Green eyeshade low, red pencil ready, oversized ledger open. Show him a journal entry or a valuation model and he will find the imbalance, the float, the unstated assumption — or he will say nothing and let it pass only when debits equal credits and every rate has a source.
 
 Where other systems cut corners, Ledger builds vaults. It guarantees every component is structurally sound, mathematically deterministic, and anchored in institutional-grade best practices.
