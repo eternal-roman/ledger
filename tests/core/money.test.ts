@@ -1,9 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { Money, FXRate, registerScaleResolver } from '../../src/core/money.js';
 import { Account, AccountType } from '../../src/core/account.js';
 import { createBalancedEntry, validateEntry } from '../../src/core/journal.js';
 
 describe('Money - exact arithmetic (no floats ever)', () => {
+  // Some tests below toggle the process-global scale resolver; restore the
+  // default (none installed) afterward, matching the cleanup pattern used in
+  // the instruments/crypto/portfolio test suites.
+  afterAll(() => registerScaleResolver(undefined));
+
   it('0.1 + 0.2 === 0.3 exactly in USD', () => {
     const a = Money.from('0.1', 'USD');
     const b = Money.from('0.2', 'USD');
