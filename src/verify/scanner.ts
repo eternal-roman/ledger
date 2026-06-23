@@ -54,7 +54,7 @@ export function scanSourceForViolations(source: string, filename: string): Money
         line: ln,
         text: trimmed.slice(0, 120),
         type: 'PARSE_FLOAT',
-        suggestion: 'use Money.from("123.45", "USD") — never parseFloat for monetary values (see src/core/money.ts)',
+        suggestion: 'use Money.from("123.45", "USD") — never parseFloat for monetary values',
       });
     }
 
@@ -66,7 +66,7 @@ export function scanSourceForViolations(source: string, filename: string): Money
           line: ln,
           text: trimmed.slice(0, 120),
           type: 'FLOAT_LITERAL',
-          suggestion: 'use Money.from("123.45", "USD") — pass string for any fractional amount (see Money.from in src/core/money.ts:86)',
+          suggestion: 'use Money.from("123.45", "USD") — pass string for any fractional amount',
         });
       }
       if (NON_INT_NUM.test(code) && !MONEY_FROM_CALL.test(code) && !/from|Money/.test(code)) {

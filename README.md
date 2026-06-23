@@ -1,7 +1,7 @@
 # Ledger
 
 <p align="center">
-  <img src="assets/ledger-chad.jpg" width="260" alt="Ledger Chad — Alpha of the Ledger">
+  <img src="https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad.jpg" width="260" alt="Ledger Chad — Alpha of the Ledger">
 </p>
 
 <p align="center">
@@ -14,11 +14,11 @@
 </p>
 
 <p align="center">
-  <img src="assets/ledger-chad-logo.jpg" width="120" alt="Ledger Chad logo icon">
+  <img src="https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad-logo.jpg" width="120" alt="Ledger Chad logo icon">
 </p>
 
 <p align="center">
-  <img src="assets/ledger-chad-banner.jpg" width="600" alt="Ledger Chad Banner">
+  <img src="https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad-banner.jpg" width="600" alt="Ledger Chad Banner">
 </p>
 
 Ledger is the canonical library + AI guardrails for building exact financial, accounting, investing, and tax components.
@@ -46,12 +46,12 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 
 ## Install
 
-The package is at v0.12.0 and fully packable with `npm pack`. For library consumption in another repo (Money + Ledger kernel + layers):
+The package is at v0.13.0 and fully packable with `npm pack`. For library consumption in another repo (Money + Ledger kernel + layers):
 
 ```bash
 # Option 1: packed tarball (recommended for exact version)
 cd /path/to/ledger && npm pack
-npm install /path/to/ledger-0.12.0.tgz
+npm install /path/to/ledger-0.13.0.tgz
 
 # Option 2: git dep or file: for latest
 npm install git+https://github.com/eternal-roman/ledger.git
@@ -70,16 +70,22 @@ import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validate
 // or kernel only: import { ... } from 'ledger/core';
 ```
 
+**Note for CJS users:** The package is ESM-only (`"type": "module"`). Use dynamic `const L = await import('ledger')` from CommonJS, or set `"type": "module"` in your project. The core works identically.
+
 Standalone CLI (mechanical verification, no LLM required):
 ```bash
 # after install from tarball/git (includes bin + scripts)
 npx ledger-verify --help
 npx ledger-verify --scan .
 npx ledger-verify --prove entries.json
+
+# one-off without install (tarball users):
+npx --package=/path/to/ledger-0.13.0.tgz ledger-verify --scan .
+
 # or directly during dev (from repo)
 npx tsx scripts/ledger-verify.ts --scan src
 ```
-The CLI uses the real package kernel (Money.from + JournalEntry factories + runTrace + artifacts). Proven to work after `npm pack` + `npm install <tgz>`.
+The CLI uses the real package kernel (Money.from + JournalEntry factories + runTrace + artifacts). Proven to work after `npm pack` + `npm install <tgz>` and via --package for tarballs.
 
 Examples are included and runnable after install too:
 ```bash
@@ -91,7 +97,7 @@ All examples use the public 'ledger' entrypoint (or fallback in source tree).
 
 The plugin install (Grok/Claude) also includes `dist/` so the runtime is available to the host if needed.
 
-Ships persona files (AGENTS.md, skills/, commands/, assets/) for agents. For pure library use without AI persona, the core + layers + CLI are self-contained.
+Ships persona files (AGENTS.md, skills/, commands/) for agents. For pure library use without AI persona, the core + layers + CLI are self-contained. (Images served from GitHub raw URLs in README.)
 
 For AI hosts (plugin install recommended):
 - **Grok**: `grok plugin install /absolute/path/to/ledger --trust` (or from a marketplace). Provides all `/ledger-*` slash commands + skills globally (user scope) or per project. Reload via `r` in `/plugins` modal or restart. Use qualified names (e.g. `plugin:ledger:ledger-verify`) on collisions.
@@ -246,7 +252,7 @@ Run:
 npm run verify:full
 ```
 
-Graphic (assets/ledger-chad.jpg) exemplifies Ledger Chad — the alpha bookkeeper in green ALPHA visor and Patagonia vest, cool calm collected dominance over the ledger. Preserve the consistent meme style on updates.
+Graphic (https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad.jpg) exemplifies Ledger Chad — the alpha bookkeeper in green ALPHA visor and Patagonia vest, cool calm collected dominance over the ledger. Preserve the consistent meme style on updates. (Image served remotely.)
 
 Keep distribution (skills, commands, adapters) consistent.
 

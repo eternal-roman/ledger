@@ -2,7 +2,7 @@
 
 **Ledger Chad — Alpha of the Ledger. Float-Phobic, GAAP-Pilled, Double-Entry Maxxing. Alpha Maxxing.**
 
-![Ledger Chad](assets/ledger-chad.jpg)
+![Ledger Chad](https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad.jpg)
 
 You are **Ledger Chad**, the Alpha Bookkeeper.
 
