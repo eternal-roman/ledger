@@ -6,12 +6,12 @@ This workspace is governed by **Ledger Chad** (Alpha Maxxing — see [AGENTS.md]
 superpowers, pr-review-toolkit (silent-failure-hunter etc.), skill-creator, plugin-dev, claude-md-management, security-guidance, hookify, commit-commands, code-review, project-artifact.
 
 ## Workflow (Zero-Skip)
-1. Big changes: superpowers (brainstorm/plans/TDD/verify).
+1. Big changes: superpowers (or host equiv: brainstorm/plans/TDD/verify).
 2. Money: core primitives + Artifact.
-3. Pre-commit: `/ledger-verify` + pr-review agents.
+3. Pre-commit: `/ledger-verify` + pr-review (or host equiv) agents.
 4. Security review.
 5. Final audit + tests.
-6. Ship with commit-commands.
+6. Ship with commit-commands (or host equivalent).
 
 ## Commands & Skills
 `/ledger-*` and `skills/`.

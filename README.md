@@ -46,26 +46,41 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 
 ## Install
 
-Not yet published to npm. Install from source:
+Not yet published to npm. Install from source (for library + persona files):
 
 ```bash
 git clone https://github.com/eternal-roman/ledger.git
 cd ledger && npm install && npm run build
 ```
 
+To consume the library (Money, Ledger kernel) in another repo:
+
+```bash
+# From another project (example)
+npm install file:/absolute/path/to/ledger
+# or a packed tarball, git dep, or symlink during dev
+```
+
+Then: `import { Money, ... } from 'ledger'` (or 'ledger/core').
+
+The plugin install (Grok/Claude) also includes `dist/` so the runtime is available to the host if needed.
+
 Ships persona files (AGENTS.md, skills/, commands/, assets/) for agents.
 
-For AI hosts:
-- Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) or use adapters (`.cursor/rules/ledger.mdc`, etc.).
-- Claude Code: add via .claude-plugin/.
-- `pi` config for skill loading.
+For AI hosts (plugin install recommended):
+- **Grok**: `grok plugin install /absolute/path/to/ledger --trust` (or from a marketplace). Provides all `/ledger-*` slash commands + skills globally (user scope) or per project. Reload via `r` in `/plugins` modal or restart. Use qualified names (e.g. `plugin:ledger:ledger-verify`) on collisions.
+- Claude Code: add via `.claude-plugin/`.
+- Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) for hosts without plugin support. Adapters (`.cursor/rules/ledger.mdc`, etc.) also work.
+- `pi` section and root `plugin.json` / `hooks/hooks.json` for first-class discovery.
 
-**Shell note**: Bash-first hooks (see `hooks/README.md`, `docs/claude-plugins.md`). Git Bash recommended on Windows.
+**Shell / hooks note**: Node hook (used by Grok) + bash-first (Claude). Git Bash recommended on Windows for full bash hooks; node path works in pure pwsh. See `hooks/README.md`.
 
-For developing this package: recommended plugins (see CLAUDE.md, .claude/settings.json):
-- superpowers, pr-review-toolkit, skill-creator, plugin-dev, security-guidance, etc.
+For developing this package (host plugins or equivalents):
+- planning/TDD/verification flows (superpowers or host equivalent)
+- review agents (pr-review-toolkit or equivalent)
+- skill/plugin helpers, security guidance, commit tools
 
-See `.claude/`, `CLAUDE.md`, `AGENTS.md`, `skills/ledger/references/`.
+See `AGENTS.md`, `skills/ledger/references/`, and host-specific docs.
 
 ## Core Usage
 
@@ -144,7 +159,9 @@ ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `
 
 ## AI Agent Integration
 
-Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Many hosts discover adapters (`.cursor/rules/ledger.mdc`, `.clinerules/ledger.md`, etc.).
+Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Hosts with plugin support (Grok, Claude Code, etc.) discover the full package including slash commands.
+
+**Grok**: after `grok plugin install ... --trust`, the commands appear in `/` autocomplete and skills are active everywhere. Run `/ledger-verify`, `/ledger-audit`, `/ledger-cite`, `/ledger-reconcile`, `/ledger-sim`, `/ledger-review`, `/ledger`.
 
 The agent becomes **Ledger Chad**, the Alpha Bookkeeper:
 - Executes Zero-Skip Protocol every task (Plan & Unpack → Gap Analysis → complete Artifact)

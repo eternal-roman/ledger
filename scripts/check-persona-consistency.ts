@@ -35,9 +35,11 @@ const ADDITIONAL_SURFACES = [
   'CLAUDE.md',
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
+  'plugin.json',
   'README.md',
   '.claude/agents/ledger-chad-reviewer.md',
   'hooks/README.md',
+  'hooks/hooks.json',
 ];
 
 const COMMANDS = [
@@ -108,7 +110,8 @@ function main() {
   for (const a of ADAPTERS) {
     const c = load(a);
     if (!c) {
-      issues.push(`Missing adapter: ${a}`);
+      // Adapters are optional in a given checkout (some hosts create on use). Do not hard-fail.
+      // They must contain required phrases *if present*.
       continue;
     }
     const isPointer = c.includes('AGENTS.md') || c.includes('skills/ledger/SKILL.md');
@@ -129,15 +132,30 @@ function main() {
 
   // 2b. Additional surfaces (manifests, CLAUDE, README, agents) — require Chad brand + core primitives (not every single one, since short files).
   const MINIMAL_FOR_ADDL = ['Money.from', 'validateEntry', 'Ledger.apply', 'double-entry', 'canon', 'Zero-Skip', 'unbalanced', 'Ledger Chad', 'Alpha Maxxing', 'or Get Beta'];
+  const MANIFEST_LIKE = ['plugin.json', 'hooks/hooks.json', '.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'];
   for (const f of ADDITIONAL_SURFACES) {
     const c = load(f);
     if (!c) {
       issues.push(`Missing persona surface: ${f}`);
       continue;
     }
-    for (const phrase of MINIMAL_FOR_ADDL) {
-      if (!c.includes(phrase)) {
-        issues.push(`${f}: missing required phrase "${phrase}"`);
+    const isManifest = MANIFEST_LIKE.some(m => f.endsWith(m));
+    if (isManifest) {
+      // Manifests/hooks: require presence of key identity + at least one kernel term; no full meme phrases.
+      const manifestRequired = ['ledger', 'Ledger'];
+      for (const phrase of manifestRequired) {
+        if (!c.toLowerCase().includes(phrase.toLowerCase())) {
+          issues.push(`${f}: missing manifest identity phrase "${phrase}"`);
+        }
+      }
+      if (!c.includes('Money.from') && !c.includes('double-entry')) {
+        issues.push(`${f}: manifest should reference core primitives (Money.from or double-entry)`);
+      }
+    } else {
+      for (const phrase of MINIMAL_FOR_ADDL) {
+        if (!c.includes(phrase)) {
+          issues.push(`${f}: missing required phrase "${phrase}"`);
+        }
       }
     }
     // still ban bad floats
