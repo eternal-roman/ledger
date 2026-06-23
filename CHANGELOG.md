@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.11.0] - 2026-06-23
+
+- docs: update README package version references to v0.11.0 (plan verification gap fix + release alignment).
+- Versions aligned across all 7: package.json, package-lock (both), plugin.json, .claude-plugin/plugin.json, CHANGELOG, pyproject.toml, ledger/__init__.py (ref).
+
 ## [0.10.0] - 2026-06-23
 
 - improve: make packaged examples runnable post-install via dynamic loader; add --prove stdin support; adoption DX follow-ups + hygiene.
