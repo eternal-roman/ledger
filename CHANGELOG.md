@@ -9,17 +9,17 @@
 - Full ledger skills remediation & adoption plan (standalone tooling, surfaces, citations, guards, dogfooding, scope, duplication, persona/coupling/honesty). All 14 verification commands + check-work PASS. Kernel invariants preserved.
 - Versions aligned across package.json, package-lock.json (top + root), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py .
 - Merged via clean PR #39 off main. Minor bump.
-
-## [Unreleased / next]
-- Adoption & remediation per full review (Iteration-3 plan):
+- Details:
   - Standalone `scripts/ledger-verify.ts` + `bin/ledger-verify.cjs` + `npm run verify:ledger` (mechanical scanner + real runTrace / makeCanonicalArtifact prove path).
   - Reusable `src/verify/scanner.ts` (exported) + refactored no-floats-guard + dedicated scanner tests.
-  - Adoption surfaces: QUICKSTART-SKILLS, SUCCESS-CHECKLIST, ANTI-PATTERNS, EXAMPLE-OUTPUT, cursor adapter, adapters/README.
+  - Adoption surfaces: QUICKSTART-SKILLS, SUCCESS-CHECKLIST, ANTI-PATTERNS, EXAMPLE-LEDGER-VERIFY-OUTPUT.md, cursor adapter, adapters/README.
   - SCOPE-AND-LAYERS.md + CITATION-COVERAGE.md + CORE-PROTOCOL.md.
   - Neutral `skills/ledger-core/SKILL.md`.
   - Reduced host-plugin coupling language and commands honesty notes.
   - Dogfood demo (`examples/kernel-proof-demo.ts`).
   - All new paths exercised by plan verification commands; verify:full green.
+
+## [Unreleased / next]
 
 ## [0.7.7] - 2026-06-23
 - Patch release: Python reference parity + version alignment.
