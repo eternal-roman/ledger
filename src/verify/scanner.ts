@@ -107,7 +107,7 @@ export function scanSourceForViolations(source: string, filename: string): Money
 export function scanDir(
   root: string,
   exts: string[] = ['.ts', '.tsx', '.js'],
-  exclude: string[] = ['node_modules', 'dist', '__pycache__', '.git', 'coverage']
+  exclude: string[] = ['node_modules', 'dist', '__pycache__', '.git', 'coverage', 'tests', '__tests__']
 ): MoneyViolation[] {
   const results: MoneyViolation[] = [];
   function walk(dir: string) {

@@ -11,11 +11,14 @@
    - Call `validateEntry(e)` (or let the create helpers do it).
    - `let l = emptyLedger(); l = l.apply(e).ledger;`
    - `l.verifyFundamentalEquation()` and `l.auditHash()`.
-4. Mechanical check (standalone, no LLM):
+4. Mechanical check (standalone, no LLM, works after tarball/git install):
    ```bash
-   npx tsx node_modules/ledger/scripts/ledger-verify.ts --scan src
-   # or after wiring: npx ledger-verify --scan .
+   npx ledger-verify --version
+   npx ledger-verify --scan .
+   # dev from source:
+   # npx tsx scripts/ledger-verify.ts --scan src
    ```
+   Use for pre-commit / CI to catch floats, direct arith, mutations before any LLM review.
 5. For scenarios/assumptions → entries: use the pattern in `examples/personal-ledger.ts` + `/ledger-reconcile` (agent) or direct kernel calls. Attach citations from the graph when rates/policy apply.
 
 Example minimal correct snippet (from examples/personal-ledger.ts):
