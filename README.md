@@ -17,6 +17,10 @@
   <img src="assets/ledger-chad-logo.jpg" width="120" alt="Ledger Chad logo icon">
 </p>
 
+<p align="center">
+  <img src="assets/ledger-chad-banner.jpg" width="600" alt="Ledger Chad Banner">
+</p>
+
 Ledger is the canonical library + AI guardrails for building exact financial, accounting, investing, and tax components.
 
 It enforces integrity that cannot be violated by accident:
