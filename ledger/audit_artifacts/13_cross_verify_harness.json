@@ -1,0 +1,16 @@
+{
+  "ops": 17,
+  "match": true,
+  "py_hash_prefix": "e55b53e8d10f8542",
+  "ts_hash_prefix": "e55b53e8d10f8542",
+  "cfa": {
+    "scope": "Automated py <-> TS cross hash/eq/balance comparison harness",
+    "assumptions": [
+      "Same entry seq in both kernels",
+      "hash and eq compared"
+    ],
+    "kernel_plan": "run_trace in py + tsx harness + parse/compare",
+    "proof": "match=True",
+    "reproducibility": "fixed minimal seq + harness.ts"
+  }
+}

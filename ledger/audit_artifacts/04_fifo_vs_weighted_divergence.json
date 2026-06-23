@@ -1,0 +1,21 @@
+{
+  "ops": 29,
+  "fifo_gain": "350.00 USD",
+  "weighted_gain": "300.00 USD",
+  "p_l_delta": "50.00 USD",
+  "equation": true,
+  "cfa": {
+    "scope": "FIFO vs weighted avg relief divergence on identical fills",
+    "assumptions": [
+      "Same 3 fills",
+      "Weighted = total_basis / total_qty * sold_qty",
+      "Exact decimal"
+    ],
+    "citations": [
+      "portfolio:cost-basis-methods"
+    ],
+    "kernel_plan": "kernel entries + run_trace + Money.sub/div for two methods + delta",
+    "proof": "FIFO=350.00 USD vs W=300.00 USD, delta=50.00 USD on P&L",
+    "reproducibility": "fixed strings; re-execute"
+  }
+}

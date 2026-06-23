@@ -8,7 +8,7 @@ This is the reference Python implementation of the ledger kernel, intended for u
 When auditing any Python financial codebase:
 1. Copy this `ledger/` package (or `pip install` when published) into the audit workspace.
 2. Run tests with `python -m pytest ledger/tests/` (preferred for package imports) or `python -m ledger.tests.test_canonical`.
-3. Use the kernel: `from ledger import Money, Account, AccountType, create_balanced_entry, empty_ledger, verify_determinism, run_trace, trading` etc.
+3. Use the kernel: `from ledger import Money, Account, AccountType, create_balanced_entry, empty_ledger, verify_determinism, run_trace, trading, lots` etc. (trading: reconcile_* + tags; lots: relief_for / build_lots / realized_pnl for FIFO etc.)
 4. Replay with `ledger.apply(entry)` or `run_trace(entries)` step-by-step, capturing balances, `verify_fundamental_equation()`, and `audit_hash()` at checkpoints. Use `reconcile_buy_fill` from trading for common patterns.
 5. Prove invariants and produce numeric counter-examples vs the subject's native float/Decimal code.
 

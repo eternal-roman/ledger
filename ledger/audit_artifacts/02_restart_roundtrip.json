@@ -1,0 +1,22 @@
+{
+  "ops": 10,
+  "pre_hash": "ce989c8b0efedc58aa410f8f4775bc65e659a4a3d1375d4a50a792ea39420864",
+  "post_reload_hash_equal": true,
+  "final_hash": "b51bde663c7e512f2594e215e911e438d31ce73af6bd32b2149fdf2d8226813f",
+  "equation_always": true,
+  "cfa": {
+    "scope": "Restart roundtrip + resume on Python canonical",
+    "assumptions": [
+      "JSON roundtrip via to_json/from_json on Ledger",
+      "apply after reload",
+      "no float"
+    ],
+    "citations": [
+      "kernel:roundtrip-stable",
+      "kernel:audit-hash-chain"
+    ],
+    "kernel_plan": "Ledger.to_json + from_json + apply + run_trace + verify_fundamental_equation",
+    "proof": "pre/post hash equal=True, eq always true, final hash b51bde663c7e",
+    "reproducibility": "fixed ids/dates/amounts as str; re-run this file"
+  }
+}

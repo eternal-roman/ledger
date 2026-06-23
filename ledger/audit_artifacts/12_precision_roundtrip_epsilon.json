@@ -1,0 +1,20 @@
+{
+  "ops": 9,
+  "hash_match": true,
+  "eq": true,
+  "cfa": {
+    "scope": "8dp precision + full json roundtrip + no-epsilon",
+    "assumptions": [
+      "BTC 8dp fills + fees",
+      "to_json/from_json + resume hash/eq"
+    ],
+    "citations": [
+      "kernel:determinism",
+      "kernel:exact-decimal"
+    ],
+    "kernel_plan": "reconcile + run_trace + to_json/from_json + audit_hash compare",
+    "proof": "hash_equal=True, eq=True, no tolerance used",
+    "reproducibility": "fixed high-prec strings"
+  },
+  "hash": "9cb6070dbc3426e1"
+}

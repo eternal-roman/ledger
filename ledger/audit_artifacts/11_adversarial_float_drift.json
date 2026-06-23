@@ -1,0 +1,19 @@
+{
+  "ops": 7,
+  "naive_gross": 807.8041016605999,
+  "kernel_cash": "-809.82 USD",
+  "kernel_rejected_float": true,
+  "cfa": {
+    "scope": "Adversarial demonstration of float vs kernel exact on realistic fill",
+    "assumptions": [
+      "0.01234567 * 65432.18 case",
+      "fee added"
+    ],
+    "citations": [
+      "kernel:no-float"
+    ],
+    "kernel_plan": "reconcile + run_trace vs direct float mul",
+    "proof": "naive_gross=807.8041016605999 vs kernel exact notional; float construction forbidden",
+    "reproducibility": "exact q/pr strings"
+  }
+}
