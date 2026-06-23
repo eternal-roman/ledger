@@ -1,9 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { Money, FXRate } from '../../src/core/money.js';
+import { describe, it, expect, afterAll } from 'vitest';
+import { Money, FXRate, registerScaleResolver } from '../../src/core/money.js';
 import { Account, AccountType } from '../../src/core/account.js';
 import { createBalancedEntry, validateEntry } from '../../src/core/journal.js';
 
 describe('Money - exact arithmetic (no floats ever)', () => {
+  // Some tests below toggle the process-global scale resolver; restore the
+  // default (none installed) afterward, matching the cleanup pattern used in
+  // the instruments/crypto/portfolio test suites.
+  afterAll(() => registerScaleResolver(undefined));
+
   it('0.1 + 0.2 === 0.3 exactly in USD', () => {
     const a = Money.from('0.1', 'USD');
     const b = Money.from('0.2', 'USD');
@@ -121,6 +126,16 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const m2 = Money.fromJSON(j);
     expect(m2.equals(m)).toBe(true);
     expect(m2.asOf).toBe('2026-06-21');
+  });
+
+  it('fromJSON restores explicit asset scale even with no resolver installed', () => {
+    registerScaleResolver(undefined); // simulate: asset registry not installed
+    const btc = Money.from('0.50000000', 'BTC', undefined, undefined, 8);
+    expect(btc.scale).toBe(8);
+
+    const restored = Money.fromJSON(btc.toJSON());
+    expect(restored.scale).toBe(8);
+    expect(restored.toString()).toBe('0.50000000 BTC');
   });
 
   it('rejects non-integer number input (no silent float capture)', () => {

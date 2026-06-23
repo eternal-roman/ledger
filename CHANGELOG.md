@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.6] - 2026-06-23
+- Cleanup release: removed self-confirming "enforcement" theater; kept the real kernel + persona voice.
+  - Removed the `check:persona` CI gate and `scripts/check-persona-consistency.ts` — builds no longer fail on marketing strings (Ledger Chad persona voice retained in docs).
+  - Deleted `ledger/audit_artifacts/` and `LEDGER_ENFORCEMENT_PLAN.md` (padded, self-confirming "proof" apparatus; real verification lives in `tests/`).
+  - Removed stray release tarballs/signatures from the working tree (already gitignored).
+  - Fixed: `Money` now serializes `scale` (`toJSON`/`fromJSON`), so asset amounts (e.g. 8-dp crypto) roundtrip exactly even when the global scale resolver is not installed.
+  - Documented and regression-locked the `auditHash` length-prefix framing (no hash format change; `ledger-audit-v1` retained).
+  - `verify:full` is now build + typecheck + test + verify (no persona step); 106 tests green.
+
 ## [0.7.5] - 2026-06-23
 - Patch release: ledger enforcement iteration complete.
   - Ported minimal lots.py (build_lots, relief_for, realized_pnl) to Python reference canonical.

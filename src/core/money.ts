@@ -215,11 +215,12 @@ export class Money {
    * Serialize to plain object for roundtrips, persistence, hashing.
    * v: version for forward compat.
    */
-  toJSON(): { v: string; a: string; c: string; asOf?: string; provenance?: string } {
+  toJSON(): { v: string; a: string; c: string; s: number; asOf?: string; provenance?: string } {
     return {
       v: '1',
       a: this._amount.toString(),
       c: this.currency,
+      s: this.scale, // persist scale so asset Money rehydrates correctly without the global resolver
       asOf: this.asOf,
       provenance: this.provenance,
     };
@@ -237,7 +238,8 @@ export class Money {
     if (amt == null || !cur) {
       throw new Error('Money.fromJSON missing amount or currency');
     }
-    return Money.from(amt, cur, j.asOf, prov);
+    const scale = typeof j.s === 'number' ? j.s : undefined; // backward compatible: v1 JSON without `s`
+    return Money.from(amt, cur, j.asOf, prov, scale);
   }
 
   /** Combine provenance strings for add/sub (internal, exact, no mutation). */

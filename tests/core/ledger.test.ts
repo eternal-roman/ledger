@@ -359,6 +359,23 @@ describe('Ledger (immutable append + projections)', () => {
     expect(h1).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it('auditHash incorporates line count/grouping (no regrouping collision)', () => {
+    const cash = new Account('1000', 'Cash', AccountType.Asset);
+    const equity = new Account('3000', 'Equity', AccountType.Equity);
+
+    // Same id/date/description, same net effect, different line grouping.
+    const twoLine = createBalancedEntry('e1', '2026-06-23', cash, equity, Money.from('100', 'USD'), 'cap');
+    const fourLine = new JournalEntry('e1', '2026-06-23', [
+      makeLine(cash, Money.from('50', 'USD'), 'debit'),
+      makeLine(cash, Money.from('50', 'USD'), 'debit'),
+      makeLine(equity, Money.from('50', 'USD'), 'credit'),
+      makeLine(equity, Money.from('50', 'USD'), 'credit'),
+    ], 'cap');
+
+    const h = (e: JournalEntry) => emptyLedger().apply(e).ledger.auditHash();
+    expect(h(twoLine)).not.toBe(h(fourLine));
+  });
+
   it('auditHash chains: changing an earlier entry changes the final hash', () => {
     const draw = new JournalEntry('b', '2026-01-02', [
       makeLine(equity, Money.from('100', 'USD'), 'debit'),

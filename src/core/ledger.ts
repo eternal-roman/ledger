@@ -189,7 +189,11 @@ export class Ledger {
 
   /** Stable SHA-256 audit hash (tamper-evident chain over all entries/fields). */
   auditHash(): string {
-    // length-prefixed fields + prev chain for forgery resistance
+    // Tamper-evident SHA-256 chain. Every field is individually length-prefixed
+    // (`${f.length}:${f}`) before hashing, so differing field *content* and
+    // differing line *counts* both yield distinct token streams — two entries
+    // cannot collide by regrouping lines (locked by ledger.test.ts). Tag is the
+    // format version; bump it only on an intentional, breaking format change.
     let chain = createHash('sha256').update('ledger-audit-v1').digest('hex');
     for (const e of this._entries) {
       const fields: string[] = [e.id, e.effectiveDate, e.description];
