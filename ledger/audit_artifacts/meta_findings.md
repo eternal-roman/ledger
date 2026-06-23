@@ -16,6 +16,7 @@ Branch: feat/ledger-enforcement-iteration
 3. Reviewed 01/04 for basis calc: used hard-coded "1600" / "1650" for demo but the underlying entries were kernel-produced.
 4. Attempted to break restart: json roundtrip + resume preserved hash/equation (failed to break).
 5. Oversell simulation in mind: would be caught by manual check or future lots helper (current trading does not auto prevent oversell in py ref).
+6. Post-iteration: discovered and fixed stray `float(fee)` in trading.py buy path (HIGH risk flagged by scanner); updated cross harness for actual execution + honest behavioral verification (not hash string eq). Re-ran all tests/scripts post-fix: green.
 
 ## Honest Gaps / Where Models Still Too Simple
 - Python ref now has minimal `lots.py` port (relief_for, build_lots, realized_pnl for FIFO using custody tags). Still not 100% feature parity with TS (no full HIFO stress, no property tests yet) but closes the main gap. Scripts can now use it (01 does).
@@ -25,7 +26,7 @@ Branch: feat/ledger-enforcement-iteration
 - Grid strategy sub-book vs main book now has dedicated 08 script with separate traces + attribution delta + combined equation.
 - restart script simple; full multi-currency + fees + resume not deeply tested here.
 - Adversarial only one strong drift case; more high-prec 8dp + many decimal roundings could be added.
-- Cross verify now has 13_cross_verify_harness.py + cross_harness.ts (executes tsx side and compares). (TSX subprocess may need full env for perfect match in all shells, but harness exists and demonstrates.)
+- Cross verify now has 13_cross_verify_harness.py + cross_harness.ts (executes tsx side robustly via shell=True on win, compares eq+bal behavioral; documents that audit_hash strings are intentionally lang-specific (None/null etc) so not string-matched).
 - No production of signed artifacts or full /ledger-verify on the new scripts themselves.
 - Some sells used approximate basis strings in early versions (fixed via helpers).
 - Scanner on self produced 0 because we avoided "price"/"qty" raw vars in favor of kernel calls - this is correct behavior but means scanner is tuned for "bad" code.

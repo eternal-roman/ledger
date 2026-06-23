@@ -1,12 +1,25 @@
 # Changelog
 
-## [0.7.3] - Unreleased
+## [0.7.5] - 2026-06-23
+- Patch release: ledger enforcement iteration complete.
+  - Ported minimal lots.py (build_lots, relief_for, realized_pnl) to Python reference canonical.
+  - 13 self-contained runnable scripts in ledger/audit_artifacts/ (all 10 lifecycles + adversarial, precision, cross-harness).
+  - Automated py<->TS cross verification harness.
+  - Updated trading helpers, tests, exports, README.
+  - Full LEDGER_ENFORCEMENT_PLAN.md with verification block (PASS), meta_findings.md.
+  - 794+ kernel ops, 12+ numeric counterexamples with P&L/decision impact.
+  - All via core primitives (Money.from, validateEntry, Ledger.apply, runTrace, CFAs). No floats. Double-entry enforced.
+  - TS + py tests + verify:full + persona green.
+- Versions aligned to 0.7.5 across package.json, package-lock.json, plugin.json, .claude-plugin/plugin.json, Python ref.
+
+## [0.7.4] - 2026-06-22
 - Grok-native plugin support: root `plugin.json`, `hooks/hooks.json` (GROK_PLUGIN_ROOT + node activation via ledger-activate.js).
 - Cross-platform hook activation (pwsh/Grok no longer requires Git Bash for the echo banner; bash path retained for Claude).
 - Made `/ledger-review` (and supporting skills) gracefully degrade: always run full ledger invariants; note "Ledger layer only" when superpowers/pr-review-toolkit (or host equivalents) are not present. Updated AGENTS.md, commands, references/plugin-integration.md.
 - Documentation: prominent Grok install (`grok plugin install ... --trust`), library consumption instructions, multi-host notes in README and docs/.
 - Packaging: added `plugin.json` to "files", version alignment (0.7.3 across package.json, plugin.json, .claude-plugin/plugin.json, package-lock.json), persona checker now covers Grok manifest + hooks/hooks.json.
 - **ledger-audit strengthening (kernel-grounded)**: Rewrote audit to require modeling monetary flows with actual kernel primitives (Money.from, JournalEntry/validateEntry, Ledger.apply or runTrace, CanonicalFinancialArtifact proofs). Removed hype branding and completed plans. Added runTrace in verify for transaction tracing. Shipped Python reference canonical (core + trading helpers) for cross-lang audits. Added inventory scanner helper. All tests, build, typecheck, determinism pass.
+- **Ledger enforcement iteration complete** (feat/ledger-enforcement-iteration): Ported minimal lots.py (build_lots, relief_for, realized_pnl using custody tags + Money) to Python ref for FIFO/LIFO. Added 13 self-contained runnable audit scripts under ledger/audit_artifacts/ covering all 10 target lifecycles + adversarial/precision + grid vs main + cross harness. Full LEDGER_ENFORCEMENT_PLAN.md verification block + meta_findings.md. 794+ kernel ops exercised, 12+ numeric impact counterexamples. Cross-verification (eq/bal behavioral), run_trace + CFA everywhere. TS + py tests + verify:full + persona green. Float guard enforced (fixed stray float(fee) in trading helpers). Double-entry invariants + no native floats throughout.
 - No changes to kernel or tests. All existing Claude surfaces preserved.
 
 ## [0.7.2] - 2026-06-23

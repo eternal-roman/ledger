@@ -77,7 +77,7 @@ def reconcile_buy_fill(
     accts = make_accounts_for_trading(venue)
     price_m = Money.from_(price, quote)
     qty_m = Money.from_(qty, base)  # asset units as Money for tagging + later lots
-    fee_m = Money.from_(fee, quote) if fee and float(fee) != 0 else Money.zero(quote)
+    fee_m = Money.from_(fee, quote) if fee and Decimal(str(fee)) != 0 else Money.zero(quote)
 
     notional_m = _notional(price_m, qty_m)
 
