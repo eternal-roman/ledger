@@ -45,4 +45,4 @@ __all__ = [
     "Lot", "RealizedDisposal", "ReliefResult", "relief_for", "build_lots", "realized_pnl",
 ]
 
-__version__ = "0.11.0-ref"  # align conceptually with TS
+__version__ = "0.12.0-ref"  # align conceptually with TS

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.12.0] - 2026-06-23
+
+- docs: align README to current v0.12.0 (plan verification gap fix + release alignment).
+- Versions aligned across all 7 locations after plan verification completion (package.json + lock + plugins + pyproject + __init__.py + CHANGELOG).
+
 ## [0.11.0] - 2026-06-23
 
 - docs: update README package version references to v0.11.0 (plan verification gap fix + release alignment).
