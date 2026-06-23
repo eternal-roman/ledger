@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Ledger Chad — Alpha of the Ledger. Exact Money.from (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip. Provides /ledger-* skills and slash commands globally.",
   "author": {
     "name": "eternal-roman / Ledger maintainers"
