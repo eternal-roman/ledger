@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.9.0] - 2026-06-23
+- Release prep following adoption plan completion and DX improvements (CLI, scanner, docs accuracy).
+- Versions aligned across package.json, package-lock.json, plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py.
+- All verifs green.
+
 ## [0.8.0] - 2026-06-23
 - Full ledger skills remediation & adoption plan (standalone tooling, surfaces, citations, guards, dogfooding, scope, duplication, persona/coupling/honesty). All 14 verification commands + check-work PASS. Kernel invariants preserved.
 - Versions aligned across package.json, package-lock.json (top + root), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py .
