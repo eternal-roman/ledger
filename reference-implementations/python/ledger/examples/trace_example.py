@@ -1,7 +1,7 @@
 """
 Demonstration of deep transaction tracing using the canonical Python Ledger.
 
-In a real SUPER audit this pattern is repeated for every critical money lifecycle:
+In a real kernel-grounded audit this pattern is repeated for every critical money lifecycle:
 1. Define domain Accounts.
 2. For a realistic numeric scenario, construct exact JournalEntry using Money.from_.
 3. Apply step-by-step to a Ledger.

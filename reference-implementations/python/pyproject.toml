@@ -23,4 +23,4 @@ include = ["ledger*"]
 
 [project.urls]
 Homepage = "https://github.com/eternal-roman/ledger"
-Documentation = "https://github.com/eternal-roman/ledger/blob/main/docs/SUPER_LEDGER_AUDIT_PROTOCOL.md"
+Documentation = "https://github.com/eternal-roman/ledger/blob/main/skills/ledger-audit/SKILL.md"

@@ -93,7 +93,7 @@ class TraceReplayResult:
 
 
 def run_trace(entries: List[JournalEntry]) -> TraceReplayResult:
-    """Python mirror of TS runTrace for SUPER protocol tx tracing.
+    """Python mirror of runTrace for kernel-based transaction tracing in audits.
     Applies entries one by one, capturing state after each for proofs.
     """
     ledger = empty_ledger()

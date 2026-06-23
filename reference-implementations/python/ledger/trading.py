@@ -72,7 +72,7 @@ def reconcile_buy_fill(
 
 
 def replay_fill_trace(fill_data: Dict[str, Any]) -> TraceReplayResult:
-    """Convenience: reconcile + run_trace for one fill. Great for protocol traces."""
+    """Convenience: reconcile + run_trace for one fill. Useful for producing kernel proofs in audits."""
     entries = reconcile_buy_fill(
         fill_data.get("id", "fill"),
         fill_data.get("date", "2026-06-22"),

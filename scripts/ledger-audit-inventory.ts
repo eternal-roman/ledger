@@ -1,6 +1,6 @@
 /**
  * Basic monetary expression inventory scanner for TS/JS repositories.
- * Used by SUPER_LEDGER_AUDIT_PROTOCOL Phase 1 (adapt / extend with ts-morph or acorn for production).
+ * Helper for discovering monetary expressions during kernel-grounded audits (see skills/ledger-audit).
  *
  * Run: npx tsx scripts/ledger-audit-inventory.ts --path /path/to/target --out inventory.json
  *

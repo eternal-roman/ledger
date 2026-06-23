@@ -8,7 +8,7 @@ Usage in audits:
     from ledger.ledger import Ledger, empty_ledger
     from ledger.verify import verify_determinism, validate_canonical_artifact, CanonicalFinancialArtifact
 
-Must be used to model all value in Python target repositories during SUPER audit.
+Must be used to model all value in Python target repositories during kernel-grounded audits.
 Roundtrips with JSON and passes same determinism/equation proofs as TS kernel.
 """
 

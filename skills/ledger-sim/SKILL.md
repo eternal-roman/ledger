@@ -14,7 +14,7 @@ Run scenario using only core (Money, JournalEntry, Ledger):
 - Output trace + final balances + proof + reproducibility hash.
 - "Deterministic replay hash: ..."
 
-For audits (SUPER protocol): sims feed the numeric side-by-side and adversarial drift cases.
+For audits: sims can feed numeric side-by-side comparison and drift analysis when modeling flows with the kernel.
 
 Attach citations for policy/recognition.
 

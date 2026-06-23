@@ -1,35 +1,54 @@
 ---
 name: ledger-audit
 description: >
-  Whole-repo adversarial audit using the SUPER_LEDGER_AUDIT_PROTOCOL. Mandates canonical bootstrap (Python reference or native), exhaustive expression inventory via scanner, FULL transaction tracing via repeated JournalEntry + Ledger.apply + snapshots + equation + auditHash proofs, numeric side-by-side drift counterexamples, self-attack, and permanent runnable enforcement artifacts. Use for "ledger-audit", "financial audit", "/ledger-audit", or any whole-project money hygiene review. NEVER handwavy surface scan.
+  Whole-repo audit that enforces use of the ledger kernel for monetary logic.
+  Requires expressing value flows using Money.from, JournalEntry, validateEntry, and Ledger.apply
+  (or runTrace). Discovers non-kernel monetary expressions via scanning, then models critical paths
+  as kernel sequences with proofs. Use for "ledger-audit", "financial audit", "/ledger-audit".
 license: MIT
 ---
 
-# ledger-audit (Super Rambo Kernel-Powered)
+# ledger-audit
 
-**This skill is the 10x replacement for weak pattern-greps.**
+Perform a rigorous audit that ensures monetary code is (or can be) expressed using the ledger kernel primitives.
 
-You MUST execute the full SUPER_LEDGER_AUDIT_PROTOCOL (see docs/SUPER_LEDGER_AUDIT_PROTOCOL.md — paste and follow verbatim in clean context when the target is large or precision-critical).
+## Core Requirements
+- Use the kernel for all value: `Money.from(...)`, `JournalEntry` / `createEntry` / `validateEntry`, `Ledger` + `apply`.
+- For code that does not yet use the kernel, reconstruct the actual money movements as balanced `JournalEntry` sequences.
+- Replay those sequences using `Ledger.apply` (or the `runTrace` helper from `ledger/verify`).
+- At each step prove: balances, `verifyFundamentalEquation()`, `auditHash()`.
+- Emit a `CanonicalFinancialArtifact` (scope, assumptions, citations, kernelPlan, proof, reproducibility) for significant constructs.
+- Use the shipped reference canonicals when the target language does not yet integrate the kernel.
 
-Core non-negotiable flow (never skip):
-1. PHASE 0: Bootstrap + prove the canonical for the target's language using the shipped reference (reference-implementations/python/ledger/ for Python; native 'ledger' for TS). Run its determinism + equation tests immediately. All subsequent work uses this canonical.
-2. Build/run scanner for >=120 monetary expressions. Classify. Output inventory.json.
-3. For every critical lifecycle, REBUILD as exact sequence of create_balanced_entry / create_entry + validate_entry + successive immutable Ledger.apply. At each step capture: balances, verify_fundamental_equation(), audit_hash(). Compute identical inputs through subject's native path. Produce runnable trace scripts + numeric deltas + decision impact.
-4. Run precision simulator + accumulation forensics + adversarial fuzzer. Generate >=8 concrete numeric counterexamples with exact deltas.
-5. Perform multi-book reconciliation, boundary cast audit, signal contamination mapping, test/fallback analysis using kernel proofs.
-6. Self-attack: re-scan your own findings, re-execute sims with proposed fixes, document meta-weaknesses.
-7. Emit LEDGER_SUPER_AUDIT_REPORT.md + all artifacts + the exact ENFORCER VERIFICATION block.
+## Process
+1. **Canonical bootstrap** (if needed):
+   - For TypeScript/JavaScript targets: use the `ledger` package.
+   - For Python targets: use `reference-implementations/python/ledger/`.
+   - For other languages: implement a faithful mirror that passes the determinism + equation tests.
+   - Prove it works before modeling target flows.
 
-Rank findings L-HIGH etc. Every finding must have:
-- file:line + exact expr
-- numeric counterexample (subject vs canonical)
-- hardened kernel snippet (Money.from + create + apply + proof)
-- suggested diff
+2. **Discover monetary expressions**:
+   - Use static analysis / grep / AST scanning (the `scripts/ledger-audit-inventory.ts` or equivalent Python scanner in the ref can help) to locate sites that create, transform, store, or decide on monetary values (including hidden float paths, accumulators, boundary casts).
+   - Classify them (calculation, storage, decision, boundary, etc.).
 
-Never declare clean or "passes" unless the canonical replays the subject's critical paths with equation + hash proofs holding and all quantitative bars met. "Would the books balance?" must be answered with proof from your recon + hashes.
+3. **Kernel modeling of critical paths**:
+   - Identify the important money lifecycles (fills, fees, PnL, valuation, risk sizing, etc.).
+   - Rebuild them as sequences of `JournalEntry` using the kernel.
+   - Replay step-by-step with `Ledger.apply` or the `runTrace` helper.
+   - Capture per-step state and proofs.
+   - For common domains (e.g. fills), use helpers like `reconcile_buy_fill` from the Python ref or equivalent.
+   - Where the original code uses non-kernel arithmetic, compute both paths on the same inputs and show deltas + decision impact.
 
-If the host provides superpowers / pr-review-toolkit / security, run them after the ledger layer. If absent, explicitly note "Ledger kernel layer only".
+4. **Proof and reconciliation**:
+   - Use `runTrace`, `verifyDeterminism`, `validateEntry`, and `Ledger` methods.
+   - Reconcile multiple books / external state against the kernel ledger.
+   - Produce runnable artifacts that demonstrate the proofs.
 
-Output contract: ranked evidence-dense report + runnable artifacts (scanner, traces, simulator, recon, fuzzer) + strengthened canonical usage in the target + updated protocol if gaps found.
+5. **Findings**:
+   - For each issue: exact location + expression, numeric counter-example (original vs kernel), suggested kernel version using the primitives, and impact.
 
-**Double-Entry or Get Beta. No feature incomplete. No handwave.**
+The audit passes when critical flows are either already using the kernel correctly or have been modeled + proven with it, and non-kernel usage is explicitly justified or replaced.
+
+Complements `/ledger-verify` (for changes) and `/ledger-review`.
+
+If host verification layers (TDD, pr-review-toolkit equivalents, security) are present, run them after the kernel checks. Otherwise note "Ledger kernel layer only".

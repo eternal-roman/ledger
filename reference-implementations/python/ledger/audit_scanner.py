@@ -1,5 +1,5 @@
 """
-Basic monetary expression scanner for Python targets (supports SUPER_LEDGER_AUDIT_PROTOCOL Phase 1/3).
+Basic monetary expression scanner for Python targets. Helps identify flows that should be modeled with the ledger kernel during audits.
 
 Usage (from python/ dir or with PYTHONPATH):
   python -m ledger.audit_scanner --path /path/to/target/repo
@@ -65,7 +65,7 @@ def main():
     out = {"count": len(inv), "items": inv}
     Path(args.out).write_text(json.dumps(out, indent=2))
     print(f"Scanned Python files under {args.path}. Found {len(inv)} candidates -> {args.out}")
-    print("Run this as part of Phase 1 inventory in SUPER protocol audits.")
+    print("Run this to help discover flows that need kernel modeling during audits.")
 
 if __name__ == "__main__":
     main()

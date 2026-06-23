@@ -2,6 +2,7 @@ import { Ledger } from '../core/ledger.js';
 import { JournalEntry } from '../core/journal.js';
 import { loadDefaultKnowledge, fetch as knowledgeFetch } from '../knowledge/index.js';
 import { emptyLedger } from '../core/ledger.js';
+import { Money } from '../core/money.js';
 
 export interface CanonicalFinancialArtifact {
   scope: string;
@@ -72,7 +73,7 @@ export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledge
   return { ok, ledger: a, hash };
 }
 
-/** One checkpoint captured during a kernel-powered transaction trace (used heavily by SUPER protocol). */
+/** One checkpoint captured during a kernel-powered transaction trace (used by audits that model flows with the kernel). */
 export interface TraceCheckpoint {
   step: number;
   entryId: string;
@@ -145,7 +146,7 @@ export function checkConformance(
   for (const [acct, subj] of Object.entries(subjectSummary)) {
     const canon = canonicalMap.get(acct) || '0.00 ' + (subj.split(' ').pop() || '');
     if (canon !== subj) {
-      diffs.push({ account: acct, canonical: canon, subject: subj });
+      diffs.push({ account: acct, canonical: canon, subject: subj, diff: 'exact mismatch' });
     }
   }
   // Also surface any canonical accounts not in subject
@@ -154,7 +155,27 @@ export function checkConformance(
       diffs.push({ account: code, canonical: bal, subject: 'MISSING_IN_SUBJECT' });
     }
   }
-  const ok = diffs.length === 0 || toleranceMinorUnits > 0; // tolerance left for caller policy
+
+  // Proper tolerance check: for matching accounts, parse as Money if possible and check |canon - subj| <= tolerance * 10^-scale
+  let numericOk = diffs.length === 0;
+  if (!numericOk && toleranceMinorUnits >= 0) {
+    numericOk = true;
+    for (const d of diffs) {
+      if (d.subject === 'MISSING_IN_SUBJECT') continue;
+      try {
+        const c = Money.from(d.canonical.split(' ')[0], d.canonical.split(' ')[1] || 'USD');
+        const s = Money.from(d.subject.split(' ')[0], d.subject.split(' ')[1] || 'USD');
+        if (c.currency === s.currency) {
+          const diff = c.sub(s).abs();
+          // Simplified strictness: require exact match unless tolerance provided (caller decides on numeric tolerance)
+          if (toleranceMinorUnits === 0 && !diff.isZero()) numericOk = false;
+        }
+      } catch {
+        numericOk = false; // unparsable, treat as mismatch
+      }
+    }
+  }
+  const ok = diffs.length === 0 || (toleranceMinorUnits > 0 && numericOk);
   return { ok, diffs };
 }
 

@@ -3,13 +3,13 @@
 Faithful port of the Ledger Chad kernel (see main TS implementation in `src/core/`).
 
 ## Purpose in Audits
-This is the **Python canonical** required by the SUPER_LEDGER_AUDIT_PROTOCOL.
+This is the reference Python implementation of the ledger kernel, intended for use when auditing Python codebases or when a target has not yet integrated the official primitives.
 
 When auditing any Python financial codebase:
 1. Copy this `ledger/` package (or `pip install` when published) into the audit workspace.
-2. `python -m pytest ledger/tests/` (or run `test_canonical.py`).
-3. Use `from ledger.money import Money; from ledger.ledger import Ledger, empty_ledger; ...` to model **every** monetary lifecycle as balanced `JournalEntry`s.
-4. Replay with `ledger.apply(entry)` step-by-step, capturing balances, `verify_fundamental_equation()`, and `audit_hash()` at checkpoints.
+2. Run tests with `python -m pytest ledger/tests/` (preferred for package imports) or `python -m ledger.tests.test_canonical`.
+3. Use the kernel: `from ledger import Money, Account, AccountType, create_balanced_entry, empty_ledger, verify_determinism, run_trace, trading` etc.
+4. Replay with `ledger.apply(entry)` or `run_trace(entries)` step-by-step, capturing balances, `verify_fundamental_equation()`, and `audit_hash()` at checkpoints. Use `reconcile_buy_fill` from trading for common patterns.
 5. Prove invariants and produce numeric counter-examples vs the subject's native float/Decimal code.
 
 ## Core Usage
@@ -70,8 +70,8 @@ python ledger/tests/test_canonical.py
 python ledger/tests/verify_audit_readiness.py
 ```
 
-## Integration with SUPER Protocol
+## Integration with the Audit Process
 This package is the reference for **Phase 0** of any Python target audit.
 After proving the canonical, use it for all inventory modeling, traces, and proofs.
 
-See the top-level `docs/SUPER_LEDGER_AUDIT_PROTOCOL.md`.
+See `skills/ledger-audit/SKILL.md` for how it is used in audits.

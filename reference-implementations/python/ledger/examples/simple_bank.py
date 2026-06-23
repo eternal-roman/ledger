@@ -6,7 +6,7 @@ Demonstrates:
 - Creating balanced entries
 - Applying to immutable Ledger
 - Verifying equation + hash
-- Full trace replay style (for SUPER protocol use)
+- Full trace replay style using the kernel (for rigorous audits)
 
 In a real audit, replace the hard-coded numbers with data extracted from the target repo
 and compare to its reported values.
@@ -18,8 +18,8 @@ from decimal import Decimal
 
 # Robust for running as script or module (PYTHONPATH=. from python/ dir recommended)
 here = Path(__file__).resolve().parent
-# When running python ledger/examples/xxx.py from the 'python' parent, insert the parent
-sys.path.insert(0, str(here.parent.parent))  # to find 'ledger' package dir
+# Insert the directory that contains the 'ledger' package directory
+sys.path.insert(0, str(here.parent.parent))
 # Or set PYTHONPATH=. and run from python/ dir
 
 from ledger.money import Money

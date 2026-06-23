@@ -1,5 +1,5 @@
 """
-Standalone verification that the Python canonical meets SUPER_LEDGER_AUDIT_PROTOCOL requirements:
+Standalone verification that the Python canonical implements the kernel primitives correctly (Money construction rules, double-entry validation, immutable Ledger, determinism, etc.).
 - No raw float for money
 - Full double-entry validate + create
 - Immutable Ledger.apply with re-validation
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from decimal import Decimal
 
-# Make package import work
+# Make package import work: insert dir that contains the 'ledger' subdir (so 'import ledger' works)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ledger import (
@@ -25,7 +25,7 @@ from ledger import (
 )
 
 def main():
-    print("=== SUPER AUDIT PROTOCOL - Python Canonical Verification ===")
+    print("=== Python Canonical Kernel Verification ===")
 
     cash = Account("1000", "Cash", AccountType.Asset)
     eq = Account("3000", "Equity", AccountType.Equity)
@@ -103,7 +103,7 @@ def main():
     print("[PASS] Provenance + as_of supported for audit traceability")
 
     print("\n=== ALL VERIFICATIONS PASSED ===")
-    print("Python canonical is ready for SUPER_LEDGER_AUDIT_PROTOCOL use in any repo.")
+    print("Python canonical kernel implementation verified.")
     print("It implements the kernel strength: exact entries + apply replay + proofs.")
 
 if __name__ == "__main__":

@@ -139,7 +139,7 @@ class Ledger:
 
     def snapshot(self, as_of: Optional[str] = None) -> LedgerSnapshot:
         if as_of is None:
-            as_of = "1970-01-01"  # or current; protocol will supply
+            as_of = "1970-01-01"  # or current; caller will supply
         return LedgerSnapshot(entries=self._entries, as_of=as_of)
 
     def to_json(self) -> dict:
