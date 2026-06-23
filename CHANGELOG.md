@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.13.0] - 2026-06-23
+
+- docs: align README to v0.13.0 + full plan verification completion (gap fixes landed).
+- Versions aligned across all 7 locations.
+
 ## [0.12.0] - 2026-06-23
 
 - docs: align README to current v0.12.0 (plan verification gap fix + release alignment).
