@@ -4,8 +4,8 @@ import { KnowledgeGraph, fetch as knowledgeFetch } from '../knowledge/graph.js';
 import { loadDefaultKnowledge } from '../knowledge/index.js';
 
 /**
- * Basic IFRS-inspired asset recognition rule (stub for full rules layer).
- * Uses knowledge fetch for citation.
+ * Basic IFRS-inspired asset recognition helper.
+ * Enforces kernel invariants + account type rules + surfaces matching citations.
  */
 export function validateAssetRecognition(entry: JournalEntry, graph?: KnowledgeGraph): { ok: boolean; citations: string[]; violations: string[] } {
   const g = graph || loadDefaultKnowledge();
@@ -100,7 +100,7 @@ export function validateExpenseRecognition(entry: JournalEntry, graph?: Knowledg
   return { ok: violations.length === 0, citations: facts.citations, violations };
 }
 
-/** Lease (IFRS16) recognition rule stub. Ensures kernel + pulls lease canon for ROU + liability. */
+/** Lease (IFRS16) recognition helper. Ensures kernel + pulls lease canon for ROU + liability. */
 export function validateLeaseRecognition(entry: JournalEntry, graph?: KnowledgeGraph): { ok: boolean; citations: string[]; violations: string[] } {
   const g = graph || loadDefaultKnowledge();
   const facts = knowledgeFetch(g, 'lease OR ifrs16', { standard_family: ['IFRS'], domain: ['accounting', 'leases'] });

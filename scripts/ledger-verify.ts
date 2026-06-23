@@ -53,7 +53,7 @@ function parseArgs() {
     if (a === '--scan' || a === '--prove' || a === '--diff') {
       out[a.slice(2)] = args[i + 1] || '';
       i++;
-    } else if (a === '--json' || a === '--help') {
+    } else if (a === '--json' || a === '--help' || a === '--version') {
       out[a.slice(2)] = true;
     } else if (a.startsWith('--')) {
       out[a.slice(2)] = true;
@@ -65,11 +65,24 @@ function parseArgs() {
 async function main() {
   const args = parseArgs();
 
+  if (args.version) {
+    // Robust: read package.json directly (works in tsx source and after pack/dist)
+    try {
+      const fs = await import('node:fs');
+      const p = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+      console.log(p.version || 'unknown');
+    } catch {
+      console.log('unknown');
+    }
+    process.exit(0);
+  }
+
   if (args.help) {
-    console.log('ledger-verify [--scan <path|->] [--prove <json>] [--json] [--help]');
+    console.log('ledger-verify [--scan <path|->] [--prove <json>] [--json] [--version] [--help]');
     console.log('  --scan path   : static scan for money anti-patterns (float, parseFloat, native arith, mutation)');
     console.log('  --scan -      : scan stdin (e.g. a diff)');
     console.log('  --prove file  : load simple entry data and run real runTrace + makeCanonicalArtifact');
+    console.log('  --version     : print version');
     process.exit(0);
   }
 

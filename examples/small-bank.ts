@@ -1,5 +1,6 @@
 /**
- * Stub for small bank ledger example using rules + knowledge.
+ * Small bank ledger example using rules + knowledge graph for basic recognition checks.
+ * Demonstrates rules layer + citations + reporting on a minimal double-entry set.
  */
 import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateAssetRecognition, validateLiabilityRecognition, validateLeaseRecognition, loadDefaultKnowledge } from '../src/index.js';
 
