@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Money, FXRate } from '../../src/core/money.js';
+import { Money, FXRate, registerScaleResolver } from '../../src/core/money.js';
 import { Account, AccountType } from '../../src/core/account.js';
 import { createBalancedEntry, validateEntry } from '../../src/core/journal.js';
 
@@ -121,6 +121,16 @@ describe('Money - exact arithmetic (no floats ever)', () => {
     const m2 = Money.fromJSON(j);
     expect(m2.equals(m)).toBe(true);
     expect(m2.asOf).toBe('2026-06-21');
+  });
+
+  it('fromJSON restores explicit asset scale even with no resolver installed', () => {
+    registerScaleResolver(undefined); // simulate: asset registry not installed
+    const btc = Money.from('0.50000000', 'BTC', undefined, undefined, 8);
+    expect(btc.scale).toBe(8);
+
+    const restored = Money.fromJSON(btc.toJSON());
+    expect(restored.scale).toBe(8);
+    expect(restored.toString()).toBe('0.50000000 BTC');
   });
 
   it('rejects non-integer number input (no silent float capture)', () => {
