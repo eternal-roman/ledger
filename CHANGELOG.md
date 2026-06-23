@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.7] - 2026-06-23
+- Patch release: Python reference parity + version alignment.
+  - Python ref `Money` now serializes `scale` (`to_json`/`from_json`), mirroring the TS v0.7.6 fix so both kernels roundtrip asset amounts at the correct scale without the global resolver (added `test_from_json_restores_explicit_asset_scale`).
+  - Synced `reference-implementations/python/pyproject.toml` to the current version (was lagging at 0.7.5); all version surfaces now aligned at 0.7.7.
+  - TS `verify:full` green (106 tests); Python ref suite green (10 tests).
+
 ## [0.7.6] - 2026-06-23
 - Cleanup release: removed self-confirming "enforcement" theater; kept the real kernel + persona voice.
   - Removed the `check:persona` CI gate and `scripts/check-persona-consistency.ts` — builds no longer fail on marketing strings (Ledger Chad persona voice retained in docs).

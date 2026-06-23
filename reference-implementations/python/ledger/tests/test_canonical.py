@@ -11,7 +11,7 @@ from pathlib import Path
 # Ensure importable when run directly
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ledger.money import Money, FXRate
+from ledger.money import Money, FXRate, register_scale_resolver
 from ledger.account import Account, AccountType
 from ledger.journal import (
     JournalEntry, make_line, create_balanced_entry, create_entry,
@@ -111,6 +111,18 @@ def test_allocate_edges_and_remainder():
     assert len(parts2) == 3
 
 
+def test_from_json_restores_explicit_asset_scale():
+    """Mirror of TS money.test.ts: a non-default scale must survive the JSON
+    roundtrip even when no scale resolver is installed (asset registry absent)."""
+    register_scale_resolver(None)  # ensure no asset registry installed
+    # SOL is not in CURRENCY_SCALES -> scale_for() would yield DEFAULT_SCALE (2).
+    asset = Money.from_("0.1234", "SOL", scale=4)
+    assert asset.scale == 4
+    restored = Money.from_json(asset.to_json())
+    assert restored.scale == 4
+    assert str(restored) == "0.1234 SOL"
+
+
 def test_golden_replay_from_ts_style_sequence():
     """Replay a simple sequence equivalent to TS verify-determinism and examples.
     This is the start of 'replay golden sequence from TS examples' for Phase 1.
@@ -139,7 +151,8 @@ if __name__ == "__main__":
     tests = [test_money_from_forbids_float, test_money_exact_add_sub, test_balanced_entry_and_validate,
              test_unbalanced_rejected, test_ledger_apply_immutable_and_balance,
              test_determinism_and_equation, test_canonical_artifact_validator,
-             test_allocate_edges_and_remainder, test_golden_replay_from_ts_style_sequence]
+             test_allocate_edges_and_remainder, test_from_json_restores_explicit_asset_scale,
+             test_golden_replay_from_ts_style_sequence]
     passed = 0
     for t in tests:
         try:

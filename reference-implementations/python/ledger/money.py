@@ -210,6 +210,7 @@ class Money:
             "v": "1",
             "a": str(self._amount),
             "c": self.currency,
+            "s": self.scale,  # persist scale so asset Money rehydrates correctly without the global resolver
             "asOf": self.as_of,
             "provenance": self.provenance,
         }
@@ -223,7 +224,9 @@ class Money:
         prov = j.get("provenance") or j.get("p")
         if amt is None or not cur:
             raise ValueError("Money.from_json missing amount or currency")
-        return cls.from_(amt, cur, j.get("asOf"), prov)
+        s = j.get("s")
+        scale = s if isinstance(s, int) and not isinstance(s, bool) else None  # backward compatible: legacy JSON without `s`
+        return cls.from_(amt, cur, j.get("asOf"), prov, scale)
 
     @staticmethod
     def _combine_provenance(a: Optional[str], b: Optional[str]) -> Optional[str]:
