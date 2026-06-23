@@ -10,10 +10,12 @@ license: MIT
 Run scenario using only core (Money, JournalEntry, Ledger):
 - Explicit assumptions (date, rates, jurisdiction, sources) + citations.
 - Seed stochastic elements; log seed.
-- Per step: build/validate/apply/prove equation.
-- Output trace + final balances + proof.
+- Per step: build/validate/apply/prove equation. Capture balances + auditHash at checkpoints (see runTrace in src/verify).
+- Output trace + final balances + proof + reproducibility hash.
 - "Deterministic replay hash: ..."
+
+For audits (SUPER protocol): sims feed the numeric side-by-side and adversarial drift cases.
 
 Attach citations for policy/recognition.
 
-Invalid if non-deterministic or unprovable.
+Invalid if non-deterministic or unprovable. Use for full lifecycle modeling in /ledger-audit.

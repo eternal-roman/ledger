@@ -1,29 +1,35 @@
 ---
 name: ledger-audit
 description: >
-  Whole-repo audit for financial invariants and hygiene. Scans for any monetary values not using Money.from, unvalidated or unbalanced entries, floats, hidden assumptions, missing citations. Use for "ledger-audit", "financial audit", "check entire codebase for money issues", or /ledger-audit. Produces ranked findings; does not auto-fix.
+  Whole-repo adversarial audit using the SUPER_LEDGER_AUDIT_PROTOCOL. Mandates canonical bootstrap (Python reference or native), exhaustive expression inventory via scanner, FULL transaction tracing via repeated JournalEntry + Ledger.apply + snapshots + equation + auditHash proofs, numeric side-by-side drift counterexamples, self-attack, and permanent runnable enforcement artifacts. Use for "ledger-audit", "financial audit", "/ledger-audit", or any whole-project money hygiene review. NEVER handwavy surface scan.
 license: MIT
 ---
 
-# ledger-audit
+# ledger-audit (Super Rambo Kernel-Powered)
 
-Perform a whole-project financial hygiene and invariants audit.
+**This skill is the 10x replacement for weak pattern-greps.**
 
-Scan tree/scope for:
-- Non-`Money.from` monetary values.
-- Unvalidated JournalEntry/apply.
-- Unbalanced or equation violations.
-- Hidden assumptions/rates without citations.
-- Mutation.
-- Unseeded/non-deterministic work.
+You MUST execute the full SUPER_LEDGER_AUDIT_PROTOCOL (see docs/SUPER_LEDGER_AUDIT_PROTOCOL.md — paste and follow verbatim in clean context when the target is large or precision-critical).
 
-Rank by severity. For each: location + violation + required kernel/citation fix.
+Core non-negotiable flow (never skip):
+1. PHASE 0: Bootstrap + prove the canonical for the target's language using the shipped reference (reference-implementations/python/ledger/ for Python; native 'ledger' for TS). Run its determinism + equation tests immediately. All subsequent work uses this canonical.
+2. Build/run scanner for >=120 monetary expressions. Classify. Output inventory.json.
+3. For every critical lifecycle, REBUILD as exact sequence of create_balanced_entry / create_entry + validate_entry + successive immutable Ledger.apply. At each step capture: balances, verify_fundamental_equation(), audit_hash(). Compute identical inputs through subject's native path. Produce runnable trace scripts + numeric deltas + decision impact.
+4. Run precision simulator + accumulation forensics + adversarial fuzzer. Generate >=8 concrete numeric counterexamples with exact deltas.
+5. Perform multi-book reconciliation, boundary cast audit, signal contamination mapping, test/fallback analysis using kernel proofs.
+6. Self-attack: re-scan your own findings, re-execute sims with proposed fixes, document meta-weaknesses.
+7. Emit LEDGER_SUPER_AUDIT_REPORT.md + all artifacts + the exact ENFORCER VERIFICATION block.
 
-Summary: violation count + "would balance?" 
+Rank findings L-HIGH etc. Every finding must have:
+- file:line + exact expr
+- numeric counterexample (subject vs canonical)
+- hardened kernel snippet (Money.from + create + apply + proof)
+- suggested diff
 
-Clean: "Repo passes ledger audit."
+Never declare clean or "passes" unless the canonical replays the subject's critical paths with equation + hash proofs holding and all quantitative bars met. "Would the books balance?" must be answered with proof from your recon + hashes.
 
-Scope: financial value, accounts, recognition, measurement. One-shot report.
+If the host provides superpowers / pr-review-toolkit / security, run them after the ledger layer. If absent, explicitly note "Ledger kernel layer only".
 
-## Plugin Usage
-Complements `/ledger-review`. After audit, run available host review agents (pr-review-toolkit equivalents) and security review on findings when present. Use with superpowers-style verification-before-completion or equivalent host TDD/verification when available. If those layers are absent, the audit + ledger invariants still provide the core hygiene gate.
+Output contract: ranked evidence-dense report + runnable artifacts (scanner, traces, simulator, recon, fuzzer) + strengthened canonical usage in the target + updated protocol if gaps found.
+
+**Double-Entry or Get Beta. No feature incomplete. No handwave.**

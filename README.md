@@ -177,10 +177,24 @@ each instructs the agent to apply the kernel and citation graph for that task:
 | Command            | What it guides the agent to do |
 |--------------------|--------------|
 | `/ledger-verify`   | Check a diff/snippet for invariants, Money usage, balanced entries, citations |
-| `/ledger-audit`    | Whole-project financial hygiene and structural integrity review |
+| `/ledger-audit`    | **Adversarial SUPER protocol** — canonical bootstrap + exhaustive inventory + full kernel transaction traces (Ledger.apply + snapshots + proofs) + numeric counterexamples + self-attack. See docs/SUPER_LEDGER_AUDIT_PROTOCOL.md. Produces permanent runnable enforcement artifacts. |
 | `/ledger-cite`     | Retrieve matching facts from the IFRS/GAAP citation graph |
 | `/ledger-reconcile`| Turn assumptions and rates into validated double-entry with citations |
 | `/ledger-sim`      | Walk a seeded scenario, tracing assumptions and proving invariants |
+
+## Cross-Language Canonical Support & Mighty Audits
+
+The ledger package now ships:
+- The TS/JS reference implementation (the source of truth).
+- `reference-implementations/python/ledger/` — a complete faithful Python port (Money, JournalEntry, validate_entry, Ledger with apply/equation/auditHash, verify_determinism, CanonicalFinancialArtifact). Use it for Python repositories so audits have teeth. Tests + trace example included. Run `python .../tests/test_canonical.py`.
+
+For any repository (regardless of language), `/ledger-audit` now follows the **SUPER_LEDGER_AUDIT_PROTOCOL** (see `docs/SUPER_LEDGER_AUDIT_PROTOCOL.md`). It is deliberately adversarial, quantitative, and kernel-first:
+- Always bootstrap + prove the canonical first.
+- Build scanners, model full lifecycles as real JournalEntry sequences, replay with `Ledger.apply`, capture proofs at every step.
+- Numeric side-by-side counterexamples, drift simulation, adversarial fuzzing, self-attack.
+- Minimum bars + concrete artifacts + ENFORCER_VERIFICATION block.
+
+This fixes the two historic failure modes (no Python canonical; audits that never exercised the kernel for tracing).
 
 ## Determinism & Verification
 
