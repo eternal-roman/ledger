@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.8.0] - 2026-06-23
+- Full ledger skills remediation & adoption plan (standalone tooling, surfaces, citations, guards, dogfooding, scope, duplication, persona/coupling/honesty). All 14 verification commands + check-work PASS. Kernel invariants preserved.
+- Versions aligned across package.json, package-lock.json (top + root), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py .
+- Merged via clean PR #39 off main. Minor bump.
+
 ## [Unreleased / next]
 - Adoption & remediation per full review (Iteration-3 plan):
   - Standalone `scripts/ledger-verify.ts` + `bin/ledger-verify.cjs` + `npm run verify:ledger` (mechanical scanner + real runTrace / makeCanonicalArtifact prove path).
