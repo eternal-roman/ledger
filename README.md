@@ -177,10 +177,18 @@ each instructs the agent to apply the kernel and citation graph for that task:
 | Command            | What it guides the agent to do |
 |--------------------|--------------|
 | `/ledger-verify`   | Check a diff/snippet for invariants, Money usage, balanced entries, citations |
-| `/ledger-audit`    | Whole-project financial hygiene and structural integrity review |
+| `/ledger-audit`    | Whole-repo audit that requires (or models) monetary flows using the kernel primitives (`Money.from`, `JournalEntry` + `validateEntry`, `Ledger.apply` / `runTrace`). Produces proofs and artifacts. |
 | `/ledger-cite`     | Retrieve matching facts from the IFRS/GAAP citation graph |
 | `/ledger-reconcile`| Turn assumptions and rates into validated double-entry with citations |
 | `/ledger-sim`      | Walk a seeded scenario, tracing assumptions and proving invariants |
+
+## Cross-Language Canonical Support
+
+The ledger package provides the canonical implementation in TypeScript/JavaScript. It also ships a reference Python implementation under `reference-implementations/python/ledger/` (Money, JournalEntry, validate_entry, Ledger with apply/equation/auditHash, verify_determinism, CanonicalFinancialArtifact + tests and examples).
+
+When a target repository does not yet use the kernel (especially non-TS codebases), the Python reference (or a faithful port) can be used during audit to model flows and prove invariants.
+
+`/ledger-audit` focuses on actually using these primitives to reconstruct and verify monetary logic.
 
 ## Determinism & Verification
 

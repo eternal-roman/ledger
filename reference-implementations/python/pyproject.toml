@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ledger-py"
+version = "0.7.3"
+description = "Python reference canonical implementation of the Ledger Chad kernel (Money, double-entry JournalEntry, immutable Ledger). For audits and exact financial modeling in Python repos."
+readme = "ledger/README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Ledger Chad" }
+]
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ledger*"]
+
+[project.urls]
+Homepage = "https://github.com/eternal-roman/ledger"
+Documentation = "https://github.com/eternal-roman/ledger/blob/main/skills/ledger-audit/SKILL.md"

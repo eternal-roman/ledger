@@ -28,6 +28,8 @@
     "commands",
     "hooks",
     "assets",
+    "docs",
+    "reference-implementations",
     "docs/claude-plugins.md"
   ],
   "scripts": {
@@ -37,6 +39,7 @@
     "test:watch": "vitest",
     "verify": "tsx scripts/verify-determinism.ts",
     "check:persona": "tsx scripts/check-persona-consistency.ts",
+    "audit:inventory": "tsx scripts/ledger-audit-inventory.ts",
     "verify:full": "npm run build && npm run typecheck && npm test && npm run verify && npm run check:persona",
     "bash": "bash",
     "with-bash": "bash scripts/with-git-bash.sh || echo 'On Windows use: .\\scripts\\with-git-bash.cmd \"your command\"'",

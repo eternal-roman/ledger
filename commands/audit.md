@@ -1,14 +1,14 @@
 # /ledger-audit
 
-Whole-project financial hygiene review (Ledger Chad doctrine).
+Whole-repo audit that requires monetary logic to be expressed (or explicitly modeled) using the ledger kernel.
 
-In supported hosts, audit workspace/diff/PR for:
-1. All monetary values constructed exclusively via `Money.from(...)` (no native number/float/parseFloat for amounts).
-2. Every transaction path uses `JournalEntry`, `validateEntry`, `createBalancedEntry`, `Ledger.apply` (never mutate).
-3. Invariants proven: double-entry balance, fundamental accounting equation via `ledger.verifyFundamentalEquation()`.
-4. Knowledge citations attached where policy/tax/standards involved (`/ledger-cite` levers used: standard_family, domain, jurisdiction).
-5. No hidden assumptions (dates, jurisdictions, rates, multiples explicit).
-6. Determinism: reproducible given same inputs; verify harness passes.
-7. Graph levers used to pull only required canon (no full knowledge dump).
+Key expectations:
+- Use `Money.from`, `JournalEntry` construction + `validateEntry`, and `Ledger.apply` (or `runTrace`).
+- When code bypasses the kernel, reconstruct the flows as proper entries and replay + prove them.
+- Use scanning to locate expressions that need modeling.
+- Provide numeric proofs and side-by-side comparisons.
+- Emit `CanonicalFinancialArtifact` for significant financial logic.
 
-Report violations with file:line + recommended kernel fix. Attach canon citations for any rates or treatments.
+Focus on the primitives and proofs, not just naming conventions.
+
+Complements `/ledger-verify` and `/ledger-review`. The ledger kernel layer always runs.
