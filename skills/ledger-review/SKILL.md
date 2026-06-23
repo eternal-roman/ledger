@@ -15,7 +15,7 @@ Perform a complete, multi-layered review of financial code or changes.
 3. **Host review agents (when available)**:
    - pr-review-toolkit equivalents (silent-failure-hunter, type-design-analyzer, pr-test-analyzer, code-reviewer/simplifier) when present.
 4. **Security**: Apply guidance findings; flag monetary risks.
-5. **Summary**: Pass/Fail + ranked issues + kernel-tied fixes. Always include ledger layer result. If optional layers were not available, note "Ledger layer only (no superpowers/pr-review equivalents detected in host)". "Passed" requires clean ledger invariants + any available host layers.
+5. **Summary**: Pass/Fail + ranked issues + kernel-tied fixes. Always include ledger layer result. If optional layers were not available, note "Ledger layer only (no superpowers/pr-review equivalents detected)". "Passed" requires clean ledger invariants + any available host layers.
 
 ## Triggers
 "ledger review", "full ledger review", "Ledger Chad review", "alpha review", "review for shipping", "pre-pr financial review".

@@ -76,8 +76,8 @@ For AI hosts (plugin install recommended):
 **Shell / hooks note**: Node hook (used by Grok) + bash-first (Claude). Git Bash recommended on Windows for full bash hooks; node path works in pure pwsh. See `hooks/README.md`.
 
 For developing this package (host plugins or equivalents):
-- planning/TDD/verification flows (superpowers or host equivalent)
-- review agents (pr-review-toolkit or equivalent)
+- planning/TDD/verification flows (host equivalents when present — e.g. superpowers-style or pr-review-toolkit-style)
+- review agents (host equivalents)
 - skill/plugin helpers, security guidance, commit tools
 
 See `AGENTS.md`, `skills/ledger/references/`, and host-specific docs.
@@ -171,8 +171,10 @@ The agent becomes **Ledger Chad**, the Alpha Bookkeeper:
 - Uses graph knowledge (levers) only when required
 - Leads with alpha confidence: "Double-Entry or Get Beta." "Mistakes do not ship, bro."
 
-Commands are **agent-guidance prompts** (skills the host loads), not built CLI engines —
-each instructs the agent to apply the kernel and citation graph for that task:
+Commands are **agent-guidance prompts** (skills the host loads), not built-in engines.
+They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct/script use call the functions or the `ledger-verify` script / `npm run verify:ledger`.
+
+See docs/CORE-PROTOCOL.md (contains Zero-Skip Execution Protocol).
 
 | Command            | What it guides the agent to do |
 |--------------------|--------------|

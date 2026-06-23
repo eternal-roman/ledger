@@ -7,6 +7,7 @@ export { instrumentsSeed } from './seeds/instruments.js';
 // Convenience: load the default citation seeds. Canon covers accounting — IFRS
 // (conceptual framework + IAS/IFRS recognition) and US-GAAP (ASC 606 + matching) —
 // plus investing: cost basis / lot relief, IFRS 9, fair value, and GIPS performance.
+// See docs/CITATION-COVERAGE.md for lever examples and current scope (starter set only).
 import { createGraph, loadSeed } from './graph.js';
 import { ifrsSeed } from './seeds/ifrs.js';
 import { gaapSeed } from './seeds/gaap.js';

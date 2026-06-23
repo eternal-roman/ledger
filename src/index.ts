@@ -4,6 +4,7 @@ export * from './core/index.js';
 export * from './knowledge/index.js';
 export * from './rules/index.js';
 export * from './verify/index.js';
+export * from './verify/scanner.js';
 
 // Investing & financial-services layer (all expressed through the kernel):
 // asset registry, trading/custody postings, portfolio cost-basis & valuation,

@@ -100,6 +100,26 @@ export const instrumentsSeed = {
         domain: ["investing", "performance"]
       },
       confidence: 0.95
+    },
+    {
+      id: "lot-relief-specific-id",
+      type: "Rule",
+      content: {
+        statement: "When adequate identification is made, specific lot (specific identification) method may be used to determine cost basis of securities sold; must be documented contemporaneously. FIFO is default if no identification.",
+        methods: ["specific identification (with ID)", "FIFO (default absent ID)"]
+      },
+      provenance: {
+        source_id: "us-irc",
+        locator: "Treas. Reg. 1.1012-1(c)(2)-(8)",
+        effective_from: "1954",
+        jurisdiction: ["US"]
+      },
+      dimensions: {
+        standard_family: ["US-TAX"],
+        domain: ["investing", "tax", "lot-relief", "cost-basis"],
+        asset_class: ["equity", "crypto"]
+      },
+      confidence: 1.0
     }
   ] satisfies KnowledgeNode[],
   edges: [
