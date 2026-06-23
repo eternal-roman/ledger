@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.2] - 2026-06-23
+
+- ponytail patch: remove YAGNI ChartOfAccounts (unused outside tests/comments), consolidate dupe ROUND_HALF_UP into core export, delete empty speculative standards/ dirs.
+- net -72 lines. Follows delete/yagni/stdlib/shrink.
+- kernel + AI primitives (Account, Money, JournalEntry, Ledger) unaffected.
+
 ## [0.7.1] - 2026-06-22
 
 - Cleaned up old dangling remote branches (claude/*, docs/*, feat/*, feature/*, fix/*, patch/*, review/*, refine/* etc. from history).
