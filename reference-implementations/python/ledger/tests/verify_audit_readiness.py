@@ -15,14 +15,21 @@ from pathlib import Path
 from decimal import Decimal
 
 # Make package import work: insert dir that contains the 'ledger' subdir (so 'import ledger' works)
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Make runnable directly and via pytest: ensure 'ledger' package dir is on path as parent
+_here = Path(__file__).resolve()
+# parents[0]=tests, [1]=ledger (package), [2]=python
+_ledger_root = _here.parents[1]
+_python_root = _here.parents[2]
+sys.path.insert(0, str(_python_root))
 
 from ledger import (
     Money, Account, AccountType,
     create_balanced_entry, create_entry, make_line,
     empty_ledger, verify_determinism,
-    validate_entry, JournalEntry
+    validate_entry, JournalEntry,
+    trading,
 )
+from ledger.trading import reconcile_buy_fill, reconcile_sell_fill, replay_fill_trace
 
 def main():
     print("=== Python Canonical Kernel Verification ===")
@@ -101,6 +108,30 @@ def main():
     m = Money.from_("42.5", "USD", as_of="2026-06-22", provenance="test:audit-abstracted")
     assert m.as_of == "2026-06-22"
     print("[PASS] Provenance + as_of supported for audit traceability")
+
+    # 10. Trading helpers (reconcile + run_trace with lot tags + realistic BTC fill)
+    # Use 0.01234567 BTC case explicitly called out in enforcement plan
+    buy_entries = reconcile_buy_fill(
+        "f-btc-001", "2026-06-22",
+        qty="0.01234567", price="65432.18", fee="2.02",
+        base="BTC", quote="USD", venue="TEST"
+    )
+    assert len(buy_entries) == 2
+    # First entry carries lot tags on custody line
+    cust_line = [l for l in buy_entries[0].lines if "CUST" in l.account.code][0]
+    assert cust_line.tags and cust_line.tags.get(trading.LOT_TAGS["role"]) == "acquire"
+    assert "costBasis" in str(cust_line.tags)
+    trace = replay_fill_trace({"id": "f-btc-001", "qty": "0.01234567", "price": "65432.18", "fee": "2.02", "side": "buy"})
+    assert trace.ok
+    assert trace.final_equation
+    # Check one balance is the tiny BTC amount
+    bals = {b["account_code"]: b["balance"] for b in trace.checkpoints[-1].balances}
+    assert any("0.01234567" in b for b in bals.values())
+    print("[PASS] Trading helpers + realistic 0.01234567 BTC buy + lot tags + run_trace")
+
+    sell_entries = reconcile_sell_fill("f-btc-s1", "2026-06-22", "0.005", "66000", "1.50")
+    assert len(sell_entries) == 2
+    print("[PASS] Sell fill reconciliation works and validates")
 
     print("\n=== ALL VERIFICATIONS PASSED ===")
     print("Python canonical kernel implementation verified.")

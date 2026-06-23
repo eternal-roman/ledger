@@ -28,7 +28,7 @@ Perform a rigorous audit that ensures monetary code is (or can be) expressed usi
    - Prove it works before modeling target flows.
 
 2. **Discover monetary expressions**:
-   - Use static analysis / grep / AST scanning (the `scripts/ledger-audit-inventory.ts` or equivalent Python scanner in the ref can help) to locate sites that create, transform, store, or decide on monetary values (including hidden float paths, accumulators, boundary casts).
+   - Use static analysis / grep / AST scanning to locate sites that create, transform, store, or decide on monetary values (including hidden float paths, accumulators, boundary casts).
    - Classify them (calculation, storage, decision, boundary, etc.).
 
 3. **Kernel modeling of critical paths**:
@@ -36,7 +36,7 @@ Perform a rigorous audit that ensures monetary code is (or can be) expressed usi
    - Rebuild them as sequences of `JournalEntry` using the kernel.
    - Replay step-by-step with `Ledger.apply` or the `runTrace` helper.
    - Capture per-step state and proofs.
-   - For common domains (e.g. fills), use helpers like `reconcile_buy_fill` from the Python ref or equivalent.
+   - For common domains, implement minimal helpers on top of the core kernel as needed for the target.
    - Where the original code uses non-kernel arithmetic, compute both paths on the same inputs and show deltas + decision impact.
 
 4. **Proof and reconciliation**:

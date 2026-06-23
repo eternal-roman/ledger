@@ -1,0 +1,21 @@
+{
+  "ops": 19,
+  "remaining_custody": "0.00600000 BTC",
+  "cash_with_fee": "-360.20 USD",
+  "cash_no_fee": "-359.00 USD",
+  "equation": true,
+  "cfa": {
+    "scope": "Partial sell + fee impact demonstration",
+    "assumptions": [
+      "Partial qty dispose leaves correct remaining custody qty",
+      "Fee reduces net cash exactly"
+    ],
+    "citations": [
+      "kernel:double-entry",
+      "kernel:lot-tags"
+    ],
+    "kernel_plan": "reconcile_buy + reconcile_sell (partial qty) + run_trace + Money math for remainder",
+    "proof": "custody remaining 0.00600000 BTC, equation True, cash delta visible",
+    "reproducibility": "string inputs fixed"
+  }
+}

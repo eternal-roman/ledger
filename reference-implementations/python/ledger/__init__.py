@@ -6,7 +6,9 @@ Usage in audits:
     from ledger.account import Account, AccountType
     from ledger.journal import JournalEntry, create_entry, make_line, validate_entry, create_balanced_entry
     from ledger.ledger import Ledger, empty_ledger
-    from ledger.verify import verify_determinism, validate_canonical_artifact, CanonicalFinancialArtifact
+    from ledger.verify import verify_determinism, validate_canonical_artifact, CanonicalFinancialArtifact, run_trace
+    from ledger import trading
+    # trading.reconcile_buy_fill(...), trading.reconcile_sell_fill(...), trading.replay_fill_trace(...)
 
 Must be used to model all value in Python target repositories during kernel-grounded audits.
 Roundtrips with JSON and passes same determinism/equation proofs as TS kernel.
@@ -25,7 +27,9 @@ from .verify import (
     full_verify, CanonicalFinancialArtifact,
     run_trace, TraceReplayResult, TraceCheckpoint
 )
-from .trading import make_accounts_for_trading, reconcile_buy_fill, replay_fill_trace
+from . import trading
+from .audit_scanner import scan_tree, find_monetary_in_file
+from .lots import Lot, RealizedDisposal, ReliefResult, relief_for, build_lots, realized_pnl
 
 __all__ = [
     "Money", "FXRate", "money_from",
@@ -36,7 +40,9 @@ __all__ = [
     "Ledger", "empty_ledger", "LedgerSnapshot",
     "verify_determinism", "validate_canonical_artifact", "full_verify", "CanonicalFinancialArtifact",
     "run_trace", "TraceReplayResult", "TraceCheckpoint",
-    "make_accounts_for_trading", "reconcile_buy_fill", "replay_fill_trace",
+    "trading",
+    "scan_tree", "find_monetary_in_file",
+    "Lot", "RealizedDisposal", "ReliefResult", "relief_for", "build_lots", "realized_pnl",
 ]
 
 __version__ = "0.7.3-ref"  # align conceptually with TS

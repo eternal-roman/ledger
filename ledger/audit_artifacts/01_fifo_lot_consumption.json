@@ -1,0 +1,38 @@
+{
+  "ops_count": 43,
+  "fifo_gain": "350.00 USD",
+  "basis_consumed": "1600.00 USD",
+  "remaining_custody": "5.00 SH",
+  "final_equation": true,
+  "final_hash": "918526d9a2954996ed271ed3dfa3ad0f20556f3bc44d96af87bd3fe095372649",
+  "cfa": {
+    "scope": "FIFO lot consumption using kernel entries + tagged basis",
+    "assumptions": [
+      "Lots tracked via custody line tags",
+      "FIFO consumes earliest acquire first",
+      "All calcs Money only"
+    ],
+    "citations": [
+      "kernel:double-entry",
+      "kernel:lot-tags-in-audit-hash",
+      "portfolio:fifo-relief"
+    ],
+    "kernel_plan": "create_entry(with LOT_TAGS) + validate_entry + Ledger.apply + run_trace + Money.sub/add for realized",
+    "proof": "gain=350.00 USD, remaining_qty_approx_5, equation=True, hash_prefix=918526d9a295",
+    "reproducibility": "exact buy/sell qtys/prices from lots.test.ts; re-run script"
+  },
+  "checkpoints_sample": [
+    {
+      "account_code": "CUST:V:SH",
+      "balance": "5.00 SH"
+    },
+    {
+      "account_code": "CLR:V:SH",
+      "balance": "-5.00 SH"
+    },
+    {
+      "account_code": "CLR:V:SH",
+      "balance": "250.00 USD"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ops": 14,
+  "equation": true,
+  "entries": 3,
+  "cfa": {
+    "scope": "Multi-asset aggregation + equation across positions",
+    "assumptions": [
+      "Assets in different codes but same ledger",
+      "equation per currency"
+    ],
+    "kernel_plan": "create_balanced + apply x N + verify_fundamental_equation + summarize",
+    "proof": "eq=True, entries=3",
+    "reproducibility": "fixed amounts"
+  }
+}
