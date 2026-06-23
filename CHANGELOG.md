@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.5] - 2026-06-23
+- Patch release: ledger enforcement iteration complete.
+  - Ported minimal lots.py (build_lots, relief_for, realized_pnl) to Python reference canonical.
+  - 13 self-contained runnable scripts in ledger/audit_artifacts/ (all 10 lifecycles + adversarial, precision, cross-harness).
+  - Automated py<->TS cross verification harness.
+  - Updated trading helpers, tests, exports, README.
+  - Full LEDGER_ENFORCEMENT_PLAN.md with verification block (PASS), meta_findings.md.
+  - 794+ kernel ops, 12+ numeric counterexamples with P&L/decision impact.
+  - All via core primitives (Money.from, validateEntry, Ledger.apply, runTrace, CFAs). No floats. Double-entry enforced.
+  - TS + py tests + verify:full + persona green.
+- Versions aligned to 0.7.5 across package.json, package-lock.json, plugin.json, .claude-plugin/plugin.json, Python ref.
+
 ## [0.7.4] - 2026-06-22
 - Grok-native plugin support: root `plugin.json`, `hooks/hooks.json` (GROK_PLUGIN_ROOT + node activation via ledger-activate.js).
 - Cross-platform hook activation (pwsh/Grok no longer requires Git Bash for the echo banner; bash path retained for Claude).
