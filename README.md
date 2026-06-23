@@ -46,12 +46,12 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 
 ## Install
 
-The package is at v0.9.0 and fully packable with `npm pack`. For library consumption in another repo (Money + Ledger kernel + layers):
+The package is at v0.10.0 and fully packable with `npm pack`. For library consumption in another repo (Money + Ledger kernel + layers):
 
 ```bash
 # Option 1: packed tarball (recommended for exact version)
 cd /path/to/ledger && npm pack
-npm install /path/to/ledger-0.9.0.tgz
+npm install /path/to/ledger-0.10.0.tgz
 
 # Option 2: git dep or file: for latest
 npm install git+https://github.com/eternal-roman/ledger.git

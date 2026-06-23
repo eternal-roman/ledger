@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0] - 2026-06-23
+
+- improve: make packaged examples runnable post-install via dynamic loader; add --prove stdin support; adoption DX follow-ups + hygiene.
+- All 14 plan verifs, verify:full, check-work, and post-pack adoption tests green.
+- Versions aligned across package.json, package-lock.json (both), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py.
+
 ## [0.9.0] - 2026-06-23
 - Release prep following adoption plan completion and DX improvements (CLI, scanner, docs accuracy).
 - Versions aligned across package.json, package-lock.json, plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py.
