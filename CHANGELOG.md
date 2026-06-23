@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1] - 2026-06-22
+
+- Cleaned up old dangling remote branches (claude/*, docs/*, feat/*, feature/*, fix/*, patch/*, review/*, refine/* etc. from history).
+- Removed release artifacts (*.tgz, *.sig) from root.
+- Included ledger-chad-banner.jpg in README with proper scaling for full asset utilization (resolves previous dangling).
+- Verified all documents (README, AGENTS, etc.) contain only real functionality and benefits; no fantasy or overreaching claims. Persona and meme elements preserved and grounded in actual kernel behavior.
+- All previous image improvements (background removal, proportional scaling) integrated.
+
 ## [0.7.0] - 2026-06-22
 - Hardened `check:persona`: split CORE_REQUIRED from BRAND_PHRASES; pointer adapters + short manifests/docs now require only core+key Chad phrases (prevents sync fragility and cascade red merges on branding changes).
 - Expanded surfaces: now covers CLAUDE.md, .claude-plugin/*.json, .claude/agents/*, hooks/README.md, README (phrases + graphics).
