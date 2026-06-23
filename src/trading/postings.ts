@@ -1,4 +1,4 @@
-import { Money } from '../core/money.js';
+import { Money, ROUND_HALF_UP } from '../core/money.js';
 import { JournalEntry, JournalEntryLine, makeLine, createEntry, createBalancedEntry } from '../core/journal.js';
 import { Fill, PostingOptions } from './types.js';
 import {
@@ -6,7 +6,6 @@ import {
   rebateAccount, ownerFundingAccount,
 } from './accounts.js';
 
-const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
 
 /**
  * Lot-tracking metadata carried in line tags. These flow into the kernel's

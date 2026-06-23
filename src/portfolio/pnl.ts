@@ -1,9 +1,8 @@
-import { Money } from '../core/money.js';
+import { Money, ROUND_HALF_UP } from '../core/money.js';
 import { Ledger } from '../core/ledger.js';
 import { Lot, LotMethod, reliefFor, RealizedDisposal } from './lots.js';
 import { PriceMark } from './valuation.js';
 
-const ROUND_HALF_UP = 4;
 
 export interface RealizedPnL {
   readonly asset: string;

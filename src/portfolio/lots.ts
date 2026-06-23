@@ -1,8 +1,7 @@
-import { Money } from '../core/money.js';
+import { Money, ROUND_HALF_UP } from '../core/money.js';
 import { Ledger } from '../core/ledger.js';
 import { LOT_TAGS } from '../trading/postings.js';
 
-const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
 
 export type LotMethod = 'FIFO' | 'LIFO' | 'HIFO';
 

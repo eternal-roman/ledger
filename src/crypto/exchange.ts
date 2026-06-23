@@ -20,8 +20,8 @@ export function openExchange(venue: string, assets: string[], fiats: string[] = 
 }
 
 /**
- * Flat chart of accounts for a venue: custody + settlement clearing for each asset,
- * cash + clearing for each fiat. Useful for registering a ChartOfAccounts up front.
+ * Flat list of accounts for a venue: custody + settlement clearing for each asset,
+ * cash + clearing for each fiat.
  */
 export function exchangeChart(venue: string, assets: string[], fiats: string[] = ['USD']): Account[] {
   const out: Account[] = [];
