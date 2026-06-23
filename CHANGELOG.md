@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.7.4] - 2026-06-23
+## [0.7.4] - 2026-06-22
 - Grok-native plugin support: root `plugin.json`, `hooks/hooks.json` (GROK_PLUGIN_ROOT + node activation via ledger-activate.js).
 - Cross-platform hook activation (pwsh/Grok no longer requires Git Bash for the echo banner; bash path retained for Claude).
 - Made `/ledger-review` (and supporting skills) gracefully degrade: always run full ledger invariants; note "Ledger layer only" when superpowers/pr-review-toolkit (or host equivalents) are not present. Updated AGENTS.md, commands, references/plugin-integration.md.
