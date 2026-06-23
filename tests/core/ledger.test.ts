@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { Money } from '../../src/core/money.js';
-import { Account, AccountType, ChartOfAccounts } from '../../src/core/account.js';
+import { Account, AccountType } from '../../src/core/account.js';
 import { JournalEntry, makeLine, createFxConversion, createEntry, validateEntry, createBalancedEntry } from '../../src/core/journal.js';
 import { emptyLedger, Ledger } from '../../src/core/ledger.js';
 import { verifyDeterminism, validateCanonicalArtifact } from '../../src/verify/index.js';
@@ -300,27 +300,6 @@ describe('Ledger (immutable append + projections)', () => {
     expect(res.violations.length).toBeGreaterThan(0);
   });
 
-  it('ChartOfAccounts provides managed registry (pure, deduped) + supports opening balances via kernel entries', () => {
-    const cash = new Account('1000', 'Cash', AccountType.Asset);
-    const equity = new Account('3000', 'Equity', AccountType.Equity);
-    let coa = new ChartOfAccounts([cash]);
-    expect(coa.list().length).toBe(1);
-    expect(coa.get('1000')!.name).toBe('Cash');
-    expect(() => coa.add(cash)).toThrow(/already exists/);
-
-    coa = coa.add(equity);
-    expect(coa.list().length).toBe(2);
-
-    // Opening balances via kernel (typical workflow)
-    const open = createBalancedEntry('open', '2026-01-01', cash, equity, Money.from('5000', 'USD'), 'Opening balances');
-    const l = emptyLedger().apply(open).ledger;
-    expect(l.verifyFundamentalEquation()).toBe(true);
-    expect(l.balance(cash).toString()).toBe('5000.00 USD');
-
-    // serialize roundtrip for CoA
-    const coa2 = ChartOfAccounts.fromJSON(coa.toJSON());
-    expect(coa2.list().length).toBe(2);
-  });
 
   it('incomeStatement/balanceSheet/summarize use primary non-USD currency from ledger (no USD hard default)', () => {
     const asset = new Account('100', 'CashEUR', AccountType.Asset);

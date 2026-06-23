@@ -6,7 +6,7 @@ const DEFAULT_SCALE = 2;
 const CURRENCY_SCALES: Record<string, number> = {
   USD: 2, EUR: 2, GBP: 2, JPY: 0, CNY: 2, KRW: 0,
 };
-const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
+export const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
 
 /**
  * Optional scale resolver for non-fiat assets (crypto coins, equity shares, …).

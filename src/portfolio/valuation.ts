@@ -1,8 +1,7 @@
-import { Money } from '../core/money.js';
+import { Money, ROUND_HALF_UP } from '../core/money.js';
 import { Account } from '../core/account.js';
 import { Ledger } from '../core/ledger.js';
 
-const ROUND_HALF_UP = 4;
 
 /** An explicit, sourced price mark. `source` is required — valuation is never unsourced. */
 export interface PriceMark {

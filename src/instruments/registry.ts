@@ -1,9 +1,9 @@
 import { AssetSpec, makeAssetSpec } from './asset.js';
 
 /**
- * Immutable registry of asset specs (mirrors ChartOfAccounts: dedupe by key,
- * pure `add`, JSON roundtrip). Its `scaleOf` is the source of truth wired into
- * Money's scale resolver via `installAssetScales`.
+ * Immutable registry of asset specs (dedupe by key, pure `add`, JSON roundtrip).
+ * Its `scaleOf` is the source of truth wired into Money's scale resolver via
+ * `installAssetScales`.
  */
 export class AssetRegistry {
   private readonly _assets: ReadonlyMap<string, AssetSpec>;

@@ -1,9 +1,8 @@
-import { Money } from '../core/money.js';
+import { Money, ROUND_HALF_UP } from '../core/money.js';
 import { PortfolioValuation, PriceBook } from '../portfolio/valuation.js';
 import { OrderSide } from '../trading/types.js';
 import { TargetAllocation } from './allocation.js';
 
-const ROUND_HALF_UP = 4;
 
 export interface RebalanceTrade {
   readonly asset: string;
