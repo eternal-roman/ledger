@@ -29,6 +29,8 @@ async function loadKernel() {
     Account: mod.Account,
     AccountType: mod.AccountType,
     createBalancedEntry: mod.createBalancedEntry,
+    createEntry: mod.createEntry,
+    makeLine: mod.makeLine,
     emptyLedger: mod.emptyLedger,
   };
 }
@@ -122,16 +124,23 @@ async function main() {
     // Accept either raw array or {entries: [...]}. Build proper entries using kernel factories when possible.
     const rawEntries = Array.isArray(data) ? data : (data.entries || []);
     const entries = rawEntries.map((e: any) => {
-      // Minimal reconstruction using createBalancedEntry when 2 lines detected
-      if (e.lines && e.lines.length === 2) {
-        const l0 = e.lines[0], l1 = e.lines[1];
-        const amt = k.Money.from(String(l0.amount.amount || l0.amount), l0.amount.currency || 'USD');
-        // Very simple: assume first debit, second credit for demo purposes
-        const debit = new k.Account(l0.account.code, l0.account.name, k.AccountType.Asset);
-        const credit = new k.Account(l1.account.code, l1.account.name, k.AccountType.Equity);
-        return k.createBalancedEntry(e.id || 'p1', e.effectiveDate || '2026-01-01', debit, credit, amt, e.description || 'prove');
+      if (e.lines && Array.isArray(e.lines) && e.lines.length >= 2) {
+        const hasSides = e.lines.some((l: any) => l.side);
+        const lines = e.lines.map((l: any, idx: number) => {
+          const acctType = (k.AccountType as any)[l.account.type] || k.AccountType.Asset;
+          const acct = new k.Account(l.account.code, l.account.name, acctType);
+          const amt = k.Money.from(String(l.amount.amount || l.amount), l.amount.currency || 'USD');
+          let side = l.side;
+          if (!side) {
+            // backward compat for simple inputs without sides: first debit, second credit
+            side = (idx === 0) ? 'debit' : 'credit';
+          }
+          return k.makeLine(acct, amt, side);
+        });
+        // Use general createEntry for flexibility (supports any # lines, sides, types from data)
+        return k.createEntry(e.id || 'p1', e.effectiveDate || '2026-01-01', lines, e.description || 'prove');
       }
-      // Fallback: try to synthesize a minimal balanced entry
+      // Fallback minimal for simple inputs
       const cash = new k.Account('1000', 'Cash', k.AccountType.Asset);
       const eq = new k.Account('3000', 'Equity', k.AccountType.Equity);
       return k.createBalancedEntry(e.id || 'p1', e.effectiveDate || '2026-01-01', cash, eq, k.Money.from('1', 'USD'), e.description || 'prove-fallback');
