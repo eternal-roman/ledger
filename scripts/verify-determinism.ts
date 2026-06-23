@@ -3,18 +3,15 @@
  * Builds a fixed sequence of entries twice and asserts identical hashes / balances.
  * Run with: npm run verify
  */
+import { createHash } from 'node:crypto';
 import { Money } from '../src/core/money.js';
 import { Account, AccountType } from '../src/core/account.js';
 import { JournalEntry, makeLine } from '../src/core/journal.js';
 import { emptyLedger } from '../src/core/ledger.js';
 
 function hash(str: string): string {
-  // Simple stable hash for verification (real impl could use crypto)
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = (h * 31 + str.charCodeAt(i)) | 0;
-  }
-  return h.toString(16);
+  // Use node stdlib crypto for stable cross-run hash (was ad-hoc 31-mult; now native)
+  return createHash('sha256').update(str).digest('hex').slice(0, 16);
 }
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);

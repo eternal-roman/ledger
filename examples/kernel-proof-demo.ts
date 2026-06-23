@@ -2,7 +2,12 @@
  * Dogfood of scanner + real kernel proof (runTrace + makeCanonicalArtifact).
  * Run: npx tsx examples/kernel-proof-demo.ts
  */
-import { Money, Account, AccountType, createBalancedEntry, emptyLedger, runTrace, makeCanonicalArtifact, scanSourceForViolations } from '../src/index.js';
+// Support both "after npm install ledger" and "run from source tree"
+const L: any = await (async () => {
+  try { return await import('ledger'); } catch { return await import('../src/index.js'); }
+})();
+
+const { Money, Account, AccountType, createBalancedEntry, emptyLedger, runTrace, makeCanonicalArtifact, scanSourceForViolations } = L;
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Equity', AccountType.Equity);

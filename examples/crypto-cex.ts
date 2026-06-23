@@ -2,12 +2,17 @@
  * Crypto exchange (CEX) example: fund an account, buy BTC with a taker fee, sell
  * part of it, and read realized P&L — all through the immutable double-entry kernel.
  */
-import {
+// Support both "after npm install ledger" and "run from source tree"
+const L: any = await (async () => {
+  try { return await import('ledger'); } catch { return await import('../src/index.js'); }
+})();
+
+const {
   Money, emptyLedger,
   defaultAssetRegistry, installAssetScales,
   depositToEntry, fillToEntries, custodyAccount, cashAccount,
   realizedPnL, PriceBook, valuePortfolio,
-} from '../src/index.js';
+} = L;
 
 installAssetScales(defaultAssetRegistry());
 
