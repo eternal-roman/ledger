@@ -8,7 +8,7 @@ Mirrors src/verify/index.ts :
 """
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Tuple
 from .money import Money
 from .journal import JournalEntry, create_balanced_entry, validate_entry
 from .ledger import Ledger, empty_ledger
@@ -71,3 +71,63 @@ def verify_determinism(entries: List[JournalEntry]) -> Dict[str, Any]:
     eq = a.verify_fundamental_equation()
     ok = (h_a == h_b) and eq
     return {"ok": ok, "ledger": a, "hash": h_a}
+
+
+@dataclass
+class TraceCheckpoint:
+    step: int
+    entry_id: str
+    description: str
+    balances: List[Dict[str, str]]  # [{account_code, balance}]
+    equation_holds: bool
+    audit_hash_prefix: str
+
+
+@dataclass
+class TraceReplayResult:
+    final_ledger: Ledger
+    checkpoints: List[TraceCheckpoint]
+    final_equation: bool
+    final_hash: str
+    ok: bool
+
+
+def run_trace(entries: List[JournalEntry]) -> TraceReplayResult:
+    """Python mirror of TS runTrace for SUPER protocol tx tracing.
+    Applies entries one by one, capturing state after each for proofs.
+    """
+    ledger = empty_ledger()
+    checkpoints: List[TraceCheckpoint] = []
+
+    for idx, entry in enumerate(entries):
+        res_ledger, res = ledger.apply(entry)
+        if not res.ok:
+            raise ValueError(f"Trace failed at step {idx} on {entry.id}")
+        ledger = res_ledger
+
+        bals = []
+        for item in ledger.trial_balance():
+            # Handles both tuple (acct, bal) and any future dict form
+            if isinstance(item, (list, tuple)):
+                acct, bal = item
+            else:
+                acct = item.get("account") if isinstance(item, dict) else item.account
+                bal = item.get("balance") if isinstance(item, dict) else item.balance
+            bals.append({"account_code": acct.code, "balance": str(bal)})
+
+        checkpoints.append(TraceCheckpoint(
+            step=idx,
+            entry_id=entry.id,
+            description=entry.description,
+            balances=bals,
+            equation_holds=ledger.verify_fundamental_equation(),
+            audit_hash_prefix=ledger.audit_hash()[:16],
+        ))
+
+    return TraceReplayResult(
+        final_ledger=ledger,
+        checkpoints=checkpoints,
+        final_equation=ledger.verify_fundamental_equation(),
+        final_hash=ledger.audit_hash(),
+        ok=ledger.verify_fundamental_equation(),
+    )

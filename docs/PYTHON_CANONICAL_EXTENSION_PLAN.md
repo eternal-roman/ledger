@@ -1,5 +1,5 @@
 # Python Canonical Extension Plan
-## Maturing the Reference Implementation for Real-World Audits (Godzillabot-class + Any Python Repo)
+## Maturing the Reference Implementation for Real-World Audits (Complex Python Financial Systems + Any Python Repo)
 
 **Context & Motivation**
 The primary historical failure in ledger audits against Python codebases (e.g. cryptocurrency trading bots, portfolio engines, risk systems, backtesters) was the absence of a usable, kernel-faithful Python implementation of the canonical primitives.

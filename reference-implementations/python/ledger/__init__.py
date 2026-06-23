@@ -22,8 +22,10 @@ from .journal import (
 from .ledger import Ledger, empty_ledger, LedgerSnapshot
 from .verify import (
     verify_determinism, validate_canonical_artifact,
-    full_verify, CanonicalFinancialArtifact
+    full_verify, CanonicalFinancialArtifact,
+    run_trace, TraceReplayResult, TraceCheckpoint
 )
+from .trading import make_accounts_for_trading, reconcile_buy_fill, replay_fill_trace
 
 __all__ = [
     "Money", "FXRate", "money_from",
@@ -33,6 +35,8 @@ __all__ = [
     "ValidationResult", "ValidationViolation", "is_iso_date", "create_fx_conversion",
     "Ledger", "empty_ledger", "LedgerSnapshot",
     "verify_determinism", "validate_canonical_artifact", "full_verify", "CanonicalFinancialArtifact",
+    "run_trace", "TraceReplayResult", "TraceCheckpoint",
+    "make_accounts_for_trading", "reconcile_buy_fill", "replay_fill_trace",
 ]
 
 __version__ = "0.7.3-ref"  # align conceptually with TS

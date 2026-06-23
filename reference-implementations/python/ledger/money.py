@@ -15,6 +15,13 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation, getcontext
 from typing import Optional, Any, Union, List
 import json
 
+def _quantize(d: Decimal, scale: int, rounding: Any = None) -> Decimal:
+    """Helper to quantize to currency scale, mirroring decimal.js toDecimalPlaces behavior."""
+    if rounding is None:
+        rounding = ROUND_HALF_UP
+    q = Decimal('1.' + '0' * scale) if scale > 0 else Decimal('1')
+    return d.quantize(q, rounding=rounding)
+
 # Mirror TS: keep high precision for internal; scale is for formatting + sub-scale guard in journal.
 getcontext().prec = 50  # ample for financial
 
@@ -132,23 +139,23 @@ class Money:
         new_prov = self._combine_provenance(self.provenance, other.provenance)
         return Money(self._amount - other._amount, self.currency, self.scale, self.as_of or other.as_of, new_prov)
 
-    def mul(self, scalar: Union[str, int, float, Decimal], rounding_mode: Optional[int] = None) -> "Money":
+    def mul(self, scalar: Union[str, int, float, Decimal], rounding_mode: Any = None) -> "Money":
         r = self._amount * Decimal(str(scalar))
         if rounding_mode is not None:
-            r = r.to_decimal_places(self.scale, rounding_mode)  # type: ignore[attr-defined]
+            r = _quantize(r, self.scale, rounding_mode)
         return Money(r, self.currency, self.scale, self.as_of, self.provenance)
 
-    def div(self, scalar: Union[str, int, float, Decimal], rounding_mode: Optional[int] = None) -> "Money":
+    def div(self, scalar: Union[str, int, float, Decimal], rounding_mode: Any = None) -> "Money":
         r = self._amount / Decimal(str(scalar))
         if rounding_mode is not None:
-            r = r.to_decimal_places(self.scale, rounding_mode)  # type: ignore[attr-defined]
+            r = _quantize(r, self.scale, rounding_mode)
         return Money(r, self.currency, self.scale, self.as_of, self.provenance)
 
-    def convert(self, rate: FXRate, rounding_mode: int = ROUND_HALF_UP) -> "Money":
+    def convert(self, rate: FXRate, rounding_mode: Any = ROUND_HALF_UP) -> "Money":
         if self.currency != rate.from_:
             raise ValueError(f"FX mismatch: {self.currency} vs {rate.from_}")
         target_scale = scale_for(rate.to)
-        amt = (self._amount * rate.rate_decimal()).to_decimal_places(target_scale, rounding_mode)  # type: ignore[attr-defined]
+        amt = _quantize(self._amount * rate.rate_decimal(), target_scale, rounding_mode)
         return Money(amt, rate.to, target_scale, rate.as_of, rate.source or self.provenance)
 
     def allocate(self, ratios: List[Union[str, int, float, Decimal]]) -> List["Money"]:
@@ -164,7 +171,7 @@ class Money:
             if i == len(ps) - 1:
                 share = self._amount - alloc
             else:
-                share = (self._amount * p / total).to_decimal_places(self.scale, 1)  # type: ignore[attr-defined]
+                share = _quantize((self._amount * p / total), self.scale)
             m = Money(share, self.currency, self.scale, self.as_of, self.provenance)
             res.append(m)
             alloc += share
@@ -184,13 +191,13 @@ class Money:
     def to_format(self, decimals: Optional[int] = None, symbol: Optional[str] = None) -> str:
         d = decimals if decimals is not None else self.scale
         s = f"{symbol} " if symbol else ""
-        # to_fixed like
-        return f"{s}{self._amount.to_fixed(d) if hasattr(self._amount, 'to_fixed') else format(self._amount, f'.{d}f')} {self.currency}"
+        q = _quantize(self._amount, d)
+        return f"{s}{q} {self.currency}"
 
     def __str__(self) -> str:
         # Mirror primary toString using scale
         try:
-            q = self._amount.quantize(Decimal('1.' + '0' * self.scale))
+            q = _quantize(self._amount, self.scale)
             return f"{q} {self.currency}"
         except Exception:
             return f"{self._amount} {self.currency}"

@@ -98,10 +98,48 @@ def test_canonical_artifact_validator():
     assert not v2["ok"]
 
 
+def test_allocate_edges_and_remainder():
+    """Test remainder-to-last rule and exact sums (mirrors TS allocate)."""
+    m = Money.from_("100", "USD")
+    parts = m.allocate([0.5, 0.3, 0.2])
+    assert sum(p.to_decimal() for p in parts) == Decimal("100")
+    # Check last gets any remainder in non-nice cases
+    m2 = Money.from_("1", "USD")
+    parts2 = m2.allocate([Decimal("1")/3, Decimal("1")/3, Decimal("1")/3])
+    total = sum(p.to_decimal() for p in parts2)
+    assert total == Decimal("1")
+    assert len(parts2) == 3
+
+
+def test_golden_replay_from_ts_style_sequence():
+    """Replay a simple sequence equivalent to TS verify-determinism and examples.
+    This is the start of 'replay golden sequence from TS examples' for Phase 1.
+    """
+    cash = Account("1000", "Cash", AccountType.Asset)
+    equity = Account("3000", "Equity", AccountType.Equity)
+    # Equivalent to capEntry 10000 + 2500
+    e1 = create_balanced_entry("c1", "2026-06-22", cash, equity, Money.from_("10000", "USD"), "Seed1")
+    e2 = create_balanced_entry("c2", "2026-06-22", cash, equity, Money.from_("2500", "USD"), "Seed2")
+
+    l = empty_ledger()
+    for e in [e1, e2]:
+        l, res = l.apply(e)
+        assert res.ok
+
+    assert l.balance(cash).to_decimal() == Decimal("12500")
+    assert l.verify_fundamental_equation([cash, equity])
+
+    # Determinism check
+    det = verify_determinism([e1, e2])
+    assert det["ok"]
+    assert det["ledger"].balance(cash).to_decimal() == Decimal("12500")
+
+
 if __name__ == "__main__":
     tests = [test_money_from_forbids_float, test_money_exact_add_sub, test_balanced_entry_and_validate,
              test_unbalanced_rejected, test_ledger_apply_immutable_and_balance,
-             test_determinism_and_equation, test_canonical_artifact_validator]
+             test_determinism_and_equation, test_canonical_artifact_validator,
+             test_allocate_edges_and_remainder, test_golden_replay_from_ts_style_sequence]
     passed = 0
     for t in tests:
         try:
