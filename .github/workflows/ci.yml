@@ -28,8 +28,8 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Verify (build + typecheck + test + determinism + persona)
+    - name: Verify (build + typecheck + test + determinism)
       run: npm run verify:full
 
 # Pinned actions + Node 22/24 matrix for stable, current runners.
-# verify:full = build + typecheck + test + determinism + persona (single source, no duplicated steps).
+# verify:full = build + typecheck + test + verify (determinism). Persona gate removed (historical). Ledger invariants always enforced.
