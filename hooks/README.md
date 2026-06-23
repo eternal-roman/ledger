@@ -1,22 +1,24 @@
 # Hooks for Ledger (Ledger Chad — Alpha Maxxing)
 
-Bash-first activation hooks for AI hosts (Claude Code etc.). Enforces Money.from, double-entry via validateEntry + Ledger.apply, canon, Zero-Skip. No unbalanced state. Double-Entry or Get Beta.
+Activation hooks (best-effort) for AI hosts. The real rules live in AGENTS.md + skills/ledger/SKILL.md. Slash commands and skills work independently of hooks. Enforces Money.from, double-entry via validateEntry + Ledger.apply, canon, Zero-Skip. No unbalanced state. Double-Entry or Get Beta.
 
 ## Files
-- `ledger-activate` — primary bash script.
-- `run-hook.cmd` — Windows wrapper (Git Bash + cmd).
-- `claude-codex-hooks.json` — SessionStart registration.
+- `hooks.json` — Grok-native (and compatible) SessionStart. Uses `GROK_PLUGIN_ROOT` + `CLAUDE_PLUGIN_ROOT`.
+- `claude-codex-hooks.json` — Claude/Codex compat SessionStart (points at run-hook.cmd).
+- `ledger-activate` — primary bash script (Git Bash friendly).
+- `run-hook.cmd` — polyglot Windows wrapper (Git Bash + cmd).
+- `ledger-activate.js` — Node implementation (primary for Grok/pwsh and pure-Node hosts).
 
-## Setup (Windows)
-Use Git Bash. Launch from Git Bash or use:
-```powershell
-.\scripts\with-git-bash.cmd "command"
-```
+## Setup (Windows / pwsh)
+- Grok (and node-based hosts): the JS + hooks/hooks.json path works without Git Bash.
+- Claude Code: prefer Git Bash or use `.\scripts\with-git-bash.cmd "command"`.
+- Fallbacks are fail-open.
 
-Fallback: `ledger-activate.js`.
+## Environment variables (plugin hooks)
+- `GROK_PLUGIN_ROOT` (and `CLAUDE_PLUGIN_ROOT` alias) point at the installed plugin dir.
 
 ## Customization
-See hookify + plugin-dev.
+See host hook tools (hookify, etc.).
 
-See CLAUDE.md, AGENTS.md, docs/claude-plugins.md.
+See AGENTS.md and README.
 

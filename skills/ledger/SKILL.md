@@ -40,7 +40,7 @@ Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility. Then code. U
 
 - `/ledger-verify` — check diff/snippet for invariants + citation requirements
 - `/ledger-audit` — whole project financial hygiene review
-- `/ledger-review` — full multi-layer review (kernel + superpowers verification + pr-review-toolkit + security)
+- `/ledger-review` — full multi-layer review (ledger kernel invariants + host verification agents when present + security)
 - `/ledger-cite` — retrieve canon-backed fact for a concept
 - `/ledger-reconcile` — turn assumptions into proper journal entries with citations
 - `/ledger-sim` — run deterministic scenario with seed and trace assumptions
@@ -55,10 +55,14 @@ See the package `AGENTS.md` and core implementation for the executable truth. Re
 
 ## Plugin Integration (when available)
 
-Combine with:
+Ledger layer (kernel + invariants) always runs.
+
+When the host provides equivalents (superpowers-style brainstorming/plans/TDD/verification-before-completion, pr-review-toolkit agents, security tools, etc.):
+- Combine them after ledger checks.
 - superpowers (brainstorming, writing-plans, test-driven-development, verification-before-completion)
 - pr-review-toolkit agents after changes (silent-failure-hunter, type-design-analyzer)
 - security-guidance (automatic)
-- skill-creator / plugin-dev when editing this or related files
+
+Otherwise: run full ledger invariants + hygiene and note "Ledger layer only (host verification equivalents not detected)".
 
 See references/plugin-integration.md for details.

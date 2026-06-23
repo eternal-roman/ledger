@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Ledger Chad — Alpha of the Ledger. Float-phobic alpha bookkeeper. Exact Money, double-entry, validated ledgers, canon citations. Cool. Calm. Collected. Alpha Maxxing. Mistakes do not ship, bro.",
   "type": "module",
   "main": "dist/index.js",
@@ -21,6 +21,7 @@
     "LICENSE",
     "AGENTS.md",
     "CLAUDE.md",
+    "plugin.json",
     ".claude-plugin",
     "examples",
     "skills",

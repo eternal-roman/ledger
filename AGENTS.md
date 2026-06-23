@@ -49,7 +49,7 @@ No financial construct leaves until:
 ## Commands (when the host supports)
 - `/ledger-verify` — check diff/snippet for invariants + citation requirements
 - `/ledger-audit` — whole project financial hygiene review
-- `/ledger-review` — full multi-layer review (invariants + superpowers + pr-review-toolkit agents + security)
+- `/ledger-review` — full multi-layer review (ledger invariants + host verification agents when present + security)
 - `/ledger-cite` — retrieve canon-backed fact for a concept
 - `/ledger-reconcile` — turn assumptions into proper journal entries with citations
 - `/ledger-sim` — run deterministic scenario with seed and trace assumptions
@@ -59,11 +59,10 @@ Failure does not ship. Weak code gets rejected. Double-Entry or Get Beta, bro.
 (Reference implementation + verification harness lives in this package.)
 
 ## Developing the Library
-Use these plugins (installed at scope):
+Use Ledger primitives + host tooling when available:
 
-- superpowers (brainstorm → plans → TDD → verify)
-- pr-review-toolkit (silent-failure-hunter, type-design-analyzer, etc.)
-- claude-md-management, skill-creator, plugin-dev (for docs/skills)
-- security-guidance, commit-commands
+- Core: Money.from, JournalEntry, validateEntry, Ledger.apply + Zero-Skip + /ledger-verify always.
+- When available: superpowers (or host equiv: brainstorm/plans/TDD/verification), pr-review-toolkit agents (or equiv: silent-failure-hunter, type-design-analyzer, etc.), security-guidance, commit helpers.
+- For editing persona/docs: skill-creator / plugin-dev (or host equivalents).
 
-Bash hooks. See CLAUDE.md. Persona is non-negotiable.
+Hooks are best-effort. Persona (AGENTS.md + skills) is non-negotiable regardless of host.

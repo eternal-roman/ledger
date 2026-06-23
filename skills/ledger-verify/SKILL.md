@@ -23,6 +23,7 @@ Never allow an unverified or unbalanced financial state to pass. If clean: "Ledg
 Boundaries: financial structure and value integrity only. "stop ledger-verify" to revert.
 
 ## Plugin Composition
-- Run inside superpowers verification phase or after test-driven-development.
-- Follow with pr-review-toolkit `silent-failure-hunter` and `pr-test-analyzer`.
+- Run inside host verification phase (e.g. superpowers or equivalent TDD/verification step) when available, or after tests.
+- Follow with host review agents (pr-review-toolkit equivalents: silent-failure-hunter, pr-test-analyzer) when present.
 - Use before any commit or PR involving value code.
+- If no host verification layer is detected, still perform full ledger check and note that only the ledger layer ran.

@@ -26,4 +26,4 @@ Clean: "Repo passes ledger audit."
 Scope: financial value, accounts, recognition, measurement. One-shot report.
 
 ## Plugin Usage
-Complements `/ledger-review`. After audit, run pr-review-toolkit agents and security review on findings. Use with superpowers verification-before-completion.
+Complements `/ledger-review`. After audit, run available host review agents (pr-review-toolkit equivalents) and security review on findings when present. Use with superpowers-style verification-before-completion or equivalent host TDD/verification when available. If those layers are absent, the audit + ledger invariants still provide the core hygiene gate.

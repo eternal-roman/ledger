@@ -1,29 +1,29 @@
-# Integration with Claude Code Plugins
+# Integration with AI Plugins / Hosts
 
-This skill is designed to work alongside installed plugins for rigorous development:
+Ledger kernel rules are host-agnostic. The portable parts are AGENTS.md, skills/*/SKILL.md, and commands/*.toml.
 
-- **superpowers** (required for non-trivial changes):
-  - Always begin with `brainstorming` or `writing-plans`.
-  - Follow `test-driven-development`.
-  - Finish with `verification-before-completion`.
+## When the host has Claude Code plugins (superpowers, pr-review-toolkit, etc.)
+- **superpowers** (or host equivalent for non-trivial changes):
+  - Always begin with brainstorming or writing-plans.
+  - Follow test-driven-development.
+  - Finish with verification-before-completion.
 
-- **pr-review-toolkit**:
-  - After writing or modifying money logic, ask for:
-    - `silent-failure-hunter` (no hidden errors in balances or calculations)
-    - `type-design-analyzer` (strong invariants on Money, Entry, Ledger)
-    - `pr-test-analyzer` (coverage of kernel edge cases)
-  - Run `code-simplifier` only after passing all ledger checks (kernel must stay minimal).
+- **pr-review-toolkit** (or host review agents):
+  - After money logic: silent-failure-hunter, type-design-analyzer, pr-test-analyzer.
+  - code-simplifier only after ledger checks pass.
 
-- **security-guidance**:
-  - Automatic on file edits. Pay special attention to any future API surfaces, serialization of amounts, or rate inputs.
+- **security-guidance** (or equivalent): automatic on edits involving value.
 
-- **claude-md-management / skill-creator / plugin-dev**:
-  - When editing this skill or AGENTS.md, use the corresponding skills to keep quality high.
-  - Follow progressive disclosure: frontmatter → concise SKILL.md → references/.
+- **skill-creator / plugin-dev** (or host equivalents): when editing persona or skills.
 
-- **commit-commands**:
-  - Prefer `commit-push-pr` for changes that touch core.
+When in doubt: host planning/TDD → ledger kernel + /ledger-verify → host review agents → security → ship.
 
-When in doubt: superpowers → kernel → verify → pr-review → security → commit.
+## Grok and other hosts
+Grok discovers via skills/ + commands/ + optional plugin.json / hooks/hooks.json (this package provides them).
+- Run the ledger skills and /ledger-* commands directly.
+- For /ledger-review: the ledger layer always executes. If the workspace has skills or agents that provide TDD/verification/type analysis equivalents, combine them. Otherwise the review explicitly notes "Ledger layer only".
+- AGENTS.md or individual skills can be copied for hosts without plugin support.
 
-See CLAUDE.md and AGENTS.md.
+Core invariants (Money.from, validateEntry, Ledger.apply, canon) are non-negotiable everywhere.
+
+See AGENTS.md, main ledger skill, and README for usage.

@@ -1,6 +1,8 @@
 # Claude Code Plugin Setup
 
-Ledger uses these plugins for strict standards:
+Ledger is a multi-host plugin. Grok users: run `grok plugin install /path/to/ledger --trust` (see main README for Grok usage and `grok plugin` commands). The same skills and commands work.
+
+Ledger uses these plugins (or host equivalents) for strict standards:
 
 - superpowers, pr-review-toolkit, skill-creator, plugin-dev, claude-md-management, security-guidance, hookify, commit-commands, code-review, project-artifact.
 

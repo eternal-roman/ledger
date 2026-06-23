@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.3] - Unreleased
+- Grok-native plugin support: root `plugin.json`, `hooks/hooks.json` (GROK_PLUGIN_ROOT + node activation via ledger-activate.js).
+- Cross-platform hook activation (pwsh/Grok no longer requires Git Bash for the echo banner; bash path retained for Claude).
+- Made `/ledger-review` (and supporting skills) gracefully degrade: always run full ledger invariants; note "Ledger layer only" when superpowers/pr-review-toolkit (or host equivalents) are not present. Updated AGENTS.md, commands, references/plugin-integration.md.
+- Documentation: prominent Grok install (`grok plugin install ... --trust`), library consumption instructions, multi-host notes in README and docs/.
+- Packaging: added `plugin.json` to "files", version alignment (0.7.3 across package.json, plugin.json, .claude-plugin/plugin.json, package-lock.json), persona checker now covers Grok manifest + hooks/hooks.json.
+- No changes to kernel or tests. All existing Claude surfaces preserved.
+
 ## [0.7.2] - 2026-06-23
 
 - ponytail patch: remove YAGNI ChartOfAccounts (unused outside tests/comments), consolidate dupe ROUND_HALF_UP into core export, delete empty speculative standards/ dirs.
