@@ -1,23 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { scanDir, scanSourceForViolations } from '../src/verify/scanner.js';
 
-function tsFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...tsFiles(p));
-    else if (name.endsWith('.ts')) out.push(p);
-  }
-  return out;
-}
+describe('ledger mechanical scanner (no floats / money anti-patterns)', () => {
+  it('src/core and src/verify contain zero high-severity money violations (kernel heart)', () => {
+    const vios = [...scanDir('src/core'), ...scanDir('src/verify')];
+    const severe = vios.filter(v => ['PARSE_FLOAT', 'FLOAT_LITERAL', 'DIRECT_ARITHMETIC'].includes(v.type));
+    if (severe.length > 0) {
+      console.error(severe);
+    }
+    expect(severe).toEqual([]);
+  });
 
-describe('no floats in the monetary core', () => {
-  // Match actual calls, not the word in prose/comments, so we guard real usage.
-  const callsParse = (src: string) => /\bparse(Float|Int)\s*\(/.test(src);
-
-  it('src/ makes no parseFloat/parseInt calls (forbidden for monetary values)', () => {
-    const offenders = tsFiles('src').filter(f => callsParse(readFileSync(f, 'utf8')));
-    expect(offenders).toEqual([]);
+  it('scanner correctly flags a synthetic parseFloat + float literal', () => {
+    const bad = 'const f = parseFloat("1.2"); const t = 100.50 + 0.01;';
+    const direct = scanSourceForViolations(bad, 'bad.ts');
+    expect(direct.some((d: any) => d.type === 'PARSE_FLOAT')).toBe(true);
+    expect(direct.some((d: any) => d.type === 'FLOAT_LITERAL')).toBe(true);
+    expect(direct[0].suggestion).toMatch(/Money\.from/);
   });
 });

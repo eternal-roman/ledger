@@ -239,6 +239,59 @@ export const ifrsSeed = {
         domain: ["accounting", "assets", "inventory", "measurement"]
       },
       confidence: 1.0
+    },
+    {
+      id: "ifrs15-5step",
+      type: "Rule",
+      content: {
+        statement: "IFRS 15: 5-step revenue recognition model — (1) identify contract with customer, (2) identify performance obligations, (3) determine transaction price, (4) allocate transaction price, (5) recognize revenue when/as performance obligations satisfied."
+      },
+      provenance: {
+        source_id: "ifrs-15",
+        locator: "IFRS 15.9-30",
+        effective_from: "2018-01",
+        jurisdiction: ["IFRS"]
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "revenue"]
+      },
+      confidence: 1.0
+    },
+    {
+      id: "ifrs16-initial-liability",
+      type: "Rule",
+      content: {
+        statement: "IFRS 16: At commencement, lessee measures lease liability at present value of lease payments not paid. Initial direct costs, prepayments, dismantling included in ROU asset. Subsequent: interest on liability + depreciation on ROU."
+      },
+      provenance: {
+        source_id: "ifrs-16",
+        locator: "IFRS 16.26-29, 36",
+        effective_from: "2019-01",
+        jurisdiction: ["IFRS"]
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "leases", "liabilities"]
+      },
+      confidence: 1.0
+    },
+    {
+      id: "ias2-net-realizable",
+      type: "Rule",
+      content: {
+        statement: "IAS 2: Net realizable value = estimated selling price in ordinary course of business less estimated costs of completion and costs necessary to make the sale. Write-downs to NRV are recognized as expense; reversals limited."
+      },
+      provenance: {
+        source_id: "ias-2",
+        locator: "IAS 2.6, 28-33",
+        effective_from: "2003-as-revised"
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "inventory", "measurement"]
+      },
+      confidence: 1.0
     }
   ] satisfies KnowledgeNode[],
   edges: [

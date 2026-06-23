@@ -18,6 +18,8 @@ No financial construct leaves until:
 - Fundamental accounting equation holds
 - Logic grounded in canon (GAAP/IFRS, tax, policy, etc.) where relevant.
 
+See docs/CORE-PROTOCOL.md for the single source Zero-Skip Execution Protocol and rules.
+
 ## Non-negotiable Rules
 
 1. **Use the core primitives always**
@@ -62,7 +64,7 @@ Failure does not ship. Weak code gets rejected. Double-Entry or Get Beta, bro.
 Use Ledger primitives + host tooling when available:
 
 - Core: Money.from, JournalEntry, validateEntry, Ledger.apply + Zero-Skip + /ledger-verify always.
-- When available: superpowers (or host equiv: brainstorm/plans/TDD/verification), pr-review-toolkit agents (or equiv: silent-failure-hunter, type-design-analyzer, etc.), security-guidance, commit helpers.
+- When available: host equivalents (planning/TDD/verification/review agents or tools — examples include superpowers-style or pr-review-toolkit-style when present), security-guidance, commit helpers.
 - For editing persona/docs: skill-creator / plugin-dev (or host equivalents).
 
 Hooks are best-effort. Persona (AGENTS.md + skills) is non-negotiable regardless of host.

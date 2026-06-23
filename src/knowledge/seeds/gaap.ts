@@ -54,6 +54,23 @@ export const gaapSeed = {
         domain: ["accounting"]
       },
       confidence: 1.0
+    },
+    {
+      id: "gaap-matching-principle-detail",
+      type: "Principle",
+      content: {
+        statement: "Matching principle requires that costs directly associated with revenue generation (e.g. COGS, sales commissions) be recognized in the same period as the related revenue. Accruals and deferrals implement this; systematic allocation for long-lived assets."
+      },
+      provenance: {
+        source_id: "fasb-concepts-6",
+        locator: "CON 6 / ASC 605/606 application guidance",
+        effective_from: "ongoing"
+      },
+      dimensions: {
+        standard_family: ["GAAP"],
+        domain: ["accounting", "revenue", "expense"]
+      },
+      confidence: 0.95
     }
   ] satisfies KnowledgeNode[],
   edges: [

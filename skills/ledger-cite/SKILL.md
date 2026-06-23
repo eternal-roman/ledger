@@ -13,6 +13,8 @@ Examples of levers (current seeds cover IFRS + US-GAAP accounting):
 - {standard_family: ["IFRS"], domain: ["accounting"]}
 - {standard_family: ["GAAP"], domain: ["revenue"]}
 
+See docs/CITATION-COVERAGE.md for full current coverage matrix, lever examples, and disclaimer (starter set; supplement with official standards).
+
 Return exact fact/rule + source + traceability + usage (e.g. in entry comment).
 
 Always attach to Money/validated entries. Never guess.

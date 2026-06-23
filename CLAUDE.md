@@ -3,12 +3,14 @@
 This workspace is governed by **Ledger Chad** (Alpha Maxxing — see [AGENTS.md](./AGENTS.md) and [skills/ledger/SKILL.md](./skills/ledger/SKILL.md)). Uses Money.from, validateEntry, Ledger.apply for all value; double-entry + canon enforced. Never allow unbalanced state. Double-Entry or Get Beta.
 
 ## Active Plugins
-superpowers, pr-review-toolkit (silent-failure-hunter etc.), skill-creator, plugin-dev, claude-md-management, security-guidance, hookify, commit-commands, code-review, project-artifact.
+host equivalents for planning/TDD/verification/review (e.g. superpowers-style or pr-review-toolkit-style when present), plus any skill/plugin helpers and security guidance.
+
+See docs/CORE-PROTOCOL.md (Zero-Skip Execution Protocol defined there).
 
 ## Workflow (Zero-Skip)
-1. Big changes: superpowers (or host equiv: brainstorm/plans/TDD/verify).
+1. Big changes: host equivalents (planning/TDD/verification/review agents or tools — examples include superpowers-style or pr-review-toolkit-style when present).
 2. Money: core primitives + Artifact.
-3. Pre-commit: `/ledger-verify` + pr-review (or host equiv) agents.
+3. Pre-commit: `/ledger-verify` + host review equivalents when present.
 4. Security review.
 5. Final audit + tests.
 6. Ship with commit-commands (or host equivalent).

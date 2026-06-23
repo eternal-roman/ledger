@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased / next]
+- Adoption & remediation per full review (Iteration-3 plan):
+  - Standalone `scripts/ledger-verify.ts` + `bin/ledger-verify.cjs` + `npm run verify:ledger` (mechanical scanner + real runTrace / makeCanonicalArtifact prove path).
+  - Reusable `src/verify/scanner.ts` (exported) + refactored no-floats-guard + dedicated scanner tests.
+  - Adoption surfaces: QUICKSTART-SKILLS, SUCCESS-CHECKLIST, ANTI-PATTERNS, EXAMPLE-OUTPUT, cursor adapter, adapters/README.
+  - SCOPE-AND-LAYERS.md + CITATION-COVERAGE.md + CORE-PROTOCOL.md.
+  - Neutral `skills/ledger-core/SKILL.md`.
+  - Reduced host-plugin coupling language and commands honesty notes.
+  - Dogfood demo (`examples/kernel-proof-demo.ts`).
+  - All new paths exercised by plan verification commands; verify:full green.
+
 ## [0.7.7] - 2026-06-23
 - Patch release: Python reference parity + version alignment.
   - Python ref `Money` now serializes `scale` (`to_json`/`from_json`), mirroring the TS v0.7.6 fix so both kernels roundtrip asset amounts at the correct scale without the global resolver (added `test_from_json_restores_explicit_asset_scale`).
