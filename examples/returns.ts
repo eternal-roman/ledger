@@ -2,7 +2,12 @@
  * Investment returns example: time-weighted (TWR) and money-weighted (IRR) returns
  * computed deterministically in exact decimal.
  */
-import { Money, timeWeightedReturn, moneyWeightedReturn } from '../src/index.js';
+// Support both "after npm install ledger" and "run from source tree"
+const L: any = await (async () => {
+  try { return await import('ledger'); } catch { return await import('../src/index.js'); }
+})();
+
+const { Money, timeWeightedReturn, moneyWeightedReturn } = L;
 
 const twr = timeWeightedReturn([
   { begin: Money.from('10000', 'USD'), end: Money.from('11000', 'USD'), flow: Money.from('0', 'USD') },

@@ -8,7 +8,7 @@ export * from './verify/scanner.js';
 
 // Investing & financial-services layer (all expressed through the kernel):
 // asset registry, trading/custody postings, portfolio cost-basis & valuation,
-// investment math (returns, allocation, rebalancing), and crypto exchange (CEX) ops.
+// investment math (returns, allocation, rebalancing), and crypto transfers (one-shot/two-phase in-transit + network fees).
 export * from './instruments/index.js';
 export * from './trading/index.js';
 export * from './portfolio/index.js';

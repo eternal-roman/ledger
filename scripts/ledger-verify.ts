@@ -8,31 +8,57 @@
  *   npx tsx scripts/ledger-verify.ts --scan src
  *   npx tsx scripts/ledger-verify.ts --prove some-entries.json
  *
- * After `npm run build` (when bin wired):
+ * After install (tarball/git):
  *   npx ledger-verify --scan .
+ *   npx ledger-verify --prove entries.json
  *
- * Reuses: scan* from ./src/verify/scanner.js + runTrace, makeCanonicalArtifact, etc.
+ * Reuses: scan* + real kernel (Money, createEntry/makeLine, runTrace, makeCanonicalArtifact).
+ * Loads dist first (packaged) or src fallback (dev).
  */
 
 import { readFileSync, existsSync } from 'node:fs';
-import { scanDir, scanSourceForViolations } from '../src/verify/scanner.js';
 
-// Dynamic import so the script works from source with tsx before full build
+// Dynamic load from built dist (packaged install) with fallback to src (dev, tsx transpiles .ts via .js specifier)
+async function loadScanner() {
+  try {
+    return await import('../dist/verify/scanner.js');
+  } catch {
+    return await import('../src/verify/scanner.js');
+  }
+}
+
 async function loadKernel() {
-  const mod = await import('../src/index.js');
-  return {
-    runTrace: mod.runTrace,
-    makeCanonicalArtifact: mod.makeCanonicalArtifact,
-    validateEntry: mod.validateEntry,
-    JournalEntry: mod.JournalEntry,
-    Money: mod.Money,
-    Account: mod.Account,
-    AccountType: mod.AccountType,
-    createBalancedEntry: mod.createBalancedEntry,
-    createEntry: mod.createEntry,
-    makeLine: mod.makeLine,
-    emptyLedger: mod.emptyLedger,
-  };
+  try {
+    const mod = await import('../dist/index.js');
+    return {
+      runTrace: mod.runTrace,
+      makeCanonicalArtifact: mod.makeCanonicalArtifact,
+      validateEntry: mod.validateEntry,
+      JournalEntry: mod.JournalEntry,
+      Money: mod.Money,
+      Account: mod.Account,
+      AccountType: mod.AccountType,
+      createBalancedEntry: mod.createBalancedEntry,
+      createEntry: mod.createEntry,
+      makeLine: mod.makeLine,
+      emptyLedger: mod.emptyLedger,
+    };
+  } catch {
+    const mod = await import('../src/index.js');
+    return {
+      runTrace: mod.runTrace,
+      makeCanonicalArtifact: mod.makeCanonicalArtifact,
+      validateEntry: mod.validateEntry,
+      JournalEntry: mod.JournalEntry,
+      Money: mod.Money,
+      Account: mod.Account,
+      AccountType: mod.AccountType,
+      createBalancedEntry: mod.createBalancedEntry,
+      createEntry: mod.createEntry,
+      makeLine: mod.makeLine,
+      emptyLedger: mod.emptyLedger,
+    };
+  }
 }
 
 function printViolations(vs: any[]) {
@@ -83,12 +109,18 @@ async function main() {
     console.log('ledger-verify [--scan <path|->] [--prove <json>] [--json] [--version] [--help]');
     console.log('  --scan path   : static scan for money anti-patterns (float, parseFloat, native arith, mutation)');
     console.log('  --scan -      : scan stdin (e.g. a diff)');
-    console.log('  --prove file  : load simple entry data and run real runTrace + makeCanonicalArtifact');
+    console.log('  --prove file  : load JSON entries (general lines+side or simple), run real kernel: runTrace + makeCanonicalArtifact + equation');
+    console.log('  --prove -     : read JSON from stdin');
     console.log('  --version     : print version');
+    console.log('');
+    console.log('Standalone after tarball/git install: npx ledger-verify --scan .');
+    console.log('Uses real Money.from / JournalEntry / Ledger from the package. No floats.');
     process.exit(0);
   }
 
   if (args.scan !== undefined) {
+    const scanner = await loadScanner();
+    const { scanDir, scanSourceForViolations } = scanner;
     let violations: any[] = [];
     const target = String(args.scan || '.');
     if (target === '-' || target === '') {
@@ -113,14 +145,20 @@ async function main() {
 
   if (args.prove) {
     const p = String(args.prove);
-    if (!existsSync(p)) {
-      console.error('Prove file not found:', p);
-      process.exit(2);
+    let dataStr: string;
+    if (p === '-' || p === '') {
+      dataStr = readFileSync(0, 'utf8');
+    } else {
+      if (!existsSync(p)) {
+        console.error('Prove file not found:', p);
+        process.exit(2);
+      }
+      dataStr = readFileSync(p, 'utf8');
     }
     let data: any;
-    try { data = JSON.parse(readFileSync(p, 'utf8')); } catch (e) { console.error('Bad JSON'); process.exit(2); }
+    try { data = JSON.parse(dataStr); } catch (e) { console.error('Bad JSON'); process.exit(2); }
 
-    const k = await loadKernel();
+    const k: any = await loadKernel();
     // Accept either raw array or {entries: [...]}. Build proper entries using kernel factories when possible.
     const rawEntries = Array.isArray(data) ? data : (data.entries || []);
     const entries = rawEntries.map((e: any) => {

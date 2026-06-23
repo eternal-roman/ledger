@@ -75,9 +75,19 @@ Standalone CLI (mechanical verification, no LLM required):
 # after install from tarball/git (includes bin + scripts)
 npx ledger-verify --help
 npx ledger-verify --scan .
-# or directly during dev
-npx tsx node_modules/ledger/scripts/ledger-verify.ts --scan src
+npx ledger-verify --prove entries.json
+# or directly during dev (from repo)
+npx tsx scripts/ledger-verify.ts --scan src
 ```
+The CLI uses the real package kernel (Money.from + JournalEntry factories + runTrace + artifacts). Proven to work after `npm pack` + `npm install <tgz>`.
+
+Examples are included and runnable after install too:
+```bash
+npx tsx node_modules/ledger/examples/personal-ledger.ts
+npx tsx node_modules/ledger/examples/crypto-cex.ts
+# etc.
+```
+All examples use the public 'ledger' entrypoint (or fallback in source tree).
 
 The plugin install (Grok/Claude) also includes `dist/` so the runtime is available to the host if needed.
 
@@ -167,8 +177,7 @@ valuePortfolio(l, priceBook, 'USD');                 // mark-to-market into a re
   `PriceBook`/`valuePortfolio` consolidation — fail-closed on any unmarked asset.
 - **`investing/`** — `timeWeightedReturn`, `moneyWeightedReturn` (IRR, deterministic with an explicit
   `converged` flag), allocation drift, and `planRebalance` (plan only; execute via `fillToEntries`).
-- **`crypto/`** — per-venue exchange charts and inter-exchange transfers (one-shot or two-phase
-  in-transit), network fees burned.
+- **`crypto/`** — inter-exchange transfers (one-shot or two-phase in-transit) and network fees (via transfers layer on the kernel). See `examples/crypto-cex.ts` for CEX-style custody/fills/PnL.
 
 Cost basis rides in the kernel's audit-hashed line `tags`, so lots and P&L are reproducible from the
 ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `examples/returns.ts`.

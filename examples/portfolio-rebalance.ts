@@ -2,12 +2,17 @@
  * Portfolio rebalancing example: value a multi-asset book, measure drift from a
  * target allocation, and plan the trades to correct it (then execute one).
  */
-import {
+// Support both "after npm install ledger" and "run from source tree"
+const L: any = await (async () => {
+  try { return await import('ledger'); } catch { return await import('../src/index.js'); }
+})();
+
+const {
   Money, emptyLedger,
   defaultAssetRegistry, installAssetScales,
   depositToEntry, fillToEntries,
   PriceBook, valuePortfolio, allocationDrift, planRebalance,
-} from '../src/index.js';
+} = L;
 
 installAssetScales(defaultAssetRegistry());
 
@@ -39,7 +44,7 @@ for (const t of plan.trades) {
 }
 
 // Execute the ETH buy leg as a demonstration
-const ethBuy = plan.trades.find(t => t.asset === 'ETH');
+const ethBuy = plan.trades.find((t: any) => t.asset === 'ETH');
 if (ethBuy) {
   post(fillToEntries({ id: 'rb-eth', effectiveDate: '2026-06-22', venue: 'BROKER', base: 'ETH', quote: 'USD',
     side: 'buy', quantity: ethBuy.quantity, price: Money.from('3000', 'USD') }));

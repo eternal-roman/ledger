@@ -3,13 +3,12 @@
  * Demonstrates exact Money, double-entry enforcement, immutable Ledger,
  * and fundamental equation verification.
  */
-import {
-  Money,
-  Account,
-  AccountType,
-  createBalancedEntry,
-  emptyLedger,
-} from '../src/index.js';
+// Support both "after npm install ledger" and "run from source tree"
+const L: any = await (async () => {
+  try { return await import('ledger'); } catch { return await import('../src/index.js'); }
+})();
+
+const { Money, Account, AccountType, createBalancedEntry, emptyLedger } = L;
 
 const checking = new Account('100', 'Checking Account', AccountType.Asset);
 const salary = new Account('400', 'Salary Income', AccountType.Income);
