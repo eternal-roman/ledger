@@ -1,0 +1,420 @@
+/**
+ * Tool registry for the Ledger MCP server.
+ *
+ * Every tool delegates to the real @eternal-roman/ledger kernel — exact decimal
+ * Money, kernel-enforced double-entry, immutable append-only Ledger, and the
+ * SHA-256 audit-hash chain. Tools are stateless: ledger state travels in and out
+ * as JSON, so calls are reproducible and replayable. Nothing here re-implements
+ * financial logic; it is an adapter that lets an agent prove instead of guess.
+ */
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import {
+  Money,
+  validateEntry,
+  runTrace,
+  verifyDeterminism,
+  makeCanonicalArtifact,
+  loadDefaultKnowledge,
+  fetch as knowledgeFetch,
+} from '@eternal-roman/ledger';
+import { z } from 'zod';
+import {
+  entrySchema,
+  ledgerSchema,
+  toUnvalidatedEntry,
+  parseLedger,
+  findAccount,
+  toMoney,
+  roundingModeFor,
+  makeFxRate,
+  type EntryInput,
+} from './kernel-bridge.js';
+
+type ToolResult = {
+  content: { type: 'text'; text: string }[];
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+};
+
+function ok(data: Record<string, unknown>): ToolResult {
+  return {
+    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+    structuredContent: data,
+  };
+}
+
+function fail(message: string, extra: Record<string, unknown> = {}): ToolResult {
+  const data = { ok: false, error: message, ...extra };
+  return {
+    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+    structuredContent: data,
+    isError: true,
+  };
+}
+
+const moneyOperand = z.object({
+  amount: z.string().describe('Exact decimal string, never a float literal'),
+  currency: z.string(),
+});
+
+export function registerTools(server: McpServer): void {
+  // 1. money_compute — exact decimal arithmetic so the agent never does math in-token.
+  server.registerTool(
+    'money_compute',
+    {
+      title: 'Exact money arithmetic',
+      description:
+        'Perform EXACT decimal money arithmetic with the kernel (decimal.js, never floats). ' +
+        'Use this for every monetary calculation instead of computing in your own tokens. ' +
+        'Ops: add, sub (same currency), mul, div (money x scalar), allocate (split by ratios, ' +
+        'remainder to last), convert (via FX rate), compare.',
+      inputSchema: {
+        op: z.enum(['add', 'sub', 'mul', 'div', 'allocate', 'convert', 'compare', 'negate', 'abs']),
+        a: moneyOperand,
+        b: moneyOperand.optional().describe('Second operand for add/sub/compare'),
+        scalar: z.string().optional().describe('Scalar for mul/div, as a decimal string'),
+        ratios: z.array(z.string()).optional().describe('Ratios for allocate'),
+        rate: z
+          .object({ from: z.string(), to: z.string(), rate: z.string() })
+          .optional()
+          .describe('FX rate for convert'),
+        roundingMode: z.enum(['HALF_UP']).optional().describe('Rounding for mul/div/convert'),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const a = toMoney(args.a.amount, args.a.currency);
+        const rm = roundingModeFor(args.roundingMode);
+        switch (args.op) {
+          case 'add':
+          case 'sub': {
+            if (!args.b) return fail(`op "${args.op}" requires operand b`);
+            const b = toMoney(args.b.amount, args.b.currency);
+            const r = args.op === 'add' ? a.add(b) : a.sub(b);
+            return ok({ ok: true, result: r.toString(), currency: r.currency });
+          }
+          case 'mul':
+          case 'div': {
+            if (args.scalar == null) return fail(`op "${args.op}" requires scalar`);
+            const r = args.op === 'mul' ? a.mul(args.scalar, rm) : a.div(args.scalar, rm);
+            return ok({ ok: true, result: r.toString(), currency: r.currency });
+          }
+          case 'allocate': {
+            if (!args.ratios || args.ratios.length === 0)
+              return fail('op "allocate" requires non-empty ratios');
+            const parts = a.allocate(args.ratios);
+            return ok({
+              ok: true,
+              parts: parts.map((p) => p.toString()),
+              sumsToOriginal: true,
+            });
+          }
+          case 'convert': {
+            if (!args.rate) return fail('op "convert" requires rate');
+            const r = a.convert(makeFxRate(args.rate), rm);
+            return ok({ ok: true, result: r.toString(), currency: r.currency });
+          }
+          case 'compare': {
+            if (!args.b) return fail('op "compare" requires operand b');
+            const b = toMoney(args.b.amount, args.b.currency);
+            return ok({ ok: true, compare: a.compare(b) });
+          }
+          case 'negate':
+            return ok({ ok: true, result: a.negate().toString() });
+          case 'abs':
+            return ok({ ok: true, result: a.abs().toString() });
+          default:
+            return fail(`unknown op`);
+        }
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 2. entry_validate — the guardrail. Reports structured violations, never throws.
+  server.registerTool(
+    'entry_validate',
+    {
+      title: 'Validate a journal entry',
+      description:
+        'Run the kernel invariant check on a proposed journal entry: balanced debits=credits ' +
+        'per currency, >=2 lines, positive amounts, no sub-scale precision, valid ISO date, no ' +
+        'silent currency mix. Returns { ok, violations[] }. Always validate before posting.',
+      inputSchema: { entry: entrySchema },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const entry = toUnvalidatedEntry(args.entry as EntryInput);
+        const result = validateEntry(entry);
+        return ok({ ok: result.ok, violations: result.violations });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 3. ledger_post — validate then apply; fail-closed (never posts an invalid entry).
+  server.registerTool(
+    'ledger_post',
+    {
+      title: 'Post an entry to a ledger',
+      description:
+        'Validate and apply a journal entry to a (serialized) ledger, returning the new ledger ' +
+        'JSON plus its audit hash. The kernel refuses unbalanced state: an invalid entry is NOT ' +
+        'posted and its violations are returned instead. Omit "ledger" to start from empty.',
+      inputSchema: { ledger: ledgerSchema, entry: entrySchema },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const ledger = parseLedger(args.ledger);
+        const entry = toUnvalidatedEntry(args.entry as EntryInput);
+        const { ledger: next, result } = ledger.apply(entry);
+        if (!result.ok) {
+          return ok({ ok: false, posted: false, violations: result.violations });
+        }
+        return ok({
+          ok: true,
+          posted: true,
+          ledger: next.toJSON(),
+          auditHash: next.auditHash(),
+          entryCount: next.entries.length,
+        });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 4. ledger_balance — net balance for an account (fails closed on multi-currency).
+  server.registerTool(
+    'ledger_balance',
+    {
+      title: 'Account balance',
+      description:
+        'Net balance for an account in a serialized ledger, per its normal balance side. Pass ' +
+        '"currency" for multi-currency accounts (otherwise fails closed). Returns all currencies ' +
+        'via balancesByCurrency too.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        accountCode: z.string(),
+        asOf: z.string().optional().describe('Optional as-of date YYYY-MM-DD'),
+        currency: z.string().optional(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const ledger = parseLedger(args.ledger);
+        const account = findAccount(ledger, args.accountCode);
+        if (!account) return fail(`account ${args.accountCode} not found in ledger`);
+        const byCurrency = ledger
+          .balancesByCurrency(account, args.asOf)
+          .map((m) => m.toString());
+        const balance = ledger.balance(account, args.asOf, args.currency).toString();
+        return ok({ ok: true, accountCode: account.code, balance, byCurrency });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 5. ledger_trial_balance — all accounts and net balances.
+  server.registerTool(
+    'ledger_trial_balance',
+    {
+      title: 'Trial balance',
+      description: 'Every account in a serialized ledger with its current net balance (one row per currency).',
+      inputSchema: { ledger: ledgerSchema },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const ledger = parseLedger(args.ledger);
+        const rows = ledger.trialBalance().map(({ account, balance }) => ({
+          accountCode: account.code,
+          accountName: account.name,
+          type: account.type,
+          balance: balance.toString(),
+        }));
+        return ok({ ok: true, rows });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 6. ledger_verify_equation — the fundamental accounting equation, per currency.
+  server.registerTool(
+    'ledger_verify_equation',
+    {
+      title: 'Verify accounting equation',
+      description:
+        'Verify Assets + Expenses = Liabilities + Equity + Income (per currency) holds for a ' +
+        'serialized ledger. Returns { balanced }.',
+      inputSchema: { ledger: ledgerSchema },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const ledger = parseLedger(args.ledger);
+        return ok({ ok: true, balanced: ledger.verifyFundamentalEquation() });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 7. ledger_audit_hash — tamper-evident SHA-256 chain over the whole ledger.
+  server.registerTool(
+    'ledger_audit_hash',
+    {
+      title: 'Audit hash',
+      description:
+        'Compute the tamper-evident SHA-256 audit-hash chain for a serialized ledger. Any change ' +
+        'to any field or line ordering yields a different hash.',
+      inputSchema: { ledger: ledgerSchema },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const ledger = parseLedger(args.ledger);
+        return ok({ ok: true, auditHash: ledger.auditHash(), entryCount: ledger.entries.length });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 8. ledger_verify_determinism — rebuild twice, prove byte-identical + equation holds.
+  server.registerTool(
+    'ledger_verify_determinism',
+    {
+      title: 'Verify determinism',
+      description:
+        'Rebuild a serialized ledger twice and confirm the two runs are byte-for-byte identical ' +
+        'via their audit hashes AND that the fundamental equation holds. Returns { ok, hash }.',
+      inputSchema: { ledger: ledgerSchema },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const ledger = parseLedger(args.ledger);
+        const entries = [...ledger.entries];
+        const r = verifyDeterminism(entries);
+        return ok({ ok: r.ok, hash: r.hash });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 9. trace_run — step-by-step replay with per-step balances + equation + hash prefix.
+  server.registerTool(
+    'trace_run',
+    {
+      title: 'Trace a sequence of entries',
+      description:
+        'Replay a sequence of journal entries on a fresh ledger, capturing balances, the ' +
+        'fundamental equation, and an audit-hash prefix at every step. This is the agent-facing ' +
+        'audit trail. Fails closed with the offending step if any entry is invalid.',
+      inputSchema: { entries: z.array(entrySchema).min(1) },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const entries = (args.entries as EntryInput[]).map(toUnvalidatedEntry);
+        const trace = runTrace(entries);
+        return ok({
+          ok: trace.ok,
+          finalEquation: trace.finalEquation,
+          finalHash: trace.finalHash,
+          checkpoints: trace.checkpoints,
+        });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 10. cite_lookup — grounded IFRS/GAAP citations from the knowledge graph.
+  server.registerTool(
+    'cite_lookup',
+    {
+      title: 'Look up accounting citations',
+      description:
+        'Retrieve matching IFRS/GAAP facts and citations from the kernel knowledge graph for a ' +
+        'query (e.g. "revenue recognition", "lease", "cost basis"). Use to ground claims in canon ' +
+        'rather than asserting from memory.',
+      inputSchema: {
+        query: z.string(),
+        levers: z.record(z.string()).optional().describe('Optional dimension filters'),
+        asOf: z.string().optional(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const graph = loadDefaultKnowledge();
+        const result = knowledgeFetch(graph, args.query, args.levers ?? {}, args.asOf);
+        return ok({
+          ok: true,
+          citations: result.citations,
+          nodes: result.nodes.map((n: any) => ({
+            id: n.id,
+            confidence: n.confidence,
+            source: `${n.provenance?.source_id ?? ''} ${n.provenance?.locator ?? ''}`.trim(),
+          })),
+        });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+
+  // 11. artifact_make — force a Canonical Financial Artifact (proof bundle) as output.
+  server.registerTool(
+    'artifact_make',
+    {
+      title: 'Build a canonical financial artifact',
+      description:
+        'Assemble a Canonical Financial Artifact (scope, assumptions, citations, kernel plan, ' +
+        'proof, reproducibility) — the structured proof bundle a financial answer should carry. ' +
+        'Validates that the kernel plan references core primitives; errors otherwise.',
+      inputSchema: {
+        scope: z.string(),
+        assumptions: z.array(z.string()).min(1),
+        citations: z.array(z.string()).optional(),
+        kernelPlan: z.string().optional(),
+        proof: z.string(),
+        reproducibility: z.string(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const artifact = makeCanonicalArtifact({
+          scope: args.scope,
+          assumptions: args.assumptions,
+          citations: args.citations,
+          kernelPlan: args.kernelPlan,
+          proof: args.proof,
+          reproducibility: args.reproducibility,
+        });
+        return ok({ ok: true, artifact });
+      } catch (e) {
+        return fail((e as Error).message);
+      }
+    },
+  );
+}
+
+/** Names of all registered tools (for docs/tests). */
+export const TOOL_NAMES = [
+  'money_compute',
+  'entry_validate',
+  'ledger_post',
+  'ledger_balance',
+  'ledger_trial_balance',
+  'ledger_verify_equation',
+  'ledger_audit_hash',
+  'ledger_verify_determinism',
+  'trace_run',
+  'cite_lookup',
+  'artifact_make',
+] as const;
+
+// Re-export Money for consumers that want the type without reaching into the kernel.
+export { Money };
