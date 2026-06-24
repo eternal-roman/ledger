@@ -15,6 +15,10 @@ export * from './portfolio/index.js';
 export * from './investing/index.js';
 export * from './crypto/index.js';
 
+// Accounting standards built on the kernel. IFRS 16 (Leases) — lessee — is the
+// first fully-tested standard (golden-master verified to the cent).
+export * from './standards/ifrs16/index.js';
+
 // Kernel (Money, Account, JournalEntry, Ledger) + recognition rules, a small
 // IFRS/GAAP citation graph, and the verify harness.
 //

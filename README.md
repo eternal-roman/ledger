@@ -193,6 +193,35 @@ valuePortfolio(l, priceBook, 'USD');                 // mark-to-market into a re
 Cost basis rides in the kernel's audit-hashed line `tags`, so lots and P&L are reproducible from the
 ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `examples/returns.ts`.
 
+## Accounting standards — IFRS 16 (Leases, lessee)
+
+One faithful, fully-tested standard rather than broad stubs. The IFRS 16 lessee
+engine computes the initial lease liability (present value of payments), the ROU
+asset, and the full schedule of interest accretion, principal reduction, and
+straight-line depreciation — then emits balanced kernel journal entries with
+paragraph-level citations.
+
+```ts
+import { Money, buildSchedule, leaseToEntries } from '@eternal-roman/ledger';
+
+const lease = {
+  id: 'L1', commencementDate: '2026-01-01', currency: 'USD', annualDiscountRate: '0.05',
+  payments: [
+    { date: '2026-12-31', amount: Money.from('10000.00', 'USD') },
+    { date: '2027-12-31', amount: Money.from('10000.00', 'USD') },
+    { date: '2028-12-31', amount: Money.from('10000.00', 'USD') },
+  ],
+};
+buildSchedule(lease).initialLiability.toString(); // "27232.48 USD"
+leaseToEntries(lease);                             // 10 balanced, validated entries
+```
+
+The schedule is verified **to the cent** by a golden-master test
+(`tests/standards/ifrs16.test.ts`): the liability closes to exactly `0.00`, total
+interest reconciles to payments minus initial liability, depreciation sums exactly
+to ROU cost, every entry passes `validateEntry`, the fundamental equation holds, and
+the audit hash is reproducible. This turns "IFRS-grounded" from a claim into a fact.
+
 ## AI Agent Integration
 
 Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Hosts with plugin support (Grok, Claude Code, etc.) discover the full package including slash commands.
