@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "version": "0.14.0",
-  "description": "Ledger Chad — Alpha of the Ledger. Exact Money.from (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip. Provides /ledger-* skills and slash commands globally.",
+  "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact Money.from (no floats), kernel-enforced double-entry via JournalEntry + validateEntry + Ledger.apply, audit-hashed ledgers, canon citations. Provides /ledger-* skills and slash commands.",
   "author": {
     "name": "eternal-roman / Ledger maintainers"
   },

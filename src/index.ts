@@ -30,4 +30,7 @@ function resolveVersion(): string {
   return pkg.version;
 }
 export const VERSION: string = resolveVersion();
-export const DESCRIPTION = 'Ledger Chad — Alpha of the Ledger. Cool. Calm. Collected. Alpha Maxxing. Exact Money arithmetic, double-entry, validated ledgers and canon citations. Mistakes do not ship, bro.';
+export const DESCRIPTION =
+  'Execution as Proof for money — the deterministic correctness layer AI agents call. ' +
+  'Exact decimal arithmetic, kernel-enforced double-entry, immutable audit-hashed ledgers, ' +
+  'deterministic and reproducible. Provably cannot emit unbalanced or float-based entries.';

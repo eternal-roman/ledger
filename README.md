@@ -1,48 +1,65 @@
 # Ledger
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad.jpg" width="260" alt="Ledger Chad — Alpha of the Ledger">
+  <strong>Execution as Proof for money.</strong><br>
+  The deterministic correctness layer AI agents call — exact decimal,
+  kernel-enforced double-entry, audit-hashed and reproducible.
 </p>
 
-<p align="center">
-  <strong>Ledger Chad — Alpha of the Ledger.</strong><br>
-  <strong>Float-Phobic, GAAP-Pilled, Double-Entry Maxxing.</strong>
-</p>
+Ledger is a small, exact-decimal, **double-entry kernel** for TypeScript — plus an
+**MCP server** and AI guardrails — for building financial, accounting, investing, and
+tax components that **provably cannot** emit unbalanced or float-based entries. The
+kernel fails closed: an invalid entry is rejected, not posted.
 
-<p align="center">
-  <em>Cool. Calm. Collected. Alpha Maxxing. Mistakes do not ship, bro.</em>
-</p>
+LLMs do pattern-matching, not arithmetic — they hallucinate numbers, miscategorize,
+and are confidently wrong. The industry fix is to **offload the math and the
+invariants to a deterministic tool**. Ledger is that tool for money.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad-logo.jpg" width="120" alt="Ledger Chad logo icon">
-</p>
+## What it guarantees (and the failure it removes)
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad-banner.jpg" width="600" alt="Ledger Chad Banner">
-</p>
+| Token-level LLM / float failure | Ledger guarantee |
+|---|---|
+| `0.1 + 0.2 = 0.30000000000000004`, sub-cent drift | Exact decimal `Money` — no floats, ever; sub-scale amounts rejected |
+| Debits ≠ credits, "confidently wrong" entries | Double-entry enforced at the kernel; unbalanced state cannot be applied |
+| Silent currency mixing | Per-currency balancing; fails closed without explicit FX legs |
+| Tampered or non-reproducible books | SHA-256 audit-hash chain + determinism harness (rebuild = identical hash) |
+| Ungrounded claims | Small IFRS/GAAP citation graph |
 
-Ledger is the canonical library + AI guardrails for building exact financial, accounting, investing, and tax components.
+See [`docs/BENCHMARK.md`](docs/BENCHMARK.md): with the recorded fixture, an unguarded
+agent commits **4/8 corrupt entries** and leaves the books unbalanced; the guarded
+path lets **0** reach the books and the surviving ledger is balanced, audit-hashed,
+and deterministic. Reproduce with `npm run eval`.
 
-It enforces integrity that cannot be violated by accident:
+## For AI agents — the MCP server
 
-- Exact decimal arithmetic (never floats)
-- Enforced double-entry + accounting equation (GAAP/IFRS)
-- Immutable append-only ledgers with full audit
-- Deterministic, reproducible by default
-- Zero-Skip Execution: Plan & Unpack, Gap Analysis, complete Artifact before any production code
-- Grounded in accounting canon: IFRS conceptual framework + IAS/IFRS recognition, US-GAAP (ASC 606)
-- A small citation graph: levers fetch the IFRS/GAAP facts that match a query
-- The agent *is* Ledger Chad: the alpha bookkeeper — cool, calm, collected, dominant on the invariants.
+```bash
+npx -y @eternal-roman/ledger-mcp
+```
 
-## How it works
+```json
+{
+  "mcpServers": {
+    "ledger": { "command": "npx", "args": ["-y", "@eternal-roman/ledger-mcp"] }
+  }
+}
+```
 
-Before any financial modeling, recognition, or code, the agent runs the **Zero-Skip Execution Protocol**:
+Gives an agent tools to `money_compute`, `entry_validate`, `ledger_post`,
+`ledger_balance`, `ledger_verify_equation`, `ledger_audit_hash`, `trace_run`,
+`cite_lookup`, and more — so it proves instead of guessing. See [`mcp/`](mcp/).
 
-1. Does this touch value, accounts, recognition, measurement, or risk pricing?
-2. Can it be expressed with the immutable kernel? (`Money.from`, `JournalEntry`, `Ledger.apply`)
-3. Is there a canon fact or graph-retrieved knowledge that governs it? Cite the source.
-4. Is the result deterministic and reproducible?
-5. Do `validateEntry` and the ledger prove the invariants (balance, accounting equation)?
+## Why this over the alternatives
+
+| | Exact money | Double-entry enforced | Immutable + audit hash | Deterministic harness | DB-agnostic | AI / MCP guardrail |
+|---|---|---|---|---|---|---|
+| **Ledger** | ✅ | ✅ (kernel) | ✅ | ✅ | ✅ (pure TS) | ✅ |
+| dinero.js | ✅ | — | — | — | ✅ | — |
+| medici | partial | ✅ | — | — | ❌ (MongoDB) | — |
+| Formance / TigerBeetle | ✅ | ✅ | ✅ | partial | ❌ (service / DB) | — |
+
+No alternative combines all of: exact decimal **+** kernel-enforced double-entry **+**
+immutability **+** tamper-evident audit hash **+** a determinism harness **+** zero
+database dependency **+** an MCP guardrail. That combination is the point.
 
 ## Install
 
@@ -182,13 +199,17 @@ Load `AGENTS.md` (or `skills/ledger/SKILL.md`). Hosts with plugin support (Grok,
 
 **Grok**: after `grok plugin install ... --trust`, the commands appear in `/` autocomplete and skills are active everywhere. Run `/ledger-verify`, `/ledger-audit`, `/ledger-cite`, `/ledger-reconcile`, `/ledger-sim`, `/ledger-review`, `/ledger`.
 
-The agent becomes **Ledger Chad**, the Alpha Bookkeeper:
-- Executes Zero-Skip Protocol every task (Plan & Unpack → Gap Analysis → complete Artifact)
+The agent operates under the Zero-Skip discipline:
+- Runs the protocol every task (Plan & Unpack → Gap Analysis → complete Artifact)
 - Uses `Money`/`JournalEntry` only (never floats)
 - Grounds in accounting canon (IFRS/GAAP); surfaces citations
 - Proves invariants via `validateEntry` + `Ledger.apply` before output
 - Uses graph knowledge (levers) only when required
-- Leads with alpha confidence: "Double-Entry or Get Beta." "Mistakes do not ship, bro."
+
+> There is also an optional **"Ledger Chad"** persona (a float-phobic, double-entry-maxxing
+> voice) for hosts that want personality on top of the guarantees. It is flavor, not
+> substance — see [`docs/agent-persona.md`](docs/agent-persona.md). The correctness
+> guarantees above hold with or without it.
 
 Commands are **agent-guidance prompts** (skills the host loads), not built-in engines.
 They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct/script use call the functions or the `ledger-verify` script / `npm run verify:ledger`.
@@ -233,16 +254,16 @@ Property-based tests and reproducibility checks are included.
 
 ## Development
 
-Keep persona text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters) consistent with Zero-Skip.
-
-Run:
+Run the full gate:
 ```bash
-npm run verify:full
+npm run verify:full   # build (ESM+CJS) + typecheck + tests + determinism
+npm run eval          # regenerate the benchmark report
 ```
 
-Graphic (https://raw.githubusercontent.com/eternal-roman/ledger/main/assets/ledger-chad.jpg) exemplifies Ledger Chad — the alpha bookkeeper in green ALPHA visor and Patagonia vest, cool calm collected dominance over the ledger. Preserve the consistent meme style on updates. (Image served remotely.)
-
-Keep distribution (skills, commands, adapters) consistent.
+Keep agent-guidance text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters)
+consistent with the Zero-Skip discipline. The optional persona lives in
+[`docs/agent-persona.md`](docs/agent-persona.md); keep it clearly separable from the
+correctness guarantees so the library reads as engineering first.
 
 ## License
 
