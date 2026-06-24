@@ -11,6 +11,6 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['tests/**/*.test.ts', 'mcp/tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'mcp/tests/**/*.test.ts', 'eval/**/*.test.ts'],
   },
 });

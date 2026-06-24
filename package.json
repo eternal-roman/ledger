@@ -57,6 +57,7 @@
     "test:watch": "vitest",
     "verify": "tsx scripts/verify-determinism.ts",
     "verify:ledger": "tsx scripts/ledger-verify.ts",
+    "eval": "npm run build && tsx eval/run.ts",
     "verify:full": "npm run build && npm run typecheck && npm test && npm run verify",
     "bash": "bash",
     "with-bash": "bash scripts/with-git-bash.sh || echo 'On Windows use: .\\scripts\\with-git-bash.cmd \"your command\"'",
