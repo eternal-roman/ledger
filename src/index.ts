@@ -17,7 +17,17 @@ export * from './crypto/index.js';
 
 // Kernel (Money, Account, JournalEntry, Ledger) + recognition rules, a small
 // IFRS/GAAP citation graph, and the verify harness.
-// Single source of truth: the version is read from package.json (no hardcoded drift).
-const pkg = createRequire(import.meta.url)('../package.json') as { version: string };
-export const VERSION: string = pkg.version;
+//
+// Single source of truth for the version, with no hardcoded drift and no
+// `import.meta` in the CJS bundle: the build (tsup `define`) injects
+// __LEDGER_VERSION__ from package.json; when that define is absent (dev/tsx),
+// we fall back to reading package.json at runtime. esbuild constant-folds the
+// injected branch so the import.meta path is dead-code-eliminated in CJS.
+declare const __LEDGER_VERSION__: string;
+function resolveVersion(): string {
+  if (typeof __LEDGER_VERSION__ === 'string') return __LEDGER_VERSION__;
+  const pkg = createRequire(import.meta.url)('../package.json') as { version: string };
+  return pkg.version;
+}
+export const VERSION: string = resolveVersion();
 export const DESCRIPTION = 'Ledger Chad — Alpha of the Ledger. Cool. Calm. Collected. Alpha Maxxing. Exact Money arithmetic, double-entry, validated ledgers and canon citations. Mistakes do not ship, bro.';

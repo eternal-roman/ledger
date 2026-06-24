@@ -18,6 +18,6 @@ try {
     process.exit(e.status);
   }
   console.error('ledger-verify: failed to run via npx tsx.');
-  console.error('Ensure npx is available, or run directly: npx tsx node_modules/ledger/scripts/ledger-verify.ts ' + process.argv.slice(2).join(' '));
+  console.error('Ensure npx is available, or run directly: npx tsx node_modules/@eternal-roman/ledger/scripts/ledger-verify.ts ' + process.argv.slice(2).join(' '));
   process.exit(1);
 }

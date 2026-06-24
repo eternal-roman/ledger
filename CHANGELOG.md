@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.14.0] - 2026-06-24
+
+**Installable for real, in both module systems.**
+
+- **Renamed the npm package to `@eternal-roman/ledger`** — a claimable scoped name.
+  `npm install @eternal-roman/ledger` now works directly (the previous unscoped
+  `ledger` name belonged to an unrelated package, forcing tarball/git workarounds).
+- **Dual ESM + CommonJS build** via `tsup`: `import` and `require` both resolve,
+  each with matching `.d.ts` / `.d.cts` type declarations. The prior "ESM-only,
+  use dynamic import from CJS" caveat is gone.
+- Version is injected at build time (no `import.meta` in the CJS bundle) so the
+  single source of truth stays `package.json` with no hardcoded drift.
+- Self-referencing imports, examples, the `ledger-verify` CLI, and docs updated to
+  the scoped name. Determinism harness + all 112 tests still green.
+
 ## [0.13.0] - 2026-06-23
 
 - docs: align README to v0.13.0 + full plan verification completion (gap fixes landed).

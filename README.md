@@ -46,54 +46,42 @@ Before any financial modeling, recognition, or code, the agent runs the **Zero-S
 
 ## Install
 
-The package is at v0.13.0 and fully packable with `npm pack`. For library consumption in another repo (Money + Ledger kernel + layers):
-
 ```bash
-# Option 1: packed tarball (recommended for exact version)
-cd /path/to/ledger && npm pack
-npm install /path/to/ledger-0.13.0.tgz
-
-# Option 2: git dep or file: for latest
-npm install git+https://github.com/eternal-roman/ledger.git
-# or
-npm install file:/absolute/path/to/ledger
-```
-
-Build step (for source consumers or plugin use):
-```bash
-npm install && npm run build
+npm install @eternal-roman/ledger
 ```
 
 Then:
 ```ts
-import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry, runTrace, makeCanonicalArtifact } from 'ledger';
-// or kernel only: import { ... } from 'ledger/core';
+import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry, runTrace, makeCanonicalArtifact } from '@eternal-roman/ledger';
+// or kernel only: import { ... } from '@eternal-roman/ledger/core';
 ```
 
-**Note for CJS users:** The package is ESM-only (`"type": "module"`). Use dynamic `const L = await import('ledger')` from CommonJS, or set `"type": "module"` in your project. The core works identically.
+**ESM and CommonJS both work.** The package ships a dual build (`import` and
+`require` both resolve, with matching type declarations), so:
+```js
+const { Money, validateEntry } = require('@eternal-roman/ledger'); // CJS
+```
+works identically to the ESM `import` above.
 
 Standalone CLI (mechanical verification, no LLM required):
 ```bash
-# after install from tarball/git (includes bin + scripts)
+# after install (bin + scripts are packaged)
 npx ledger-verify --help
 npx ledger-verify --scan .
 npx ledger-verify --prove entries.json
 
-# one-off without install (tarball users):
-npx --package=/path/to/ledger-0.13.0.tgz ledger-verify --scan .
-
 # or directly during dev (from repo)
 npx tsx scripts/ledger-verify.ts --scan src
 ```
-The CLI uses the real package kernel (Money.from + JournalEntry factories + runTrace + artifacts). Proven to work after `npm pack` + `npm install <tgz>` and via --package for tarballs.
+The CLI uses the real package kernel (Money.from + JournalEntry factories + runTrace + artifacts).
 
 Examples are included and runnable after install too:
 ```bash
-npx tsx node_modules/ledger/examples/personal-ledger.ts
-npx tsx node_modules/ledger/examples/crypto-cex.ts
+npx tsx node_modules/@eternal-roman/ledger/examples/personal-ledger.ts
+npx tsx node_modules/@eternal-roman/ledger/examples/crypto-cex.ts
 # etc.
 ```
-All examples use the public 'ledger' entrypoint (or fallback in source tree).
+All examples use the public '@eternal-roman/ledger' entrypoint (or fallback in source tree).
 
 The plugin install (Grok/Claude) also includes `dist/` so the runtime is available to the host if needed.
 
@@ -117,7 +105,7 @@ See `AGENTS.md`, `skills/ledger/references/`, and host-specific docs.
 ## Core Usage
 
 ```ts
-import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry } from 'ledger';
+import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry } from '@eternal-roman/ledger';
 
 const cash = new Account('1000', 'Cash', AccountType.Asset);
 const equity = new Account('3000', 'Owner Equity', AccountType.Equity);
@@ -159,7 +147,7 @@ import {
   Money, emptyLedger, defaultAssetRegistry, installAssetScales,
   depositToEntry, fillToEntries, realizedPnL, PriceBook, valuePortfolio,
   planRebalance, timeWeightedReturn, moneyWeightedReturn,
-} from 'ledger';
+} from '@eternal-roman/ledger';
 
 installAssetScales(defaultAssetRegistry()); // teach Money the asset scales (fiat unchanged)
 

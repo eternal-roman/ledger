@@ -4,7 +4,7 @@
  */
 // Support both "after npm install ledger" and "run from source tree"
 const L: any = await (async () => {
-  try { return await import('ledger'); } catch { return await import('../src/index.js'); }
+  try { return await import('@eternal-roman/ledger'); } catch { return await import('../src/index.js'); }
 })();
 
 const { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateAssetRecognition, validateLiabilityRecognition, validateLeaseRecognition, loadDefaultKnowledge } = L;
