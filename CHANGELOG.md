@@ -2,18 +2,46 @@
 
 ## [0.14.0] - 2026-06-24
 
-**Installable for real, in both module systems.**
+**The deterministic correctness layer AI agents call.** Installable for real,
+usable from any agent, with a proof and a fully-tested standard.
 
+### Installable, in both module systems
 - **Renamed the npm package to `@eternal-roman/ledger`** — a claimable scoped name.
   `npm install @eternal-roman/ledger` now works directly (the previous unscoped
   `ledger` name belonged to an unrelated package, forcing tarball/git workarounds).
 - **Dual ESM + CommonJS build** via `tsup`: `import` and `require` both resolve,
-  each with matching `.d.ts` / `.d.cts` type declarations. The prior "ESM-only,
-  use dynamic import from CJS" caveat is gone.
-- Version is injected at build time (no `import.meta` in the CJS bundle) so the
-  single source of truth stays `package.json` with no hardcoded drift.
-- Self-referencing imports, examples, the `ledger-verify` CLI, and docs updated to
-  the scoped name. Determinism harness + all 112 tests still green.
+  each with matching `.d.ts` / `.d.cts` declarations. The ESM-only caveat is gone.
+  Version is injected at build time (no `import.meta` in the CJS bundle), keeping
+  `package.json` the single source of truth.
+
+### MCP server — `@eternal-roman/ledger-mcp`
+- A stdio Model Context Protocol server exposing the kernel as agent tools:
+  `money_compute`, `entry_validate`, `ledger_post`, `ledger_balance`,
+  `ledger_trial_balance`, `ledger_verify_equation`, `ledger_audit_hash`,
+  `ledger_verify_determinism`, `trace_run`, `cite_lookup`, `artifact_make`.
+  Stateless (ledger state travels as JSON) and fail-closed (invalid entries are
+  rejected, not posted). Includes a registry manifest and client setup docs.
+
+### Proof — benchmark
+- `npm run eval` runs the same AI-proposed entries unguarded vs kernel-guarded.
+  With the recorded fixture, the unguarded run commits 4/8 corrupt entries and
+  leaves the books unbalanced; the guarded run lets 0 reach the books and the
+  surviving ledger is balanced, audit-hashed, and deterministic. Report in
+  `docs/BENCHMARK.md`; asserted in CI.
+
+### Standard — IFRS 16 (Leases, lessee)
+- A faithful, fully-tested engine on the kernel: PV initial liability, ROU asset,
+  interest accretion, principal reduction, straight-line depreciation, and balanced
+  journal entries with paragraph citations. Verified to the cent by a golden-master
+  test.
+
+### Positioning
+- README now leads with the guarantee ("Execution as Proof for money"), a
+  failure-mode → guarantee table, an MCP quickstart, and a comparison vs
+  dinero.js / medici / Formance / TigerBeetle. The "Ledger Chad" persona moved to
+  `docs/agent-persona.md` as optional flavor.
+
+All 134 tests green (kernel + MCP + eval + IFRS 16); determinism harness passing.
 
 ## [0.13.0] - 2026-06-23
 

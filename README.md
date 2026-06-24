@@ -6,6 +6,12 @@
   kernel-enforced double-entry, audit-hashed and reproducible.
 </p>
 
+<p align="center">
+  <a href="https://github.com/eternal-roman/ledger/actions/workflows/ci.yml"><img src="https://github.com/eternal-roman/ledger/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/@eternal-roman/ledger"><img src="https://img.shields.io/npm/v/@eternal-roman/ledger.svg" alt="npm"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+</p>
+
 Ledger is a small, exact-decimal, **double-entry kernel** for TypeScript — plus an
 **MCP server** and AI guardrails — for building financial, accounting, investing, and
 tax components that **provably cannot** emit unbalanced or float-based entries. The
