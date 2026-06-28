@@ -1,5 +1,11 @@
 # Releasing & registries
 
+> ⚠️ **Status: DEFERRED — not released yet.** Do **not** run these steps as part of
+> the current work. We are intentionally holding the npm/registry publish for a
+> dedicated release PR. Tracked in
+> [#50](https://github.com/eternal-roman/ledger/issues/50). The files here are in
+> place so that follow-up PR is a quick, low-risk execution.
+
 The repo is prepared for publication; these are the manual steps a maintainer with
 the right credentials runs. Nothing here is automated in CI (publishing requires an
 npm token and registry accounts).
