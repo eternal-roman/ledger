@@ -1,18 +1,31 @@
 {
-  "name": "ledger",
-  "version": "0.13.0",
-  "description": "Ledger Chad — Alpha of the Ledger. Float-phobic alpha bookkeeper. Exact Money, double-entry, validated ledgers, canon citations. Cool. Calm. Collected. Alpha Maxxing. Mistakes do not ship, bro.",
+  "name": "@eternal-roman/ledger",
+  "version": "0.14.0",
+  "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact decimal, kernel-enforced double-entry, audit-hashed and reproducible. Provably cannot emit unbalanced or float-based entries. No database required.",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./core": {
-      "import": "./dist/core/index.js",
-      "types": "./dist/core/index.d.ts"
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "require": {
+        "types": "./dist/core/index.d.cts",
+        "default": "./dist/core/index.cjs"
+      }
     }
   },
   "files": [
@@ -33,13 +46,18 @@
     "reference-implementations",
     "docs/claude-plugins.md"
   ],
+  "workspaces": [
+    "mcp"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup",
+    "build:mcp": "npm -w @eternal-roman/ledger-mcp run build",
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "tsx scripts/verify-determinism.ts",
     "verify:ledger": "tsx scripts/ledger-verify.ts",
+    "eval": "npm run build && tsx eval/run.ts",
     "verify:full": "npm run build && npm run typecheck && npm test && npm run verify",
     "bash": "bash",
     "with-bash": "bash scripts/with-git-bash.sh || echo 'On Windows use: .\\scripts\\with-git-bash.cmd \"your command\"'",
@@ -61,6 +79,10 @@
     "deterministic",
     "exact-arithmetic",
     "ai-skill",
+    "ai-agent",
+    "mcp",
+    "mcp-server",
+    "llm-guardrail",
     "financial-systems",
     "ledger-chad",
     "investing",
@@ -82,6 +104,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "fast-check": "^3.23.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.0"

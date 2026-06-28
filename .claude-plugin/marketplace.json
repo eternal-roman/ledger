@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ledger",
-  "description": "Ledger Chad — Alpha of the Ledger (Alpha Maxxing). Exact Money (no floats), double-entry via JournalEntry + validateEntry + Ledger.apply, canon citations, Zero-Skip. The alpha bookkeeper. Mistakes do not ship.",
+  "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact Money.from (no floats), kernel-enforced double-entry via JournalEntry + validateEntry + Ledger.apply, audit-hashed ledgers, canon citations. Provides /ledger-* skills and slash commands.",
   "owner": {
     "name": "eternal-roman",
     "url": "https://github.com/eternal-roman/ledger"
@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "ledger",
-      "description": "Ledger Chad: Money.from always, validated JournalEntry + Ledger.apply, citations, no floats, provable balance + invariants. Alpha Maxxing. Double-Entry or Get Beta. No unbalanced state.",
+      "description": "Deterministic financial-correctness guardrails: Money.from always, validated JournalEntry + Ledger.apply, audit-hashed ledgers, citations, no floats, provable balance + invariants.",
       "source": "./",
       "category": "productivity"
     }

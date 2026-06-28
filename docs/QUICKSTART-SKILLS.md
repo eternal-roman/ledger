@@ -3,7 +3,7 @@
 1. Make the rules visible: copy `AGENTS.md` (or `skills/ledger/SKILL.md`) into your project root, or `grok plugin install /path/to/ledger --trust`.
 2. Depend on the library: `npm install file:/absolute/path/to/ledger` (or packed tarball / git dep). Then:
    ```ts
-   import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry } from 'ledger';
+   import { Money, Account, AccountType, createBalancedEntry, emptyLedger, validateEntry } from '@eternal-roman/ledger';
    ```
 3. Always:
    - `Money.from("123.45", "USD")` (string for fractions).

@@ -18,12 +18,14 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 
-// Dynamic load from built dist (packaged install) with fallback to src (dev, tsx transpiles .ts via .js specifier)
+// Scanner functions (scanDir, scanSourceForViolations) are re-exported from the
+// public entry, which is the bundled artifact under the dual ESM/CJS build.
+// Load the built dist first (packaged install), fall back to src (dev/tsx).
 async function loadScanner() {
   try {
-    return await import('../dist/verify/scanner.js');
+    return await import('../dist/index.js');
   } catch {
-    return await import('../src/verify/scanner.js');
+    return await import('../src/index.js');
   }
 }
 

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.eternal-roman/ledger",
+  "description": "Deterministic financial-correctness tools for AI agents: exact decimal money, kernel-enforced double-entry, audit-hashed ledgers. Validate, post, balance, trace, and prove instead of doing the math in-token.",
+  "version": "0.14.0",
+  "repository": {
+    "url": "https://github.com/eternal-roman/ledger",
+    "source": "github",
+    "subfolder": "mcp"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@eternal-roman/ledger-mcp",
+      "version": "0.14.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

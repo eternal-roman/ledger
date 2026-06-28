@@ -10,7 +10,7 @@ license: MIT
 Verify the current diff, file, or snippet against ledger invariants.
 
 The agent must:
-1. Parse for any monetary amounts and force `Money.from(...)` usage (from 'ledger' or 'ledger/core').
+1. Parse for any monetary amounts and force `Money.from(...)` usage (from '@eternal-roman/ledger' or '@eternal-roman/ledger/core').
 2. Construct JournalEntry(s) where transactions or values appear.
 3. Call `validateEntry` and/or `Ledger.apply` and report the result.
 4. Flag any violations with exact proof (unbalanced lines, float usage, missing citations, mutation).

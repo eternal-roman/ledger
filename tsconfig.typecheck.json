@@ -9,6 +9,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "include": ["src/**/*", "scripts/**/*", "tests/**/*", "examples/**/*"],
+  "include": ["src/**/*", "scripts/**/*", "tests/**/*", "examples/**/*", "eval/**/*"],
   "exclude": ["node_modules", "dist"]
 }

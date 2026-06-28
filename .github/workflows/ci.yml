@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, 'feature/*', 'feat/*', 'fix/*' ]
+    branches: [ main, 'feature/*', 'feat/*', 'fix/*', 'claude/**' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch: {}
@@ -31,5 +31,13 @@ jobs:
     - name: Verify (build + typecheck + test + determinism)
       run: npm run verify:full
 
+    - name: Build MCP server (typechecks dist)
+      run: npm run build:mcp
+
+    - name: Benchmark (guardrail must fully protect the books)
+      run: npm run eval
+
 # Pinned actions + Node 22/24 matrix for stable, current runners.
-# verify:full = build + typecheck + test + verify (determinism). Persona gate removed (historical). Ledger invariants always enforced.
+# verify:full = build + typecheck + test (kernel + MCP + eval) + determinism.
+# build:mcp typechecks/builds the MCP workspace; eval re-runs the guardrail benchmark
+# (fixture mode, no network) and fails if any invariant violation reaches the books.
