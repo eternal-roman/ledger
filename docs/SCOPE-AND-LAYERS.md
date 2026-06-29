@@ -25,7 +25,7 @@ The mechanical enforcement is now also available via `scripts/ledger-verify.ts` 
 - Citation graph seeds are a small, high-quality starter set (see docs/CITATION-COVERAGE.md). Not a full canon replacement.
 - Skills are instructions + the CLI/script layer. LLM fidelity still matters for complex modeling; use the kernel functions directly in code for determinism.
 
-**Disclaimer (legal):** This kernel and associated tooling (MCP, skills, verification) implement deterministic financial computation and invariant enforcement primitives. It is not advice. Users are responsible for all compliance (GAAP/IFRS, tax, law) and input correctness. Tests and adversarial harnesses are due diligence measures. MIT License applies (see root LICENSE).
+**Disclaimer:** See README §Disclaimer + MIT LICENSE. Tests/adversarial = due diligence.
 
 Graceful degradation: ledger layer always runs; when host equivalents absent note "Ledger layer only (no superpowers/pr-review equivalents detected)".
 

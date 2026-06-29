@@ -10,9 +10,9 @@ Current seeds provide starter canon for IFRS + US-GAAP + basic instruments/tax.
 ## Representative Nodes
 See src/knowledge/seeds/*.ts for full list (conceptual framework, ASC 606, IFRS 15 5-step, ifrs15-5step, ifrs16-initial-liability, ias2-net-realizable, cost basis §1012, lot-relief-specific-id, IFRS 9, GIPS, matching principle details, etc.).
 
-**This is a starter set.** For production regulatory work always verify against the current official standards and your jurisdiction's current law. Use `ledger-cite` or `fetch` with levers to retrieve what is present.
+Starter set only. Always verify against official standards/law for production.
 
-Tests exercising citations and the knowledge graph are due diligence verification of the seeds and lookup mechanism; they do not substitute for official canon review. See the Disclaimer in README.md and root LICENSE (MIT).
+Citation tests = due diligence (see README Disclaimer + MIT LICENSE).
 
 ## Example lever queries (for /ledger-cite or direct fetch)
 ```ts

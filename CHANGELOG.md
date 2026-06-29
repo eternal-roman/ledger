@@ -4,35 +4,27 @@
 
 **MCP error response contract hardening + disclaimers (patch).**
 
-- Investigated and resolved real inconsistencies in MCP error signaling: `isError` usage was non-uniform across schema violations (SDK "MCP error -32602"), logical fail-closed (e.g. unbalanced via `ok({ok:false, violations})`), and runtime/precond (via `fail()`).
-- Standardized response contract: all controlled responses include top-level `ok: boolean`; logical fail-closed use structured {ok:false, ...} (isError typically unset); errors use isError + {ok:false, error}.
-- Added robust parsing in test `call()` and smoke `callJson` + `expectError`.
-- Expanded smoke and added dedicated contract tests covering schema, logical, and error categories.
-- Added minimal disclaimers (tests = "due diligence", MIT supported) in root/mcp READMEs, SCOPE, CITATION, SKILLs, SECURITY, AGENTS, python ref.
-- Deepened adversarial MCP loop coverage.
-- Response contract now documented in mcp/README.md.
-- All gates: 27 MCP tests, smoke (with error shapes), check:versions, verify:full green. No impact to kernel determinism or first-class usage.
+- Fixed inconsistent MCP error shapes (isError for schema vs {ok:false} for logical/runtime). Standardized: top-level `ok: boolean`; robust parsers + tests for all shapes.
+- Added contract tests + expanded smoke covering schema/logical/error cases.
+- Minimal disclaimers (due diligence, MIT) in key MDs + SKILLs.
+- Deepened adversarial loop coverage. Response contract documented.
+- Gates green: 27 tests, smoke, check:versions, verify:full. Kernel unchanged.
 
-Versions aligned across package.json, package-lock.json (both), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, pyproject.toml, ledger/__init__.py (0.16.6-ref).
+Manifests synced; check:versions + verify:full green.
 
 ## [0.16.5] - 2026-06-29
 
 **MCP first-class kernel citizen + mandatory result verification (patch).**
 
-- Added minimal legal disclaimers across primary locations (root+mcp READMEs, SCOPE-AND-LAYERS.md, CITATION-COVERAGE.md, skills/ledger/SKILL.md, SECURITY.md, AGENTS.md, Python ref README) referencing MIT license. Explicitly frames tests/adversarial harnesses/benchmarks as "due diligence".
-- Added deep adversarial MCP loop test (direct in-memory MCP client, 12+ rounds of malicious attempts: unbalanced, sub-scale, bad dates, number-rate injection, etc.). All attempts rejected or returned with `kernelVerified` + equation + determinism proofs. No bad data emitted. 27 MCP tests total pass deterministically.
-- MCP now static top-level imports from kernel (no lazy/any/dynamic in tools layer).
-- All key operations (post, fx, dep, guarded, cashflow, reconcile, portfolio, settlement, closing) now re-verify output with kernel primitives before return: verifyFundamentalEquation, validateEntry on generated, auditHash, etc. Responses include `kernelVerified` proof.
-- Consistent exact string serialization ("N CUR") for report Money values (fx, dep schedules).
-- Rates in fx now string-only (exact decimal, no number).
-- ledgerSchema stricter (v + entries shape).
-- Standardized {ok:false} responses for business failures.
-- New `scripts/check-versions.ts` + wired into verify:full/prepublish (audits all 7+ locations incl mcp/*).
-- Expanded MCP tests + smoke cover advanced + verification roundtrips + serialization + guarded paths + rate enforcement. All 24 MCP tests pass (incl. deep adversarial loop); smoke green.
-- Ensures MCP never returns mistakes: always kernel-correct or explicit fail.
-- Hardened MCP error handling: investigated and resolved inconsistent `isError` signaling, non-uniform failure payloads ({ok:false,violations} vs {ok:false,error} vs raw "MCP error" strings), and fragile client helpers. All 20 tools now follow documented response contract. Added robust call helpers, error shape tests to unit + smoke (schema, logical fail-closed, precondition), and "Response Contract" section in mcp/README.md. All diagnostics, 27 MCP tests, and smoke now green. Due diligence for agent reliability.
+- Minimal disclaimers added (tests = due diligence, MIT-backed) in READMEs, SCOPE, CITATION, skills, SECURITY, AGENTS, Python ref.
+- Deep adversarial MCP loop (12+ malicious cases): all rejected or kernel-verified; no bad data.
+- Static kernel imports; key ops re-verify via primitives (equation, validateEntry, auditHash) before return + `kernelVerified`.
+- Exact string serialization for Money; string-only rates; stricter ledgerSchema; {ok:false} for business fails.
+- `check-versions.ts` (all manifests incl mcp/*) wired to verify:full.
+- Expanded tests/smoke (adversarial, verification roundtrips, guarded paths). 24+ tests + smoke green. MCP error shapes hardened (isError + {ok:false} contract, robust parsers).
+- Ensures kernel-correct or explicit fail; response contract documented.
 
-Versions aligned, check:versions + verify:full + mcp smoke green.
+Manifests synced; check:versions + verify:full + mcp smoke green.
 
 ## [0.16.4] - 2026-06-29
 
@@ -50,7 +42,7 @@ Made `@eternal-roman/ledger-mcp` fully usable over the published `npx -y @eterna
 
 Full suite green (kernel + MCP unit tests + stdio smoke); determinism verified; both packages build.
 
-Versions aligned across all locations.
+Manifests synced; check:versions + verify:full green.
 
 ## [0.16.3] - 2026-06-29
 
@@ -67,7 +59,7 @@ New MCP tools: `cashflow_statement`, `reconcile_positions`, `portfolio_relief`, 
 
 Verification: a 3-round seeded adversarial harness asserts every invariant holds (equation, determinism, cash-flow reconciliation, holding-period classification, settlement netting) and that every malformed proposal — unbalanced, currency-mix, duplicate id, sub-scale, float, non-finite, oversell, settlement-before-trade, fee-exceeds-amount — is always rejected and never posted. Full suite **179 tests** green and identical across 3 consecutive runs; `tsc` clean; both packages build; determinism + standalone adversarial suites green. No change to serialization format or existing balances.
 
-Versions aligned across all 7 locations.
+Manifests synced; check:versions + verify:full green.
 
 ## [0.16.2] - 2026-06-29
 
@@ -85,7 +77,7 @@ Validated and fixed findings from an adversarial audit, plus a parallel hole fou
 
 10 new regression tests added (157 total). `tsc` typecheck clean; determinism verification produces identical audit hashes across runs; MCP suite green. No impact on serialization format or existing balances.
 
-Versions aligned across all 7 locations.
+Manifests synced; check:versions + verify:full green.
 
 ## [0.16.1] - 2026-06-29
 
@@ -97,7 +89,7 @@ Versions aligned across all 7 locations.
 - Full /ledger-audit + /ponytail-audit + test suite + determinism verified clean. No impact on Kernel or MCP data integrity.
 - PR #60 merged after CI green.
 
-Versions aligned across all 7 locations.
+Manifests synced; check:versions + verify:full green.
 
 ## [0.16.0] - 2026-06-29
 
@@ -108,25 +100,18 @@ Versions aligned across all 7 locations.
 - Multi-Currency FX Translation & CTA
 - Standard Depreciation & Amortization Schedules
 
-All implemented on the kernel. Versions aligned across all 7 locations.
+All implemented on the kernel. Manifests synced; check:versions + verify:full green.
 
 ## [0.15.0] - 2026-06-28
 
-**Factual cleanup + release hygiene for the kernel.**
+**Factual cleanup + release hygiene.**
 
-### Documentation and code notes verification
-- Full audit of README.md, all `docs/*.md`, `mcp/README.md`, hooks docs, and source comments (`//`, `/*`, `#`).
-- Removed/qualified marketing and legal-risk language: no "provably", no "guarantees" (as claims), no "Execution as Proof for money", no "the deterministic correctness layer", no "industry fix", no "turns X into a fact", no "protects".
-- Headings/tables/principles/descriptions now use exact terms matching the kernel: "enforces the invariants at the API boundary", "rejects ... never posted", "fail closed", "properties hold by construction".
-- "Comparison with related libraries", "Enforced behaviors", "What the Kernel Enforces".
-- Cleaned workspace junk/clutter (all session `.*.txt`, probe/adversarial temp scripts); `git fetch --prune --tags`; tags space contains only clean `vX.Y.Z`.
-- Persona flavor isolated; citations docs retain honest "starter set" + "verify against official" disclaimers.
-- Changes are minimal, traceable to actual code behavior (validateEntry, Ledger.apply, tests, golden masters).
+- Audited and tightened README, docs, mcp/README, hooks, comments: removed overclaims ("provably", "guarantees", hype phrasing), adopted precise kernel terms ("enforces", "fail closed").
+- Cleaned clutter (temp scripts, stale tags); isolated persona flavor; kept citation disclaimers honest.
+- Changes minimal/traceable to kernel behavior.
 
-### Versions aligned across all 7 locations
-package.json, package-lock.json (top-level + packages[""]), plugin.json, .claude-plugin/plugin.json, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py, CHANGELOG.md
-
-All 135 tests + determinism + build + typecheck green. CI matrix passed.
+Manifests synced; check:versions + verify:full green.
+All 135 tests + determinism + build + typecheck green. CI passed.
 
 ## [0.14.0] - 2026-06-24
 
@@ -174,32 +159,32 @@ All 134 tests green (kernel + MCP + eval + IFRS 16); determinism harness passing
 ## [0.13.0] - 2026-06-23
 
 - docs: align README to v0.13.0 + full plan verification completion (gap fixes landed).
-- Versions aligned across all 7 locations.
+- Manifests synced; check:versions + verify:full green.
 
 ## [0.12.0] - 2026-06-23
 
 - docs: align README to current v0.12.0 (plan verification gap fix + release alignment).
-- Versions aligned across all 7 locations after plan verification completion (package.json + lock + plugins + pyproject + __init__.py + CHANGELOG).
+- Manifests synced; check:versions + verify:full green.
 
 ## [0.11.0] - 2026-06-23
 
 - docs: update README package version references to v0.11.0 (plan verification gap fix + release alignment).
-- Versions aligned across all 7: package.json, package-lock (both), plugin.json, .claude-plugin/plugin.json, CHANGELOG, pyproject.toml, ledger/__init__.py (ref).
+- Manifests synced; check:versions + verify:full green.
 
 ## [0.10.0] - 2026-06-23
 
 - improve: make packaged examples runnable post-install via dynamic loader; add --prove stdin support; adoption DX follow-ups + hygiene.
 - All 14 plan verifs, verify:full, check-work, and post-pack adoption tests green.
-- Versions aligned across package.json, package-lock.json (both), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py.
+- Manifests synced; check:versions + verify:full green.
 
 ## [0.9.0] - 2026-06-23
 - Release prep following adoption plan completion and DX improvements (CLI, scanner, docs accuracy).
-- Versions aligned across package.json, package-lock.json, plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py.
+- Manifests synced; check:versions + verify:full green.
 - All verifs green.
 
 ## [0.8.0] - 2026-06-23
 - Full ledger skills remediation & adoption plan (standalone tooling, surfaces, citations, guards, dogfooding, scope, duplication, persona/coupling/honesty). All 14 verification commands + check-work PASS. Kernel invariants preserved.
-- Versions aligned across package.json, package-lock.json (top + root), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py .
+- Manifests synced; check:versions + verify:full green.
 - Merged via clean PR #39 off main. Minor bump.
 - Details:
   - Standalone `scripts/ledger-verify.ts` + `bin/ledger-verify.cjs` + `npm run verify:ledger` (mechanical scanner + real runTrace / makeCanonicalArtifact prove path).
@@ -211,10 +196,8 @@ All 134 tests green (kernel + MCP + eval + IFRS 16); determinism harness passing
   - Dogfood demo (`examples/kernel-proof-demo.ts`).
   - All new paths exercised by plan verification commands; verify:full green.
 
-## [Unreleased / next]
-
 ## [0.7.7] - 2026-06-23
-- Patch release: Python reference parity + version alignment.
+- Patch release: Python reference parity + manifests sync.
   - Python ref `Money` now serializes `scale` (`to_json`/`from_json`), mirroring the TS v0.7.6 fix so both kernels roundtrip asset amounts at the correct scale without the global resolver (added `test_from_json_restores_explicit_asset_scale`).
   - Synced `reference-implementations/python/pyproject.toml` to the current version (was lagging at 0.7.5); all version surfaces now aligned at 0.7.7.
   - TS `verify:full` green (106 tests); Python ref suite green (10 tests).
@@ -238,14 +221,14 @@ All 134 tests green (kernel + MCP + eval + IFRS 16); determinism harness passing
   - 794+ kernel ops, 12+ numeric counterexamples with P&L/decision impact.
   - All via core primitives (Money.from, validateEntry, Ledger.apply, runTrace, CFAs). No floats. Double-entry enforced.
   - TS + py tests + verify:full + persona green.
-- Versions aligned to 0.7.5 across package.json, package-lock.json, plugin.json, .claude-plugin/plugin.json, Python ref.
+- Manifests synced; check:versions + verify:full green.
 
 ## [0.7.4] - 2026-06-22
 - Grok-native plugin support: root `plugin.json`, `hooks/hooks.json` (GROK_PLUGIN_ROOT + node activation via ledger-activate.js).
 - Cross-platform hook activation (pwsh/Grok no longer requires Git Bash for the echo banner; bash path retained for Claude).
 - Made `/ledger-review` (and supporting skills) gracefully degrade: always run full ledger invariants; note "Ledger layer only" when superpowers/pr-review-toolkit (or host equivalents) are not present. Updated AGENTS.md, commands, references/plugin-integration.md.
 - Documentation: prominent Grok install (`grok plugin install ... --trust`), library consumption instructions, multi-host notes in README and docs/.
-- Packaging: added `plugin.json` to "files", version alignment (0.7.3 across package.json, plugin.json, .claude-plugin/plugin.json, package-lock.json), persona checker now covers Grok manifest + hooks/hooks.json.
+- Packaging: added `plugin.json` to "files", manifests synced, persona checker coverage.
 - **ledger-audit strengthening (kernel-grounded)**: Rewrote audit to require modeling monetary flows with actual kernel primitives (Money.from, JournalEntry/validateEntry, Ledger.apply or runTrace, CanonicalFinancialArtifact proofs). Removed hype branding and completed plans. Added runTrace in verify for transaction tracing. Shipped Python reference canonical (core + trading helpers) for cross-lang audits. Added inventory scanner helper. All tests, build, typecheck, determinism pass.
 - **Ledger enforcement iteration complete** (feat/ledger-enforcement-iteration): Ported minimal lots.py (build_lots, relief_for, realized_pnl using custody tags + Money) to Python ref for FIFO/LIFO. Added 13 self-contained runnable audit scripts under ledger/audit_artifacts/ covering all 10 target lifecycles + adversarial/precision + grid vs main + cross harness. Full LEDGER_ENFORCEMENT_PLAN.md verification block + meta_findings.md. 794+ kernel ops exercised, 12+ numeric impact counterexamples. Cross-verification (eq/bal behavioral), run_trace + CFA everywhere. TS + py tests + verify:full + persona green. Float guard enforced (fixed stray float(fee) in trading helpers). Double-entry invariants + no native floats throughout.
 - No changes to kernel or tests. All existing Claude surfaces preserved.

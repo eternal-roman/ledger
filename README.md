@@ -1,9 +1,8 @@
 # Ledger
 
 <p align="center">
-  <strong>Execution as Proof for money.</strong><br>
-  The deterministic correctness layer AI agents call — exact decimal,
-  kernel-enforced double-entry, audit-hashed and reproducible.
+  <strong>Exact-decimal double-entry kernel + MCP for agents.</strong><br>
+  Money.from + validateEntry + Ledger.apply. Audit-hashed. Deterministic. Fails closed.
 </p>
 
 <p align="center">
@@ -12,29 +11,19 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
 
-Ledger is a small, exact-decimal, **double-entry kernel** for TypeScript — plus an
-**MCP server** and AI guardrails — for building financial, accounting, investing, and
-tax components that **provably cannot** emit unbalanced or float-based entries. The
-kernel fails closed: an invalid entry is rejected, not posted.
+Small TypeScript double-entry kernel (exact `Money`, no floats) with MCP server. Invalid entries are rejected, never posted. Per-currency balance + audit hash + determinism harness enforced at the core.
 
-LLMs do pattern-matching, not arithmetic — they hallucinate numbers, miscategorize,
-and are confidently wrong. The industry fix is to **offload the math and the
-invariants to a deterministic tool**. Ledger is that tool for money.
+See [`docs/BENCHMARK.md`](docs/BENCHMARK.md) for the empirical guardrail result (unguarded vs kernel paths) and `npm run eval` to reproduce.
 
-## What it guarantees (and the failure it removes)
+## Enforcement (what the kernel prevents)
 
-| Token-level LLM / float failure | Ledger guarantee |
-|---|---|
-| `0.1 + 0.2 = 0.30000000000000004`, sub-cent drift | Exact decimal `Money` — no floats, ever; sub-scale amounts rejected |
-| Debits ≠ credits, "confidently wrong" entries | Double-entry enforced at the kernel; unbalanced state cannot be applied |
-| Silent currency mixing | Per-currency balancing; fails closed without explicit FX legs |
-| Tampered or non-reproducible books | SHA-256 audit-hash chain + determinism harness (rebuild = identical hash) |
-| Ungrounded claims | Small IFRS/GAAP citation graph |
-
-See [`docs/BENCHMARK.md`](docs/BENCHMARK.md): with the recorded fixture, an unguarded
-agent commits **4/8 corrupt entries** and leaves the books unbalanced; the guarded
-path lets **0** reach the books and the surviving ledger is balanced, audit-hashed,
-and deterministic. Reproduce with `npm run eval`.
+| Failure mode             | Kernel behavior                              |
+|--------------------------|----------------------------------------------|
+| Float drift / sub-scale  | `Money.from` rejects; exact decimal only     |
+| Unbalanced entry         | `validateEntry` + `Ledger.apply` reject      |
+| Currency mix             | Per-currency; explicit FX required           |
+| Tamper / non-repro       | Length-prefixed SHA-256 auditHash + verifyDeterminism |
+| Ungrounded               | Starter IFRS/GAAP citation graph             |
 
 ## For AI agents — the MCP server
 
@@ -241,10 +230,8 @@ The agent operates under the Zero-Skip discipline:
 - Proves invariants via `validateEntry` + `Ledger.apply` before output
 - Uses graph knowledge (levers) only when required
 
-> The kernel rules (exact Money, double-entry, Zero-Skip, citations) are mandatory.
-> Additional voice or persona instructions are optional flavor — see the rules in
-> [`AGENTS.md`](AGENTS.md) and [`docs/agent-persona.md`](docs/agent-persona.md). The correctness
-> guarantees above hold with or without it.
+> Kernel rules (exact Money, double-entry, Zero-Skip, citations) are mandatory.
+> Persona/voice notes are optional (see AGENTS.md + docs/agent-persona.md). The rules above apply with or without flavor.
 
 Commands are **agent-guidance prompts** (skills the host loads), not built-in engines.
 They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct/script use call the functions or the `ledger-verify` script / `npm run verify:ledger`.

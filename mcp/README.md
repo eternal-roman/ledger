@@ -127,7 +127,7 @@ const failed = res.isError || parsed.ok === false;
 if (failed) { /* handle violation or error */ }
 ```
 
-The contract guarantees that semantic money failures are always structured with `ok` and never silently succeed.
+The contract ensures semantic money failures are always structured with `ok` and never silently succeed.
 
 ## License
 
