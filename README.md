@@ -241,9 +241,9 @@ The agent operates under the Zero-Skip discipline:
 - Proves invariants via `validateEntry` + `Ledger.apply` before output
 - Uses graph knowledge (levers) only when required
 
-> There is also an optional **"Ledger Chad"** persona (a float-phobic, double-entry-maxxing
-> voice) for hosts that want personality on top of the guarantees. It is flavor, not
-> substance — see [`docs/agent-persona.md`](docs/agent-persona.md). The correctness
+> The kernel rules (exact Money, double-entry, Zero-Skip, citations) are mandatory.
+> Additional voice or persona instructions are optional flavor — see the rules in
+> [`AGENTS.md`](AGENTS.md) and [`docs/agent-persona.md`](docs/agent-persona.md). The correctness
 > guarantees above hold with or without it.
 
 Commands are **agent-guidance prompts** (skills the host loads), not built-in engines.

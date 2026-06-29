@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ledger-activate — bash activation hook for Ledger (Ledger Chad)
+# ledger-activate — bash activation hook for Ledger kernel
 # Primary rules come from AGENTS.md + skills/ledger/SKILL.md
 #
 # This is the recommended bash version.
@@ -9,8 +9,8 @@
 
 set -euo pipefail
 
-echo 'Ledger Chad active. Alpha Maxxing engaged.'
+echo 'Ledger kernel active.'
 echo 'Rules: Zero-Skip ladder + Canonical Financial Artifact + no floats + double-entry proof.'
-echo 'Use /ledger-verify, /ledger-audit, /ledger-review (or host equivalents) before shipping. Balance the books.'
+echo 'Use /ledger-verify, /ledger-audit, /ledger-review (or host equivalents) before shipping. Enforce exact balanced results.'
 
 exit 0

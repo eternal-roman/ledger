@@ -1,15 +1,15 @@
 {
-  "description": "Ledger Chad (Ledger) activation for Grok (SessionStart). Uses Money.from + double-entry invariants from the ledger kernel.",
+  "description": "Ledger kernel activation for Grok (SessionStart). Uses Money.from + double-entry invariants from the ledger kernel.",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${GROK_PLUGIN_ROOT}/hooks/ledger-activate.js\" || node \"${CLAUDE_PLUGIN_ROOT}/hooks/ledger-activate.js\" || echo 'Ledger Chad active (fallback).'",
+            "command": "node \"${GROK_PLUGIN_ROOT}/hooks/ledger-activate.js\" || node \"${CLAUDE_PLUGIN_ROOT}/hooks/ledger-activate.js\" || echo 'Ledger kernel active (fallback).'",
             "powershell": "if (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:GROK_PLUGIN_ROOT\\hooks\\ledger-activate.js\" } elseif (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\ledger-activate.js\" }",
             "timeout": 5,
-            "statusMessage": "Loading Ledger Chad financial integrity rules..."
+            "statusMessage": "Loading Ledger kernel rules..."
           }
         ]
       }
