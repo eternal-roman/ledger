@@ -104,7 +104,7 @@ npx tsx node_modules/@eternal-roman/ledger/examples/personal-ledger.ts
 npx tsx node_modules/@eternal-roman/ledger/examples/crypto-cex.ts
 # etc.
 ```
-All examples use the public '@eternal-roman/ledger' entrypoint (or fallback in source tree).
+All examples use the public '@eternal-roman/ledger' entry point (or fallback in source tree).
 
 The plugin install (Grok/Claude) also includes `dist/` so the runtime is available to the host if needed.
 
@@ -114,7 +114,7 @@ For AI hosts (plugin install recommended):
 - **Grok**: `grok plugin install /absolute/path/to/ledger --trust` (or from a marketplace). Provides all `/ledger-*` slash commands + skills globally (user scope) or per project. Reload via `r` in `/plugins` modal or restart. Use qualified names (e.g. `plugin:ledger:ledger-verify`) on collisions.
 - Claude Code: add via `.claude-plugin/`.
 - Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) for hosts without plugin support. Adapters (`.cursor/rules/ledger.mdc`, etc.) also work.
-- `pi` section and root `plugin.json` / `hooks/hooks.json` for first-class discovery.
+- Plugin metadata in `plugin.json` and `hooks/hooks.json` for first-class discovery.
 
 **Shell / hooks note**: Node hook (used by Grok) + bash-first (Claude). Git Bash recommended on Windows for full bash hooks; node path works in pure pwsh. See `hooks/README.md`.
 
@@ -154,7 +154,7 @@ See `examples/personal-ledger.ts`.
 - `makeLine` + `createBalancedEntry`/`createEntry` (compound)/`createFxConversion(..., rate?)`.
 - `validateEntry(entry)` (balance, scale, ISO date, currency) + `ledger.apply(entry)`.
 - `ledger.balance(account[, asOf, currency])`, `balancesByCurrency`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`. Fails closed on multi-currency unless currency given.
-- `ledger.auditHash()` — SHA-256 chain (tamper-detect); `verifyDeterminism` rebuilds + compares.
+- `ledger.auditHash()` — SHA-256 chain (tamper-evident); `verifyDeterminism` rebuilds + compares.
 - Knowledge: `loadDefaultKnowledge()` + levers for GAAP/IFRS.
 - Prove with `validateEntry` + equation before use.
 
@@ -247,7 +247,7 @@ The agent operates under the Zero-Skip discipline:
 > guarantees above hold with or without it.
 
 Commands are **agent-guidance prompts** (skills the host loads), not built-in engines.
-They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct/script use call the functions or the `ledger-verify` script / `npm run verify:ledger`.
+They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct or script use, call the functions or the `ledger-verify` script / `npm run verify:ledger`.
 
 See docs/CORE-PROTOCOL.md (contains Zero-Skip Execution Protocol).
 
@@ -279,7 +279,7 @@ Property-based tests and reproducibility checks are included.
 
 ## Principles
 
-- Zero-Skip Execution Protocol: nothing handwavy or lazy survives review
+- Zero-Skip Execution Protocol: nothing hand-wavy or lazy survives review
 - Exact value, always (deterministic decimal arithmetic)
 - Double-entry enforced at the kernel (GAAP/IFRS aligned)
 - Immutability + provenance + full audit trail
