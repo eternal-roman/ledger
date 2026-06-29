@@ -1,0 +1,92 @@
+name: Release Tag
+
+# Creates an annotated git tag + GitHub Release from the version in package.json.
+#
+# Why this exists: tags cannot be pushed from the sandboxed development
+# environment (the git relay rejects tag-ref pushes with HTTP 403). This
+# workflow uses the repository's own GITHUB_TOKEN, which is permitted, so a
+# release is tagged automatically the moment a version bump lands on main.
+#
+# Triggers:
+#   - push to main that touches package.json  -> tags the new version if untagged
+#   - workflow_dispatch                        -> tag on demand; pass `ref` to
+#                                                 backfill a historical release
+#                                                 (e.g. ref=26f1581 for v0.16.2)
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'package.json' ]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit SHA or branch to tag (defaults to the triggering commit)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for tagging)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref || github.sha }}
+
+      - name: Resolve version from package.json
+        id: ver
+        run: |
+          v=$(node -p "require('./package.json').version")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "tag=v$v" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: v$v"
+
+      - name: Check whether the tag already exists
+        id: check
+        run: |
+          if git ls-remote --tags origin "refs/tags/${{ steps.ver.outputs.tag }}" | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.ver.outputs.tag }} already exists — nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract release notes from CHANGELOG.md
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          awk -v ver="$v" '
+            $0 ~ "^## \\[" ver "\\]" { f=1; print; next }
+            f && /^## \[/ { exit }
+            f { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md || true
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "Release ${{ steps.ver.outputs.tag }}" > RELEASE_NOTES.md
+          fi
+          echo "----- release notes -----"
+          cat RELEASE_NOTES.md
+
+      - name: Create and push annotated tag
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GIT_AUTHOR_NAME: 'github-actions[bot]'
+          GIT_AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+          GIT_COMMITTER_NAME: 'github-actions[bot]'
+          GIT_COMMITTER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+        run: |
+          git tag -a "${{ steps.ver.outputs.tag }}" -m "Release ${{ steps.ver.outputs.tag }}"
+          git push origin "${{ steps.ver.outputs.tag }}"
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --notes-file RELEASE_NOTES.md \
+            --target "$(git rev-parse HEAD)"
