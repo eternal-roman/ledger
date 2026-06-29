@@ -1,0 +1,68 @@
+.planning/
+# Planning, knowledge seeds, detailed architecture, review docs, internal plans
+# Only final package + minimal public README/ docs are committed
+
+# Build / deps
+node_modules/
+dist/
+build/
+*.log
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+
+# Env
+.env
+.env.local
+*.env
+
+# Misc
+*.tmp
+
+# Release artifacts (produced by release skill + npm pack / python -m build etc.)
+# These are always signed + verified as part of /release; never commit them.
+*.tgz
+*.tar.gz
+*.whl
+*.sig
+*.asc
+release-artifacts/
+dist/*.tgz
+dist/*.sig
+dist/*.asc
+
+# Internal planning, commercial roadmap, detailed design specs, and architecture docs
+# These introduce bloat and potential security/info-leak risks (roadmap, gaps, internal processes).
+LEDGER-COMMERCIAL-GRADE-PLAN.md
+*COMMERCIAL*PLAN*.md
+docs/superpowers/
+docs/*design*.md
+docs/*spec*.md
+*engine-design*.md
+
+# Local AI coding agent / IDE rule files and project settings (breadcrumbs from multiple tools)
+# Canonical instructions live in AGENTS.md, CLAUDE.md, skills/, commands/, .claude-plugin/
+# .claude/settings.json contains machine-specific permissions and should not be committed.
+.claude/settings.json
+.claude/*settings*
+.clinerules/
+.cursor/
+.kiro/
+.windsurf/
+*clinerules*
+*cursor*
+*kiro*
+*windsurf*
+
+# Other local / transient
+.claude/cache/
+*.bak
+*~
+# Note: .claude-plugin/ and .github/ are intentionally tracked for the plugin + CI.

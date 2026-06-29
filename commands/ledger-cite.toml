@@ -1,0 +1,2 @@
+description = "Fetch canon-backed facts and citations using knowledge levers for financial concepts"
+prompt = "Use the ledger knowledge graph to fetch canon-backed facts for the given concept (levers e.g. standard_family, domain, jurisdiction). Return precise citations and facts suitable for attaching to JournalEntry or code. Ground in GAAP/IFRS, tax law, or policy. Always pair output with proper Money.from + validated double-entry when values are involved. Reference kernel primitives."

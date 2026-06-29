@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ledger",
+  "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact Money.from (no floats), kernel-enforced double-entry via JournalEntry + validateEntry + Ledger.apply, audit-hashed ledgers, canon citations. Provides /ledger-* skills and slash commands.",
+  "owner": {
+    "name": "eternal-roman",
+    "url": "https://github.com/eternal-roman/ledger"
+  },
+  "plugins": [
+    {
+      "name": "ledger",
+      "description": "Deterministic financial-correctness guardrails: Money.from always, validated JournalEntry + Ledger.apply, audit-hashed ledgers, citations, no floats, provable balance + invariants.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

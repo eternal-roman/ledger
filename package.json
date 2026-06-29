@@ -1,0 +1,119 @@
+{
+  "name": "@eternal-roman/ledger",
+  "version": "0.16.7",
+  "description": "Exact-decimal Money and double-entry primitives for TypeScript. Enforces balanced, non-float entries via validateEntry and immutable Ledger.apply. Ships with MCP server and mechanical verification tools. No database required.",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "require": {
+        "types": "./dist/core/index.d.cts",
+        "default": "./dist/core/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "scripts",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "plugin.json",
+    ".claude-plugin",
+    "examples",
+    "skills",
+    "commands",
+    "hooks",
+    "docs",
+    "reference-implementations",
+    "docs/claude-plugins.md"
+  ],
+  "workspaces": [
+    "mcp"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:mcp": "npm run build && npm -w @eternal-roman/ledger-mcp run build",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "tsx scripts/verify-determinism.ts",
+    "verify:ledger": "tsx scripts/ledger-verify.ts",
+    "check:versions": "tsx scripts/check-versions.ts",
+    "verify:mcp": "npm run build:mcp && npm -w @eternal-roman/ledger-mcp run smoke",
+    "eval": "npm run build && tsx eval/run.ts",
+    "verify:full": "npm run build && npm run typecheck && npm test && npm run check:versions && npm run verify && npm run verify:mcp",
+    "bash": "bash",
+    "with-bash": "bash scripts/with-git-bash.sh || echo 'On Windows use: .\\scripts\\with-git-bash.cmd \"your command\"'",
+    "clean": "node --eval \"const fs=require('fs'); try{fs.rmSync('dist',{recursive:true,force:true});}catch(e){}\" ",
+    "prepublishOnly": "npm run clean && npm run verify:full"
+  },
+  "bin": {
+    "ledger-verify": "./bin/ledger-verify.cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eternal-roman/ledger.git"
+  },
+  "keywords": [
+    "ledger",
+    "accounting",
+    "double-entry",
+    "fintech",
+    "deterministic",
+    "exact-arithmetic",
+    "ai-skill",
+    "ai-agent",
+    "mcp",
+    "mcp-server",
+    "llm-guardrail",
+    "financial-systems",
+    "ledger",
+    "investing",
+    "portfolio",
+    "trading",
+    "cost-basis",
+    "crypto",
+    "cex"
+  ],
+  "author": "eternal-roman",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/eternal-roman/ledger/issues"
+  },
+  "homepage": "https://github.com/eternal-roman/ledger#readme",
+  "dependencies": {
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-check": "^3.23.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.0"
+  },
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  }
+}

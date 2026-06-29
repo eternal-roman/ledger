@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" ledger-activate",
+            "timeout": 5,
+            "statusMessage": "Loading Ledger kernel rules..."
+          }
+        ]
+      }
+    ]
+  }
+}

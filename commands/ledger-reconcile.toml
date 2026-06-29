@@ -1,0 +1,2 @@
+description = "Turn assumptions, rates or policy into proper balanced journal entries with citations"
+prompt = "Reconcile the provided assumptions, rates, or policy impacts into proper double-entry JournalEntry(s) using the ledger kernel. Every amount via Money.from. Attach canon citations from knowledge graph where applicable. Validate the entries. Output the entries plus proof of balance and the sources used. Never leave assumptions implicit."

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, 'feature/*', 'feat/*', 'fix/*', 'claude/**' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check versions are up to date and consistent
+      run: npm run check:versions
+
+    - name: Verify (build + typecheck + test + determinism + MCP stdio smoke)
+      run: npm run verify:full
+
+    - name: Verify MCP completeness (no missing tools/resources/prompts/capabilities, surface up to date)
+      run: npm run verify:mcp
+
+    - name: Benchmark (guardrail must fully protect the books)
+      run: npm run eval
+
+# Pinned actions + Node 22/24 matrix for stable, current runners.
+# Explicit CI tests for hardening:
+# - check:versions: always verify all version manifests (package*, plugin*, mcp/*, py ref, CHANGELOG) consistent.
+# - verify:mcp: runs real stdio smoke on built binary asserting full surface (20 tools, 3 resources, 3 prompts)
+#   + MCP completeness (lists match declared, no missing capabilities vs README/kernel modules).
+# verify:full includes the above + build/type/test/determinism.
+# eval = adversarial guardrail tests.
+# Combined: strongest Kernel/MCP with deterministic, kernel-verified outcomes, no drift.

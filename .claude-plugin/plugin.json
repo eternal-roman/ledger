@@ -1,0 +1,20 @@
+{
+  "name": "ledger",
+  "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact Money.from (no floats), kernel-enforced double-entry via JournalEntry + validateEntry + Ledger.apply, audit-hashed ledgers, canon citations. Provides /ledger-* skills and slash commands.",
+  "author": {
+    "name": "eternal-roman / Ledger maintainers"
+  },
+  "version": "0.16.7",
+  "homepage": "https://github.com/eternal-roman/ledger",
+  "tags": [
+    "finance",
+    "accounting",
+    "double-entry",
+    "money",
+    "ai-skill",
+    "verification",
+    "gaap",
+    "ifrs",
+    "ledger-chad"
+  ]
+}
