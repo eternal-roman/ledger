@@ -1,6 +1,6 @@
 # ledger (Python Reference Canonical)
 
-Faithful port of the Ledger Chad kernel (see main TS implementation in `src/core/`).
+Faithful port of the Ledger kernel (see main TS implementation in `src/core/`).
 
 ## Purpose in Audits
 This is the reference Python implementation of the ledger kernel, intended for use when auditing Python codebases or when a target has not yet integrated the official primitives.

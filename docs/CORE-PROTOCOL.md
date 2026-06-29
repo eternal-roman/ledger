@@ -18,4 +18,4 @@ This block is the canonical definition. All persona files, skills, docs, and com
 ## Output Contract
 Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility. Then code. Use /ledger-verify or `npm run verify:ledger`.
 
-Invalid state must not be produced or persisted.
+Failure does not ship. All operations must be exact, balanced, and kernel-enforced.

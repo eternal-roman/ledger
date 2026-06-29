@@ -1,8 +1,9 @@
 # Ledger
 
 <p align="center">
-  <strong>Exact decimal, double-entry kernel for TypeScript.</strong><br>
-  Enforces balanced entries with no floats. Includes MCP server and verification tools.
+  <strong>Execution as Proof for money.</strong><br>
+  The deterministic correctness layer AI agents call — exact decimal,
+  kernel-enforced double-entry, audit-hashed and reproducible.
 </p>
 
 <p align="center">
@@ -11,15 +12,18 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
 
-Ledger is an exact-decimal, double-entry kernel for TypeScript with an MCP server for AI agents. It supplies the primitives for financial, accounting, and investing components. The kernel enforces the invariants at the API boundary: unbalanced or float-based entries are rejected and never posted. The kernel fails closed: an invalid entry is rejected, not posted.
+Ledger is a small, exact-decimal, **double-entry kernel** for TypeScript — plus an
+**MCP server** and AI guardrails — for building financial, accounting, investing, and
+tax components that **provably cannot** emit unbalanced or float-based entries. The
+kernel fails closed: an invalid entry is rejected, not posted.
 
 LLMs do pattern-matching, not arithmetic — they hallucinate numbers, miscategorize,
-and are confidently wrong. One approach is to offload arithmetic and invariants
-to a deterministic library so that errors are caught before they are persisted.
+and are confidently wrong. The industry fix is to **offload the math and the
+invariants to a deterministic tool**. Ledger is that tool for money.
 
-## Enforced behaviors (and the failures they address)
+## What it guarantees (and the failure it removes)
 
-| Token-level LLM / float failure | Kernel enforcement |
+| Token-level LLM / float failure | Ledger guarantee |
 |---|---|
 | `0.1 + 0.2 = 0.30000000000000004`, sub-cent drift | Exact decimal `Money` — no floats, ever; sub-scale amounts rejected |
 | Debits ≠ credits, "confidently wrong" entries | Double-entry enforced at the kernel; unbalanced state cannot be applied |
@@ -27,7 +31,7 @@ to a deterministic library so that errors are caught before they are persisted.
 | Tampered or non-reproducible books | SHA-256 audit-hash chain + determinism harness (rebuild = identical hash) |
 | Ungrounded claims | Small IFRS/GAAP citation graph |
 
-See [`docs/BENCHMARK.md`](docs/BENCHMARK.md). With the recorded fixture, an unguarded
+See [`docs/BENCHMARK.md`](docs/BENCHMARK.md): with the recorded fixture, an unguarded
 agent commits **4/8 corrupt entries** and leaves the books unbalanced; the guarded
 path lets **0** reach the books and the surviving ledger is balanced, audit-hashed,
 and deterministic. Reproduce with `npm run eval`.
@@ -46,11 +50,11 @@ npx -y @eternal-roman/ledger-mcp
 }
 ```
 
-The MCP server gives agents tools (`money_compute`, `entry_validate`, `ledger_post`,
+Gives an agent tools to `money_compute`, `entry_validate`, `ledger_post`,
 `ledger_balance`, `ledger_verify_equation`, `ledger_audit_hash`, `trace_run`,
-`cite_lookup`, and more) so they prove rather than guess. See [`mcp/`](mcp/).
+`cite_lookup`, and more — so it proves instead of guessing. See [`mcp/`](mcp/).
 
-## Comparison with related libraries
+## Why this over the alternatives
 
 | | Exact money | Double-entry enforced | Immutable + audit hash | Deterministic harness | DB-agnostic | AI / MCP guardrail |
 |---|---|---|---|---|---|---|
@@ -59,9 +63,9 @@ The MCP server gives agents tools (`money_compute`, `entry_validate`, `ledger_po
 | medici | partial | ✅ | — | — | ❌ (MongoDB) | — |
 | Formance / TigerBeetle | ✅ | ✅ | ✅ | partial | ❌ (service / DB) | — |
 
-No library compared above has all of the following at once: exact decimal **+** kernel-enforced double-entry **+**
+No alternative combines all of: exact decimal **+** kernel-enforced double-entry **+**
 immutability **+** tamper-evident audit hash **+** a determinism harness **+** zero
-database dependency **+** an MCP server.
+database dependency **+** an MCP guardrail. That combination is the point.
 
 ## Install
 
@@ -100,7 +104,7 @@ npx tsx node_modules/@eternal-roman/ledger/examples/personal-ledger.ts
 npx tsx node_modules/@eternal-roman/ledger/examples/crypto-cex.ts
 # etc.
 ```
-All examples use the public '@eternal-roman/ledger' entry point (or fallback in source tree).
+All examples use the public '@eternal-roman/ledger' entrypoint (or fallback in source tree).
 
 The plugin install (Grok/Claude) also includes `dist/` so the runtime is available to the host if needed.
 
@@ -110,7 +114,7 @@ For AI hosts (plugin install recommended):
 - **Grok**: `grok plugin install /absolute/path/to/ledger --trust` (or from a marketplace). Provides all `/ledger-*` slash commands + skills globally (user scope) or per project. Reload via `r` in `/plugins` modal or restart. Use qualified names (e.g. `plugin:ledger:ledger-verify`) on collisions.
 - Claude Code: add via `.claude-plugin/`.
 - Copy `AGENTS.md` (and/or `skills/ledger/SKILL.md`) for hosts without plugin support. Adapters (`.cursor/rules/ledger.mdc`, etc.) also work.
-- Plugin metadata in `plugin.json` and `hooks/hooks.json` for first-class discovery.
+- `pi` section and root `plugin.json` / `hooks/hooks.json` for first-class discovery.
 
 **Shell / hooks note**: Node hook (used by Grok) + bash-first (Claude). Git Bash recommended on Windows for full bash hooks; node path works in pure pwsh. See `hooks/README.md`.
 
@@ -150,7 +154,7 @@ See `examples/personal-ledger.ts`.
 - `makeLine` + `createBalancedEntry`/`createEntry` (compound)/`createFxConversion(..., rate?)`.
 - `validateEntry(entry)` (balance, scale, ISO date, currency) + `ledger.apply(entry)`.
 - `ledger.balance(account[, asOf, currency])`, `balancesByCurrency`, `verifyFundamentalEquation()`, `snapshot()`, `trialBalance()`. Fails closed on multi-currency unless currency given.
-- `ledger.auditHash()` — SHA-256 chain (tamper-evident); `verifyDeterminism` rebuilds + compares.
+- `ledger.auditHash()` — SHA-256 chain (tamper-detect); `verifyDeterminism` rebuilds + compares.
 - Knowledge: `loadDefaultKnowledge()` + levers for GAAP/IFRS.
 - Prove with `validateEntry` + equation before use.
 
@@ -195,15 +199,13 @@ valuePortfolio(l, priceBook, 'USD');                 // mark-to-market into a re
 Cost basis rides in the kernel's audit-hashed line `tags`, so lots and P&L are reproducible from the
 ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `examples/returns.ts`.
 
-## Accounting standards + production core features
+## Accounting standards — IFRS 16 (Leases, lessee)
 
-- IFRS 16 (Leases, lessee): full schedule + entries (PV, interest, straight-line dep via allocate, citations). Golden-master verified.
-- Period locks / hard close (anti-fraud): `createPeriodLock` + `guardedApply` (rejects effectiveDate <= lockDate).
-- Closing engine: `generateClosingEntries(ledger, closeDate, reAccount)` — zeros Income/Expense into RE using actual accounts discovered from the ledger.
-- FX translation + CTA: `computeFxTranslation(ledger, asOf, rates, reportingCurrency)` returns translated balances and the exact CTA plug for consolidated reporting.
-- General depreciation/amortization: `buildDepreciationSchedule` (straight-line via allocate for exact sums; declining) + `depreciationToEntries`.
-
-All new surfaces produce only kernel-validated `JournalEntry` objects, preserve the equation, and are deterministic. See `examples/financial-core-utilities.ts`.
+One faithful, fully-tested standard rather than broad stubs. The IFRS 16 lessee
+engine computes the initial lease liability (present value of payments), the ROU
+asset, and the full schedule of interest accretion, principal reduction, and
+straight-line depreciation — then emits balanced kernel journal entries with
+paragraph-level citations.
 
 ```ts
 import { Money, buildSchedule, leaseToEntries } from '@eternal-roman/ledger';
@@ -224,7 +226,7 @@ The schedule is verified **to the cent** by a golden-master test
 (`tests/standards/ifrs16.test.ts`): the liability closes to exactly `0.00`, total
 interest reconciles to payments minus initial liability, depreciation sums exactly
 to ROU cost, every entry passes `validateEntry`, the fundamental equation holds, and
-the audit hash is reproducible.
+the audit hash is reproducible. This turns "IFRS-grounded" from a claim into a fact.
 
 ## AI Agent Integration
 
@@ -239,13 +241,13 @@ The agent operates under the Zero-Skip discipline:
 - Proves invariants via `validateEntry` + `Ledger.apply` before output
 - Uses graph knowledge (levers) only when required
 
-> There is also an optional **"Ledger Chad"** persona (a float-phobic, double-entry-maxxing
-> voice) for hosts that want personality on top of the kernel. It is flavor, not
-> substance — see [`docs/agent-persona.md`](docs/agent-persona.md). The behaviors
-> described above hold with or without it.
+> The kernel rules (exact Money, double-entry, Zero-Skip, citations) are mandatory.
+> Additional voice or persona instructions are optional flavor — see the rules in
+> [`AGENTS.md`](AGENTS.md) and [`docs/agent-persona.md`](docs/agent-persona.md). The correctness
+> guarantees above hold with or without it.
 
 Commands are **agent-guidance prompts** (skills the host loads), not built-in engines.
-They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct or script use, call the functions or the `ledger-verify` script / `npm run verify:ledger`.
+They instruct the agent to use the real exported functions (see src/verify, src/core/journal, src/core/ledger). For direct/script use call the functions or the `ledger-verify` script / `npm run verify:ledger`.
 
 See docs/CORE-PROTOCOL.md (contains Zero-Skip Execution Protocol).
 
@@ -277,13 +279,13 @@ Property-based tests and reproducibility checks are included.
 
 ## Principles
 
-- Use the Zero-Skip protocol for value-related work
-- Exact decimal arithmetic only (no floats)
-- Double-entry enforced via the kernel primitives (with optional GAAP/IFRS citations)
-- Immutability, provenance, and audit trail
-- Citations from the knowledge graph when relevant
-- Fail closed: monetary changes must pass `validateEntry` + `Ledger.apply`
-- Small, focused surface for invariant enforcement
+- Zero-Skip Execution Protocol: nothing handwavy or lazy survives review
+- Exact value, always (deterministic decimal arithmetic)
+- Double-entry enforced at the kernel (GAAP/IFRS aligned)
+- Immutability + provenance + full audit trail
+- Graph-theory knowledge retrieval for targeted canon
+- Fail closed. The Final Verification: "Was this lazy? Is this mathematically and structurally undeniable?"
+- Minimal surface that still protects integrity
 
 ## Development
 
@@ -296,7 +298,7 @@ npm run eval          # regenerate the benchmark report
 Keep agent-guidance text (AGENTS.md, skills/*/SKILL.md, commands/*.toml, adapters)
 consistent with the Zero-Skip discipline. The optional persona lives in
 [`docs/agent-persona.md`](docs/agent-persona.md); keep it clearly separable from the
-enforced invariants so the library reads as engineering first.
+correctness guarantees so the library reads as engineering first.
 
 ## License
 

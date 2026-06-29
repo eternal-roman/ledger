@@ -1,4 +1,4 @@
-# Hooks for Ledger
+# Hooks for Ledger kernel activation
 
 Activation hooks (best-effort) for AI hosts. The real rules live in AGENTS.md + skills/ledger/SKILL.md. Slash commands and skills work independently of hooks. Enforces Money.from, double-entry via validateEntry + Ledger.apply, canon, Zero-Skip. No unbalanced state.
 

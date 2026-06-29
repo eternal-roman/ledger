@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ledger-py"
-version = "0.16.0"
-description = "Python reference canonical implementation of the Ledger Chad kernel (Money, double-entry JournalEntry, immutable Ledger). For audits and exact financial modeling in Python repos."
+version = "0.14.0"
+description = "Python reference implementation of the Ledger kernel (Money, double-entry JournalEntry, immutable Ledger). For audits and exact financial modeling in Python repos."
 readme = "ledger/README.md"
 requires-python = ">=3.10"
 authors = [
-  { name = "Ledger Chad" }
+  { name = "Ledger" }
 ]
 license = { text = "MIT" }
 dependencies = []
