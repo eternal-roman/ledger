@@ -146,24 +146,23 @@ export const baselineProposals: Record<string, Entry> = {
   },
   // OK
   t3: tasks[2].correct,
-  // PRECISION/UNBALANCED: even split done in floating point — 100/3 = 33.333..., three
-  // lines of '33.33' leave a cent unaccounted for (debits 99.99 != credit 100.00),
-  // and one line carries sub-cent precision.
+  // UNBALANCED: even split done naively — 100/3 rounded down to 33.33 each,
+  // so debits sum to 99.99 while the credit is 100.00 (off by one cent).
   t4: {
     id: 't4', date: '2026-01-12', description: 'Utilities split 3 ways',
     lines: [
-      acct('5100', 'Utilities - Dept A', 'Expense', '33.333', 'debit'),
+      acct('5100', 'Utilities - Dept A', 'Expense', '33.33', 'debit'),
       acct('5101', 'Utilities - Dept B', 'Expense', '33.33', 'debit'),
       acct('5102', 'Utilities - Dept C', 'Expense', '33.33', 'debit'),
       cash('100.00', 'credit'),
     ],
   },
-  // SUB_SCALE: float drift produced a sub-cent amount on both legs.
+  // UNBALANCED: agent used the wrong equipment cost on one leg (off by $1).
   t5: {
     id: 't5', date: '2026-01-15', description: 'Purchase equipment',
     lines: [
-      acct('1500', 'Equipment', 'Asset', '2500.00000000000001', 'debit'),
-      cash('2500.00000000000001', 'credit'),
+      acct('1500', 'Equipment', 'Asset', '2501.00', 'debit'),
+      cash('2500.00', 'credit'),
     ],
   },
   // OK

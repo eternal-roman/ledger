@@ -30,6 +30,12 @@ export class Ledger {
     if (!result.ok) {
       return { ledger: this, result };
     }
+    if (this._entries.some(e => e.id === entry.id)) {
+      return {
+        ledger: this,
+        result: { ok: false, violations: [{ type: 'DUPLICATE_ID', message: `Entry ID "${entry.id}" already exists in this ledger` }] }
+      };
+    }
     const newEntries = [...this._entries, entry];
     return {
       ledger: new Ledger(newEntries),

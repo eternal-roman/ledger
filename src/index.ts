@@ -19,6 +19,14 @@ export * from './crypto/index.js';
 // first fully-tested standard (golden-master verified to the cent).
 export * from './standards/ifrs16/index.js';
 
+// Period governance (hard close / anti-fraud), closing engine, FX translation + CTA,
+// and general depreciation/amortization schedules. All built on the kernel primitives
+// with the same golden-master, determinism, and equation guarantees.
+export * from './periods/lock.js';
+export * from './closing/closing.js';
+export * from './fx/translation.js';
+export * from './standards/depreciation/index.js';
+
 // Kernel (Money, Account, JournalEntry, Ledger) + recognition rules, a small
 // IFRS/GAAP citation graph, and the verify harness.
 //
@@ -35,6 +43,6 @@ function resolveVersion(): string {
 }
 export const VERSION: string = resolveVersion();
 export const DESCRIPTION =
-  'Execution as Proof for money — the deterministic correctness layer AI agents call. ' +
-  'Exact decimal arithmetic, kernel-enforced double-entry, immutable audit-hashed ledgers, ' +
-  'deterministic and reproducible. Provably cannot emit unbalanced or float-based entries.';
+  'Exact-decimal Money and double-entry primitives for TypeScript. ' +
+  'Enforces balanced, non-float entries via validateEntry and immutable Ledger.apply. ' +
+  'Includes audit hash, determinism checks and verification tools.';

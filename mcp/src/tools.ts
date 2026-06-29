@@ -52,6 +52,16 @@ function fail(message: string, extra: Record<string, unknown> = {}): ToolResult 
   };
 }
 
+/** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response. */
+function moneyConstructionViolation(e: unknown): ToolResult | null {
+  const msg = (e as Error).message ?? '';
+  if (msg.startsWith('Money.from:')) {
+    const data = { ok: false, violations: [{ type: 'SUB_SCALE', message: msg }] };
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: data };
+  }
+  return null;
+}
+
 const moneyOperand = z.object({
   amount: z.string().describe('Exact decimal string, never a float literal'),
   currency: z.string(),
@@ -149,7 +159,7 @@ export function registerTools(server: McpServer): void {
         const result = validateEntry(entry);
         return ok({ ok: result.ok, violations: result.violations });
       } catch (e) {
-        return fail((e as Error).message);
+        return moneyConstructionViolation(e) ?? fail((e as Error).message);
       }
     },
   );
@@ -181,6 +191,8 @@ export function registerTools(server: McpServer): void {
           entryCount: next.entries.length,
         });
       } catch (e) {
+        const mv = moneyConstructionViolation(e);
+        if (mv) return ok({ ok: false, posted: false, violations: (mv.structuredContent as any).violations });
         return fail((e as Error).message);
       }
     },
@@ -399,6 +411,142 @@ export function registerTools(server: McpServer): void {
       }
     },
   );
+
+  // === Core financial utilities (period controls, closing, FX translation, depreciation) ===
+
+  // periods_create_lock + periods_guarded_post for hard close / anti-fraud.
+  const lockSchema = z.object({
+    id: z.string(),
+    lockDate: z.string(),
+    authority: z.string(),
+    reason: z.string(),
+  });
+
+  server.registerTool(
+    'periods_create_lock',
+    {
+      title: 'Create a period lock (hard close)',
+      description: 'Create an immutable PeriodLock fact for use with guarded posting. effectiveDate <= lockDate will be rejected.',
+      inputSchema: { lock: lockSchema },
+    },
+    async (args) => {
+      try {
+        const { createPeriodLock } = await import('@eternal-roman/ledger');
+        const l = createPeriodLock(args.lock.id, args.lock.lockDate, args.lock.authority, args.lock.reason);
+        return ok({ ok: true, lock: l });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
+
+  server.registerTool(
+    'periods_guarded_post',
+    {
+      title: 'Guarded ledger post (respects period locks)',
+      description: 'Like ledger_post but rejects entries whose effectiveDate falls on or before any provided period lock. Returns the same shape.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        entry: entrySchema,
+        periodLocks: z.array(lockSchema).optional(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const bridge = await import('./kernel-bridge.js');
+        const mod = await import('@eternal-roman/ledger');
+        const ledger = bridge.parseLedger(args.ledger);
+        const entry = bridge.toUnvalidatedEntry(args.entry as any);
+        const locks = (args.periodLocks || []).map((pl: any) => mod.createPeriodLock(pl.id, pl.lockDate, pl.authority, pl.reason));
+        const res = (mod as any).guardedApply
+          ? (mod as any).guardedApply(ledger, entry, { periodLocks: locks })
+          : ledger.apply(entry);
+        if (!res.result.ok) {
+          return ok({ ok: false, posted: false, violations: res.result.violations });
+        }
+        return ok({ ok: true, posted: true, ledger: res.ledger.toJSON(), auditHash: res.ledger.auditHash() });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
+
+  server.registerTool(
+    'closing_generate_entries',
+    {
+      title: 'Generate closing entries to Retained Earnings',
+      description: 'Given a (serialized) ledger snapshot and close date, returns balanced JournalEntry[] that close Income/Expense to RE using the kernel. All entries are pre-validated.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        closeDate: z.string(),
+        retainedEarnings: z.object({ code: z.string(), name: z.string() }).optional(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const bridge = await import('./kernel-bridge.js');
+        const mod = await import('@eternal-roman/ledger');
+        const ledger = bridge.parseLedger(args.ledger);
+        const re = args.retainedEarnings
+          ? new mod.Account(args.retainedEarnings.code, args.retainedEarnings.name, mod.AccountType.Equity)
+          : undefined;
+        const entries = mod.generateClosingEntries(ledger, args.closeDate, re);
+        return ok({ ok: true, entries: entries.map((e: any) => e.toJSON ? e.toJSON() : e) });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
+
+  server.registerTool(
+    'fx_compute_translation',
+    {
+      title: 'FX translation + CTA',
+      description: 'Translate ledger balances at asOf using provided rates into reportingCurrency. Returns holdings, translated totals, and the exact CTA plug amount.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        asOf: z.string(),
+        rates: z.record(z.object({ rate: z.union([z.string(), z.number()]), source: z.string().optional() })),
+        reportingCurrency: z.string(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const bridge = await import('./kernel-bridge.js');
+        const mod = await import('@eternal-roman/ledger');
+        const ledger = bridge.parseLedger(args.ledger);
+        const result = mod.computeFxTranslation(ledger, args.asOf, args.rates, args.reportingCurrency);
+        return ok({ ok: true, ...result });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
+
+  server.registerTool(
+    'depreciation_build_schedule',
+    {
+      title: 'Build depreciation / amortization schedule',
+      description: 'Exact straight-line (allocate) or declining balance schedule. Input cost/salvage/life/method. Returns periods with exact Money amounts.',
+      inputSchema: {
+        id: z.string(),
+        cost: z.object({ amount: z.string(), currency: z.string() }),
+        salvage: z.object({ amount: z.string(), currency: z.string() }),
+        usefulLifePeriods: z.number().int().positive(),
+        method: z.enum(['straight-line', 'declining-balance']),
+        decliningRate: z.string().optional(),
+        commencementDate: z.string(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const mod = await import('@eternal-roman/ledger');
+        const input = {
+          id: args.id,
+          cost: mod.Money.from(args.cost.amount, args.cost.currency),
+          salvage: mod.Money.from(args.salvage.amount, args.salvage.currency),
+          usefulLifePeriods: args.usefulLifePeriods,
+          method: args.method,
+          decliningRate: args.decliningRate,
+          commencementDate: args.commencementDate,
+        };
+        const schedule = mod.buildDepreciationSchedule(input);
+        return ok({ ok: true, schedule });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
 }
 
 /** Names of all registered tools (for docs/tests). */
@@ -414,6 +562,11 @@ export const TOOL_NAMES = [
   'trace_run',
   'cite_lookup',
   'artifact_make',
+  'periods_create_lock',
+  'periods_guarded_post',
+  'closing_generate_entries',
+  'fx_compute_translation',
+  'depreciation_build_schedule',
 ] as const;
 
 // Re-export Money for consumers that want the type without reaching into the kernel.

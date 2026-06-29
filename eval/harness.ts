@@ -8,7 +8,7 @@
  * guarded run drops that to zero by construction (the kernel fails closed), and
  * additionally yields a balanced, audit-hashed, deterministic ledger.
  *
- * This is an invariant-enforcement benchmark (guarantees by construction), NOT a
+ * This is an invariant-enforcement benchmark (properties hold by construction of the kernel), NOT a
  * claim that the model got smarter.
  */
 import {

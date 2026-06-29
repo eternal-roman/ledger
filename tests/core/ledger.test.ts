@@ -75,8 +75,14 @@ describe('Ledger (immutable append + projections)', () => {
           let ledger = emptyLedger();
           let netCash = Money.from('0', 'USD');
 
-          for (const amt of amounts) {
-            const e = capEntry(String(amt));
+          for (let i = 0; i < amounts.length; i++) {
+            const amt = amounts[i];
+            const e = new JournalEntry(
+              `cap-step-${i}`,
+              '2026-01-01',
+              [makeLine(cash, Money.from(String(amt), 'USD'), 'debit'), makeLine(equity, Money.from(String(amt), 'USD'), 'credit')],
+              'Capital contribution'
+            );
             const res = ledger.apply(e);
             if (!res.result.ok) return false;
             ledger = res.ledger;
@@ -104,7 +110,8 @@ describe('Ledger (immutable append + projections)', () => {
         (amts) => {
           let ledger = emptyLedger();
           const rev = new Account('400', 'Rev', AccountType.Income);
-          for (const amt of amts) {
+          for (let i = 0; i < amts.length; i++) {
+            const amt = amts[i];
             const rev80 = Math.floor((amt * 4) / 5);
             const rest = amt - rev80;
             const lines = [
@@ -112,7 +119,7 @@ describe('Ledger (immutable append + projections)', () => {
               makeLine(rev, Money.from(String(rev80), 'USD'), 'credit'),
               makeLine(equity, Money.from(String(rest), 'USD'), 'credit')
             ];
-            const e = new JournalEntry('pc' + amt, '2026-01-01', lines, 'prop compound');
+            const e = new JournalEntry('pc-step-' + i, '2026-01-01', lines, 'prop compound');
             if (!validateEntry(e).ok) return false;
             ledger = ledger.apply(e).ledger;
             if (!ledger.verifyFundamentalEquation()) return false;

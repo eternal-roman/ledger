@@ -1,6 +1,6 @@
 # Scope and Layers (What the Kernel + Skills Actually Deliver Today)
 
-## Kernel Guarantees (src/core + src/verify)
+## What the Kernel Enforces (src/core + src/verify)
 - `Money.from` (exact Decimal, rejects non-int JS numbers, see money.ts:86-93).
 - `JournalEntry` + `validateEntry` (balance per currency, >=2 lines, positive amounts, scale, ISO date, no currency mix in one entry).
 - Immutable `Ledger.apply` (re-validates on every apply).
@@ -21,7 +21,7 @@ Agent guidance (skills/*.SKILL.md + commands/*.toml) that instructs the model to
 The mechanical enforcement is now also available via `scripts/ledger-verify.ts` / `npm run verify:ledger`.
 
 ## Limitations (see also docs/roadmap.md)
-- No complete schedule engines for IFRS 15/16 (deferred; roadmap Option A).
+- IFRS 16 (leases) fully implemented with golden-master verification. General depreciation/amortization (straight-line via allocate, declining balance) and period controls/closing/FX translation+CTA added as production utilities on the kernel.
 - Citation graph seeds are a small, high-quality starter set (see docs/CITATION-COVERAGE.md). Not a full canon replacement.
 - Skills are instructions + the CLI/script layer. LLM fidelity still matters for complex modeling; use the kernel functions directly in code for determinism.
 

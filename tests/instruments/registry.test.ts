@@ -45,18 +45,13 @@ describe('asset-aware Money scale (additive resolver)', () => {
 
   it('SUB_SCALE rejects precision finer than the asset scale', () => {
     installAssetScales(defaultAssetRegistry());
+    // Guard is now at Money.from construction — 9dp on an 8dp asset throws immediately.
+    expect(() => Money.from('0.000000005', 'BTC')).toThrow('Money.from');
+    // 8 dp is exactly the BTC scale — must be accepted:
+    expect(Money.from('0.00000001', 'BTC').toString()).toBe('0.00000001 BTC');
+    // Confirm the entry using 8dp also passes validateEntry:
     const a = new Account('CUST:X:BTC', 'btc', AccountType.Asset);
     const b = new Account('CLR:X:BTC', 'clr', AccountType.Liability);
-    // 9 dp on an 8-dp asset -> SUB_SCALE
-    const bad = new JournalEntry('e1', '2026-06-22', [
-      makeLine(a, Money.from('0.000000005', 'BTC'), 'debit'),
-      makeLine(b, Money.from('0.000000005', 'BTC'), 'credit'),
-    ], 'sub-scale btc');
-    const v = validateEntry(bad);
-    expect(v.ok).toBe(false);
-    expect(v.violations.some(x => x.type === 'SUB_SCALE')).toBe(true);
-
-    // 8 dp is fine
     const ok = createBalancedEntry('e2', '2026-06-22', a, b, Money.from('0.00000001', 'BTC'), 'ok btc');
     expect(validateEntry(ok).ok).toBe(true);
   });

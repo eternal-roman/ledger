@@ -90,6 +90,12 @@ export class Money {
       throw new Error(`Money.from: non-integer number ${value} risks float imprecision — pass a string (e.g. "${value}")`);
     }
     const dec = new Decimal(String(value));
+    const resolvedScale = scale ?? scaleFor(currency.toUpperCase());
+    if (dec.decimalPlaces() > resolvedScale) {
+      throw new Error(
+        `Money.from: ${value} ${currency.toUpperCase()} has ${dec.decimalPlaces()} decimal places but the currency scale is ${resolvedScale} — use a string with at most ${resolvedScale} decimal places`
+      );
+    }
     return new Money(dec, currency, scale, asOf, provenance);
   }
 

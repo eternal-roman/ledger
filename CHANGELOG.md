@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.16.0] - 2026-06-29
+
+**Core financial utilities release.**
+
+- Period-End Lock / Hard Close (anti-fraud protocol)
+- Closing / Retained Earnings Engine
+- Multi-Currency FX Translation & CTA
+- Standard Depreciation & Amortization Schedules
+
+All implemented on the kernel. Versions aligned across all 7 locations.
+
+## [0.15.0] - 2026-06-28
+
+**Factual cleanup + release hygiene for the kernel.**
+
+### Documentation and code notes verification
+- Full audit of README.md, all `docs/*.md`, `mcp/README.md`, hooks docs, and source comments (`//`, `/*`, `#`).
+- Removed/qualified marketing and legal-risk language: no "provably", no "guarantees" (as claims), no "Execution as Proof for money", no "the deterministic correctness layer", no "industry fix", no "turns X into a fact", no "protects".
+- Headings/tables/principles/descriptions now use exact terms matching the kernel: "enforces the invariants at the API boundary", "rejects ... never posted", "fail closed", "properties hold by construction".
+- "Comparison with related libraries", "Enforced behaviors", "What the Kernel Enforces".
+- Cleaned workspace junk/clutter (all session `.*.txt`, probe/adversarial temp scripts); `git fetch --prune --tags`; tags space contains only clean `vX.Y.Z`.
+- Persona flavor isolated; citations docs retain honest "starter set" + "verify against official" disclaimers.
+- Changes are minimal, traceable to actual code behavior (validateEntry, Ledger.apply, tests, golden masters).
+
+### Versions aligned across all 7 locations
+package.json, package-lock.json (top-level + packages[""]), plugin.json, .claude-plugin/plugin.json, reference-implementations/python/pyproject.toml, reference-implementations/python/ledger/__init__.py, CHANGELOG.md
+
+All 135 tests + determinism + build + typecheck green. CI matrix passed.
+
 ## [0.14.0] - 2026-06-24
 
 **The deterministic correctness layer AI agents call.** Installable for real,

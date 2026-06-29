@@ -7,7 +7,7 @@ ways: **baseline** (as-is, no guardrail) and **guarded** (each must pass the
 `@eternal-roman/ledger` kernel — `validateEntry` + `Ledger.apply` — before it
 lands). We then count how many invariant violations reach the committed books.
 
-> This is an invariant-enforcement benchmark: the guarantees are by construction,
+> This is an invariant-enforcement benchmark: the properties hold by construction of the kernel,
 > not a claim that the model got smarter.
 
 ## Headline
@@ -34,8 +34,8 @@ balanced, audit-hashed, and reproducible.
 | `t1` | Owner invests $10,000 cash to start the business. | ✅ valid |
 | `t2` | Pay January office rent of $1,800 in cash. | ❌ UNBALANCED |
 | `t3` | Invoice a client $4,200 for consulting on account (accounts receivable). | ✅ valid |
-| `t4` | Split a $100.00 shared utility bill evenly across 3 departments (cash paid). | ❌ SUB_SCALE, UNBALANCED |
-| `t5` | Buy a $2,500 laptop with cash (capitalize as equipment). | ❌ SUB_SCALE |
+| `t4` | Split a $100.00 shared utility bill evenly across 3 departments (cash paid). | ❌ UNBALANCED |
+| `t5` | Buy a $2,500 laptop with cash (capitalize as equipment). | ❌ UNBALANCED |
 | `t6` | Receive $4,200 cash from the client paying off their invoice. | ✅ valid |
 | `t7` | Accrue $1,200.50 of interest income earned but not yet received. | ✅ valid |
 | `t8` | Record $900 cash for a software subscription expense. | ❌ UNBALANCED, CURRENCY_MIX |

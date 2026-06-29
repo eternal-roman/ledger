@@ -30,6 +30,10 @@ from .verify import (
 from . import trading
 from .audit_scanner import scan_tree, find_monetary_in_file
 from .lots import Lot, RealizedDisposal, ReliefResult, relief_for, build_lots, realized_pnl
+from .periods import create_period_lock, PeriodLock, validate_entry_with_period_locks, guarded_apply
+from .closing import generate_closing_entries, create_retained_earnings_account
+from .fx_translation import compute_fx_translation
+from .depreciation import build_depreciation_schedule, depreciation_to_entries
 
 __all__ = [
     "Money", "FXRate", "money_from",
@@ -43,6 +47,10 @@ __all__ = [
     "trading",
     "scan_tree", "find_monetary_in_file",
     "Lot", "RealizedDisposal", "ReliefResult", "relief_for", "build_lots", "realized_pnl",
+    "create_period_lock", "PeriodLock", "validate_entry_with_period_locks", "guarded_apply",
+    "generate_closing_entries", "create_retained_earnings_account",
+    "compute_fx_translation",
+    "build_depreciation_schedule", "depreciation_to_entries",
 ]
 
-__version__ = "0.14.0-ref"  # align conceptually with TS
+__version__ = "0.16.0-ref"  # align conceptually with TS

@@ -292,6 +292,23 @@ export const ifrsSeed = {
         domain: ["accounting", "inventory", "measurement"]
       },
       confidence: 1.0
+    },
+    {
+      id: "ias21-foreign-currency-translation",
+      type: "Rule",
+      content: {
+        statement: "IAS 21: For translation to a presentation currency, assets and liabilities are translated at the closing rate; income/expenses at actual or average rates. Resulting exchange differences are recognized in other comprehensive income as Cumulative Translation Adjustment (CTA) within equity so that the translated financial statements balance."
+      },
+      provenance: {
+        source_id: "ias-21",
+        locator: "IAS 21 The Effects of Changes in Foreign Exchange Rates, paras 39-47, 57",
+        effective_from: "2003-as-revised"
+      },
+      dimensions: {
+        standard_family: ["IFRS"],
+        domain: ["accounting", "foreign-currency", "consolidation", "cta"]
+      },
+      confidence: 1.0
     }
   ] satisfies KnowledgeNode[],
   edges: [
@@ -305,6 +322,7 @@ export const ifrsSeed = {
     { from: "ifrs16-lease-recognition", to: "double-entry-principle", type: "requires" },
     { from: "ifrs16-lease-recognition", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
     { from: "ias16-depreciation-systematic", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
-    { from: "ias2-inventory-lower-of-cost-nrv", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" }
+    { from: "ias2-inventory-lower-of-cost-nrv", to: "ifrs-cf-2018-elements-asset-4.3", type: "derives_from" },
+    { from: "ias21-foreign-currency-translation", to: "double-entry-principle", type: "requires" }
   ] satisfies KnowledgeEdge[]
 };
