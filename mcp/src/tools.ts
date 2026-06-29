@@ -52,6 +52,16 @@ function fail(message: string, extra: Record<string, unknown> = {}): ToolResult 
   };
 }
 
+/** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response. */
+function moneyConstructionViolation(e: unknown): ToolResult | null {
+  const msg = (e as Error).message ?? '';
+  if (msg.startsWith('Money.from:')) {
+    const data = { ok: false, violations: [{ type: 'SUB_SCALE', message: msg }] };
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: data };
+  }
+  return null;
+}
+
 const moneyOperand = z.object({
   amount: z.string().describe('Exact decimal string, never a float literal'),
   currency: z.string(),
@@ -149,7 +159,7 @@ export function registerTools(server: McpServer): void {
         const result = validateEntry(entry);
         return ok({ ok: result.ok, violations: result.violations });
       } catch (e) {
-        return fail((e as Error).message);
+        return moneyConstructionViolation(e) ?? fail((e as Error).message);
       }
     },
   );
@@ -181,6 +191,8 @@ export function registerTools(server: McpServer): void {
           entryCount: next.entries.length,
         });
       } catch (e) {
+        const mv = moneyConstructionViolation(e);
+        if (mv) return ok({ ok: false, posted: false, violations: (mv.structuredContent as any).violations });
         return fail((e as Error).message);
       }
     },

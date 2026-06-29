@@ -54,7 +54,7 @@ const ar      = new Account('1100', 'Accounts Rec.', AccountType.Asset);
 const inv     = new Account('1200', 'Inventory',     AccountType.Asset);
 const ap      = new Account('2000', 'Accounts Pay.', AccountType.Liability);
 const equity  = new Account('3000', 'Owner Equity',  AccountType.Equity);
-const revenue = new Account('4000', 'Revenue',       AccountType.Revenue);
+const revenue = new Account('4000', 'Revenue',       AccountType.Income);
 const cogs    = new Account('5000', 'COGS',          AccountType.Expense);
 
 // ─── 1. Float arithmetic ──────────────────────────────────────────────────────
@@ -95,28 +95,17 @@ check('div keeps full internal precision — display truncates, arithmetic does 
   expect(third.mul(3).toString(), '1.00 USD');   // arithmetic: exact
 });
 
-// FINDING: sub-scale amounts silently truncate at construction (no throw)
-check('[FINDING] Money.from("0.001", "USD") truncates to 0.00 silently', () => {
-  const m = Money.from('0.001', 'USD');
-  expect(m.toString(), '0.00 USD'); // silent truncation, NOT a reject
-  // This means an AI agent passing sub-cent amounts gets silently zeroed.
-  // makeLine then enforces > 0, so a zeroed amount fails at entry creation.
+check('Money.from("0.001", "USD") throws — sub-scale rejected at construction', () => {
+  expectThrows(() => Money.from('0.001', 'USD'));
 });
 
-// FINDING: makeLine checks positivity only (lte(0)), NOT sub-scale.
-// The sub-scale 0.001 passes makeLine (internal decimal is 0.001, not 0).
-// validateEntry catches it via SUB_SCALE — so the guard is at entry creation, not line creation.
-check('[FINDING] makeLine allows sub-scale amount; createEntry catches it via SUB_SCALE', () => {
-  const subScale = Money.from('0.001', 'USD'); // internal: 0.001, display: 0.00
-  const line = makeLine(cash, subScale, 'debit', {}); // no throw here
-  expect(line.amount.toString(), '0.00 USD');          // display truncated
-  // But createEntry validates and must throw:
-  expectThrows(() =>
-    createEntry('sub-scale-entry', '2026-06-29',
-      [makeLine(cash, subScale, 'debit', {}), makeLine(equity, subScale, 'credit', {})],
-      'Sub-scale test'
-    )
-  );
+check('sub-scale Money.from throws before makeLine is ever reached', () => {
+  // The guard is now at Money.from, not deferred to createEntry
+  expectThrows(() => Money.from('0.001', 'USD'));
+  expectThrows(() => Money.from('0.123', 'USD')); // 3dp for 2dp currency
+  // Valid amounts still work
+  const fine = Money.from('0.01', 'USD');
+  expect(fine.toString(), '0.01 USD');
 });
 
 // ─── 2. Unbalanced entries ────────────────────────────────────────────────────
@@ -414,17 +403,17 @@ check('two branches from same base are independent', () => {
 // ─── 10. Edge cases an AI would hallucinate ───────────────────────────────────
 console.log('\n10. AI hallucination targets — amounts, dates, IDs');
 
-// FINDING: Ledger.apply has NO duplicate-ID check. The same entry can be posted twice.
-// This means an AI agent that retries a failed call can silently double-post.
-// The defense is at the caller's layer (MCP tool, application) not the kernel.
-check('[FINDING] Ledger.apply silently accepts duplicate entry IDs — double-posting possible', () => {
+check('Ledger.apply rejects duplicate entry IDs — DUPLICATE_ID violation', () => {
   const e = createBalancedEntry('dup', '2026-06-28', cash, equity, Money.from('100.00', 'USD'), 'post');
   const { ledger: l1, result: r1 } = emptyLedger().apply(e);
   expect(r1.ok, true);
-  const { ledger: l2, result: r2 } = l1.apply(e); // same ID again — accepted!
-  expect(r2.ok, true);
-  // Balance is now doubled — this is a real double-post:
-  expect(l2.balance(cash).toString(), '200.00 USD'); // NOT 100.00
+  expect(l1.balance(cash).toString(), '100.00 USD');
+  const { ledger: l2, result: r2 } = l1.apply(e); // same ID → rejected
+  expect(r2.ok, false);
+  if (r2.ok) throw new Error('should have been rejected');
+  expect(r2.violations[0].type, 'DUPLICATE_ID');
+  // Ledger is unchanged — no double-post
+  expect(l2.balance(cash).toString(), '100.00 USD');
 });
 
 check('non-ISO date is rejected', () => {

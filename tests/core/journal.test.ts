@@ -105,13 +105,11 @@ describe('JournalEntry + validateEntry (double-entry kernel)', () => {
   });
 
   it('rejects line amounts finer than the currency scale (sub-cent)', () => {
-    const e = new JournalEntry('sub', '2026-06-21', [
-      makeLine(cash, Money.from('0.001', 'USD'), 'debit'),
-      makeLine(equity, Money.from('0.001', 'USD'), 'credit'),
-    ], 'sub-cent');
-    const res = validateEntry(e);
-    expect(res.ok).toBe(false);
-    expect(res.violations.some(v => v.type === 'SUB_SCALE')).toBe(true);
+    // Guard is now at Money.from construction — sub-scale amounts throw before an entry is built.
+    expect(() => Money.from('0.001', 'USD')).toThrow('Money.from');
+    expect(() => Money.from('0.123', 'USD')).toThrow('Money.from');
+    // Valid 2-dp amounts are still accepted:
+    expect(Money.from('0.01', 'USD').toString()).toBe('0.01 USD');
   });
 
   it('rejects a non-ISO effective date', () => {
