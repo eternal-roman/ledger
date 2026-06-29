@@ -6,6 +6,8 @@ export default defineConfig({
   entry: {
     server: 'src/server.ts',
     tools: 'src/tools.ts',
+    resources: 'src/resources.ts',
+    prompts: 'src/prompts.ts',
   },
   format: ['esm'],
   dts: true,
