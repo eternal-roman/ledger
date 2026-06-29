@@ -15,7 +15,11 @@ name: Release Tag
 #
 # Triggers:
 #   - push to main touching package.json  -> ensure tag + GH Release for the version
+#   - push of v* tag                     -> ensure GH Release (covers local signed tag push)
 #   - workflow_dispatch (optional `ref`) -> backfill/create for a specific commit
+#
+# Extraction is strict: fails if the version's CHANGELOG section is missing (enforces
+# that the bump commit landed with proper entry per /release skill).
 #
 # See: /release skill, the "Publish" section, and verification via grok_com_github__get_release_by_tag.
 
@@ -23,6 +27,8 @@ on:
   push:
     branches: [ main ]
     paths: [ 'package.json' ]
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       ref:
@@ -80,21 +86,32 @@ jobs:
         if: steps.check.outputs.exists == 'false' || steps.release-check.outputs.exists == 'false'
         run: |
           set -euo pipefail
-          v="${{ steps.ver.outputs.version }}"
-          awk -v ver="$v" '
-            $0 ~ "^## \\[" ver "\\]" { f=1; print; next }
-            f && /^## \[/ { exit }
-            f { print }
-          ' CHANGELOG.md > RELEASE_NOTES.md || true
-          if [ ! -s RELEASE_NOTES.md ]; then
-            echo "ERROR: No CHANGELOG section found for version ${v} (expected '## [${v}] ...')." >&2
-            echo "The release bump commit must include an updated CHANGELOG entry (per /release skill)."
-            echo "Release ${{ steps.ver.outputs.tag }}" > RELEASE_NOTES.md
-            # Do not hard-fail the extraction (allow minimal release), but surface loudly.
-            # To enforce strictly, uncomment: exit 1
-          fi
-          echo "----- release notes -----"
-          cat RELEASE_NOTES.md
+          export VERSION="${{ steps.ver.outputs.version }}"
+          node - << 'NODE'
+            const fs = require('fs');
+            const v = process.env.VERSION;
+            const content = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const lines = content.split(/\r?\n/);
+            const header = new RegExp('^## \\[' + v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\]');
+            let out = [];
+            let capturing = false;
+            for (const line of lines) {
+              if (!capturing && header.test(line)) { capturing = true; out.push(line); continue; }
+              if (capturing) {
+                if (/^## \[/.test(line)) break;
+                out.push(line);
+              }
+            }
+            let notes = out.join('\n').trim();
+            if (!notes || !notes.startsWith('## [' + v + ']')) {
+              console.error('ERROR: No CHANGELOG section found for version ' + v + ' (expected "## [' + v + '] ...").');
+              console.error('The release bump commit must include an updated CHANGELOG entry (per /release skill).');
+              process.exit(1);
+            }
+            fs.writeFileSync('RELEASE_NOTES.md', notes + '\n');
+            console.log('----- release notes -----');
+            console.log(notes);
+          NODE
 
       - name: Create and push annotated tag (unsigned fallback)
         if: steps.check.outputs.exists == 'false'

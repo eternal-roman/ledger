@@ -6,9 +6,11 @@
 > [#50](https://github.com/eternal-roman/ledger/issues/50). The files here are in
 > place so that follow-up PR is a quick, low-risk execution.
 
+**For the internal Git version bump + signed tag + GitHub Release:** use the `/release` skill (or equivalent host command). It enforces the full sequence (feature PRs first, bump via protected path if needed, pre/post gates, `check:versions`, local signed tag+artifact, verification, MCP PRs where applicable). See `~/.grok/skills/release/SKILL.md` (or project copy) and `.github/workflows/release-tag.yml`.
+
 The repo is prepared for publication; these are the manual steps a maintainer with
-the right credentials runs. Nothing here is automated in CI (publishing requires an
-npm token and registry accounts).
+the right credentials runs for *final npm publish*. Nothing here is automated in CI (publishing requires an
+npm token and registry accounts). The steps below assume the Git-side release (tag + GH Release) has already completed via the skill.
 
 ## 1. Publish the kernel — `@eternal-roman/ledger`
 
