@@ -60,11 +60,14 @@ function fail(message: string, extra: Record<string, unknown> = {}): ToolResult 
 /** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response (consistent with other fail-closed). */
 function moneyConstructionViolation(e: unknown): ToolResult | null {
   const msg = (e as Error).message ?? '';
-  if (msg.startsWith('Money.from:')) {
-    const data = { ok: false, violations: [{ type: 'SUB_SCALE', message: msg }] };
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: data };
-  }
-  return null;
+  if (!msg.startsWith('Money.from:')) return null;
+  const type = /decimal places|scale/.test(msg)
+    ? 'SUB_SCALE'
+    : /finite/.test(msg)
+      ? 'NON_FINITE'
+      : 'INVALID_AMOUNT';
+  const data = { ok: false, violations: [{ type, message: msg }] };
+  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: data };
 }
 
 const moneyOperand = z.object({
@@ -118,10 +121,13 @@ export function registerTools(server: McpServer): void {
             if (!args.ratios || args.ratios.length === 0)
               return fail('op "allocate" requires non-empty ratios');
             const parts = a.allocate(args.ratios);
+            // Verify the kernel invariant rather than asserting it: the parts must
+            // sum back to the original amount exactly.
+            const sum = parts.reduce((acc, p) => acc.add(p), L.Money.zero(a.currency));
             return ok({
               ok: true,
               parts: parts.map((p) => p.toString()),
-              sumsToOriginal: true,
+              sumsToOriginal: sum.equals(a),
             });
           }
           case 'convert': {
