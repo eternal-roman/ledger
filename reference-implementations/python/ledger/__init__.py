@@ -53,4 +53,4 @@ __all__ = [
     "build_depreciation_schedule", "depreciation_to_entries",
 ]
 
-__version__ = "0.16.0-ref"  # align conceptually with TS
+__version__ = "0.16.1-ref"  # align conceptually with TS
