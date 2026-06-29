@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.16.3] - 2026-06-29
+
+**Operational FinEx extensions (patch).**
+
+Four kernel-native extensions, each built only on existing primitives (exact `Money`, `validateEntry`, immutable `Ledger`) and wired end-to-end (module → `index.ts` export → MCP tool → tests), in the same style as the closing/FX/depreciation utilities:
+
+- **Cash flow statement (`reporting/cashflow`):** direct-method statement derived exactly from ledger cash-account movements via per-leg attribution (a counterparty leg contributes `credit − debit` to cash). Per-currency operating/investing/financing with opening and closing cash and a self-checking `opening + netChange == closing` reconciliation. Cash accounts detected by convention (`CASH*` codes / "cash"-named assets) or an explicit code list.
+- **Position reconciliation (`reconcile/reconcile`):** compares ledger-derived balances against an external snapshot (exchange/custodian/bank), matched by account code **and** currency, with exact Money diffs and fail-closed status (`matched` / `mismatch` / `missing_in_ledger` / `missing_in_external`).
+- **Holding-period classification (`portfolio/lots`):** lot relief now emits a per-slice breakdown with `holdingDays` and short/long/**mixed** term (configurable `longTermThresholdDays`, default 365). Additive and backward-compatible; respects the v0.16.2 VULN-03 side guards.
+- **Settlement-date accounting (`trading/settlement`):** T+N postings — trade-date entries route the cash leg through a settlement receivable (sell) / payable (buy); the settlement-date entry swaps it for cash, netting the receivable/payable to zero. Economically identical to the spot fill, every leg kernel-validated.
+
+New MCP tools: `cashflow_statement`, `reconcile_positions`, `portfolio_relief`, `settlement_build_entries`.
+
+Verification: a 3-round seeded adversarial harness asserts every invariant holds (equation, determinism, cash-flow reconciliation, holding-period classification, settlement netting) and that every malformed proposal — unbalanced, currency-mix, duplicate id, sub-scale, float, non-finite, oversell, settlement-before-trade, fee-exceeds-amount — is always rejected and never posted. Full suite **179 tests** green and identical across 3 consecutive runs; `tsc` clean; both packages build; determinism + standalone adversarial suites green. No change to serialization format or existing balances.
+
+Versions aligned across all 7 locations.
+
 ## [0.16.2] - 2026-06-29
 
 **Security & correctness hardening (patch).**

@@ -27,6 +27,12 @@ export * from './closing/closing.js';
 export * from './fx/translation.js';
 export * from './standards/depreciation/index.js';
 
+// Operational reporting & controls built on the kernel: direct-method cash flow
+// statement (derived exactly from cash-account movements) and position
+// reconciliation against an external source of truth (exchange/custodian/bank).
+export * from './reporting/cashflow.js';
+export * from './reconcile/reconcile.js';
+
 // Kernel (Money, Account, JournalEntry, Ledger) + recognition rules, a small
 // IFRS/GAAP citation graph, and the verify harness.
 //

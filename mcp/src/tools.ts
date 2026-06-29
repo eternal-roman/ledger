@@ -547,6 +547,170 @@ export function registerTools(server: McpServer): void {
       } catch (e) { return fail((e as Error).message); }
     },
   );
+
+  // === Operational reporting & controls (cash flow, reconciliation, lot relief, settlement) ===
+
+  server.registerTool(
+    'cashflow_statement',
+    {
+      title: 'Direct-method cash flow statement',
+      description:
+        'Derive an exact direct-method cash flow statement from a serialized ledger: operating / ' +
+        'investing / financing flows per currency, with opening and closing cash. Cash accounts are ' +
+        'detected by convention (Asset codes starting CASH or names containing "cash") unless ' +
+        'cashAccountCodes is supplied. Self-checks that opening + netChange === closing.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        start: z.string().optional().describe('Inclusive period start YYYY-MM-DD'),
+        end: z.string().optional().describe('Inclusive period end YYYY-MM-DD'),
+        cashAccountCodes: z.array(z.string()).optional().describe('Explicit cash account codes'),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const bridge = await import('./kernel-bridge.js');
+        const mod = await import('@eternal-roman/ledger');
+        const ledger = bridge.parseLedger(args.ledger);
+        const sections = mod.cashFlowStatement(ledger, {
+          start: args.start,
+          end: args.end,
+          cashAccountCodes: args.cashAccountCodes,
+        });
+        return ok({ ok: true, sections });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
+
+  server.registerTool(
+    'reconcile_positions',
+    {
+      title: 'Reconcile positions against an external source',
+      description:
+        'Compare ledger-derived balances against an external snapshot (exchange/custodian/bank), ' +
+        'matched by account code AND currency. Returns per-account status (matched / mismatch / ' +
+        'missing_in_ledger / missing_in_external) with exact diffs and an overall reconciled flag.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        external: z.array(z.object({
+          accountCode: z.string(),
+          amount: z.string().describe('Exact decimal string, never a float'),
+          currency: z.string(),
+        })),
+        asOf: z.string().optional().describe('Optional as-of date YYYY-MM-DD'),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const bridge = await import('./kernel-bridge.js');
+        const mod = await import('@eternal-roman/ledger');
+        const ledger = bridge.parseLedger(args.ledger);
+        const result = mod.reconcilePositions(ledger, args.external, args.asOf);
+        return ok({ ok: true, ...result });
+      } catch (e) {
+        return moneyConstructionViolation(e) ?? fail((e as Error).message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'portfolio_relief',
+    {
+      title: 'Lot relief with holding-period classification',
+      description:
+        'Reconstruct open lots and realized disposals for an asset from the ledger using FIFO / LIFO ' +
+        '/ HIFO, with exact cost basis. Each disposal is broken down per consumed lot and classified ' +
+        'short vs long term by holding days (default threshold 365). Fails closed on oversell.',
+      inputSchema: {
+        ledger: ledgerSchema,
+        asset: z.string(),
+        method: z.enum(['FIFO', 'LIFO', 'HIFO']).optional(),
+        longTermThresholdDays: z.number().int().positive().optional(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const bridge = await import('./kernel-bridge.js');
+        const mod = await import('@eternal-roman/ledger');
+        const ledger = bridge.parseLedger(args.ledger);
+        const r = mod.reliefFor(ledger, args.asset, args.method ?? 'FIFO', {
+          longTermThresholdDays: args.longTermThresholdDays,
+        });
+        // Serialize Money fields to exact strings for transport.
+        return ok({
+          ok: true,
+          asset: r.asset,
+          quote: r.quote,
+          totalRealized: r.totalRealized.toString(),
+          openLots: r.openLots.map((l) => ({
+            id: l.id, asset: l.asset, acquiredDate: l.acquiredDate,
+            originEntryId: l.originEntryId,
+            quantity: l.quantity.toString(), costBasis: l.costBasis.toString(),
+          })),
+          realized: r.realized.map((d) => ({
+            tradeId: d.tradeId, date: d.date, asset: d.asset, term: d.term,
+            quantity: d.quantity.toString(), proceeds: d.proceeds.toString(),
+            basis: d.basis.toString(), gain: d.gain.toString(),
+            lots: d.lots.map((s) => ({
+              lotId: s.lotId, acquiredDate: s.acquiredDate,
+              quantity: s.quantity.toString(), basis: s.basis.toString(),
+              proceeds: s.proceeds.toString(), gain: s.gain.toString(),
+              holdingDays: s.holdingDays, term: s.term,
+            })),
+          })),
+        });
+      } catch (e) { return fail((e as Error).message); }
+    },
+  );
+
+  server.registerTool(
+    'settlement_build_entries',
+    {
+      title: 'Settlement-date (T+N) entries for a fill',
+      description:
+        'Split a fill into trade-date entries (asset moves; cash booked as a settlement receivable ' +
+        'on a sell / payable on a buy) and settlement-date entries (the receivable/payable is swapped ' +
+        'for cash). All entries are kernel-validated and balanced. Returns both entry sets as JSON.',
+      inputSchema: {
+        fill: z.object({
+          id: z.string(),
+          effectiveDate: z.string(),
+          venue: z.string(),
+          base: z.string(),
+          quote: z.string(),
+          side: z.enum(['buy', 'sell']),
+          quantity: moneyOperand,
+          price: moneyOperand,
+          fee: moneyOperand.optional(),
+          rebate: moneyOperand.optional(),
+        }),
+        settlementDate: z.string(),
+        lotMethod: z.string().optional(),
+      },
+    },
+    async (args): Promise<ToolResult> => {
+      try {
+        const mod = await import('@eternal-roman/ledger');
+        const f = args.fill;
+        const fill = {
+          id: f.id, effectiveDate: f.effectiveDate, venue: f.venue,
+          base: f.base, quote: f.quote, side: f.side,
+          quantity: mod.Money.from(f.quantity.amount, f.quantity.currency),
+          price: mod.Money.from(f.price.amount, f.price.currency),
+          fee: f.fee ? mod.Money.from(f.fee.amount, f.fee.currency) : undefined,
+          rebate: f.rebate ? mod.Money.from(f.rebate.amount, f.rebate.currency) : undefined,
+        };
+        const res = mod.settleFill(fill, args.settlementDate, { lotMethod: args.lotMethod });
+        return ok({
+          ok: true,
+          settledCash: res.settledCash.toString(),
+          tradeDate: res.tradeDate.map((e) => e.toJSON()),
+          settlement: res.settlement.map((e) => e.toJSON()),
+        });
+      } catch (e) {
+        return moneyConstructionViolation(e) ?? fail((e as Error).message);
+      }
+    },
+  );
 }
 
 /** Names of all registered tools (for docs/tests). */
@@ -567,6 +731,10 @@ export const TOOL_NAMES = [
   'closing_generate_entries',
   'fx_compute_translation',
   'depreciation_build_schedule',
+  'cashflow_statement',
+  'reconcile_positions',
+  'portfolio_relief',
+  'settlement_build_entries',
 ] as const;
 
 // Re-export Money for consumers that want the type without reaching into the kernel.
