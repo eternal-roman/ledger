@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.16.2] - 2026-06-29
+
+**Security & correctness hardening (patch).**
+
+Validated and fixed findings from an adversarial audit, plus a parallel hole found in review:
+
+- **VULN-01 (CRITICAL):** `Money.from` now rejects non-finite values (`Infinity`/`-Infinity`/`NaN`) from both string and number forms, so a non-finite amount can never poison balances, the fundamental equation, or the audit hash.
+- **VULN-02 (MEDIUM):** `Money.from` uses `Number.isSafeInteger`, rejecting numeric input above `MAX_SAFE_INTEGER` that `String()` would silently truncate.
+- **VULN-03 (HIGH):** lot reconstruction asserts the ledger side matches the tag role (`acquire`⇒debit, `dispose`⇒credit), preventing phantom cost lots from a mistagged line.
+- **VULN-04 (MEDIUM):** trading account `norm` preserves separators (`USD-T`⇒`USD_T`) so distinct symbols no longer collide onto one custody account.
+- **VULN-06 (LOW):** knowledge-graph search applies `\b` word boundaries only adjacent to word characters, so terms like `$100` match.
+- **FXRate Infinity/NaN (CRITICAL, found in review):** the same non-finite class reached the kernel through `FXRate` (string rates bypassed the number-only guard) and was reachable from the MCP server. Closed the whole class with one central `toFiniteDecimal` guard at every external numeric entry point (`Money.from`, `FXRate`, `Money.mul`/`div` scalars, `Money.allocate` ratios).
+- VULN-05 (regex synonym evasion) reviewed and intentionally not patched: it is an advisory-layer limitation that does not affect kernel double-entry invariants.
+
+10 new regression tests added (157 total). `tsc` typecheck clean; determinism verification produces identical audit hashes across runs; MCP suite green. No impact on serialization format or existing balances.
+
+Versions aligned across all 7 locations.
+
 ## [0.16.1] - 2026-06-29
 
 **Persona language cleanup (patch).**
