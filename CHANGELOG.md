@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.16.6] - 2026-06-29
+
+**MCP error response contract hardening + disclaimers (patch).**
+
+- Investigated and resolved real inconsistencies in MCP error signaling: `isError` usage was non-uniform across schema violations (SDK "MCP error -32602"), logical fail-closed (e.g. unbalanced via `ok({ok:false, violations})`), and runtime/precond (via `fail()`).
+- Standardized response contract: all controlled responses include top-level `ok: boolean`; logical fail-closed use structured {ok:false, ...} (isError typically unset); errors use isError + {ok:false, error}.
+- Added robust parsing in test `call()` and smoke `callJson` + `expectError`.
+- Expanded smoke and added dedicated contract tests covering schema, logical, and error categories.
+- Added minimal disclaimers (tests = "due diligence", MIT supported) in root/mcp READMEs, SCOPE, CITATION, SKILLs, SECURITY, AGENTS, python ref.
+- Deepened adversarial MCP loop coverage.
+- Response contract now documented in mcp/README.md.
+- All gates: 27 MCP tests, smoke (with error shapes), check:versions, verify:full green. No impact to kernel determinism or first-class usage.
+
+Versions aligned across package.json, package-lock.json (both), plugin.json, .claude-plugin/plugin.json, CHANGELOG.md, pyproject.toml, ledger/__init__.py (0.16.6-ref).
+
 ## [0.16.5] - 2026-06-29
 
 **MCP first-class kernel citizen + mandatory result verification (patch).**
