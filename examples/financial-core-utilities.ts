@@ -34,7 +34,7 @@ async function main() {
   console.log('Pre-close net income (demo):', ledger.incomeStatement?.()?.netIncome?.toString?.() ?? 'n/a');
 
   // === 2. Period Lock (anti-fraud) ===
-  const q2Lock = createPeriodLock('Q2-2026-close', '2026-06-30', 'CFO', 'Q2 hard close - no backdating');
+  const q2Lock = createPeriodLock('Q2-2026-close', '2026-06-30', 'CFO', 'Q2 hard close - no backdating', '2026-06-29T12:00:00.000Z');
   const postCloseAttempt = createBalancedEntry('bad-backdate', '2026-06-15', cash, revenue, Money.from('100', 'USD'), 'Illegal backdate');
   const guarded = guardedApply(ledger, postCloseAttempt, { periodLocks: [q2Lock] });
   console.log('Backdated post after lock rejected?', !guarded.result.ok, guarded.result.violations?.[0]?.type);

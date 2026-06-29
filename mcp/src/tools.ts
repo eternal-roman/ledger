@@ -440,6 +440,7 @@ export function registerTools(server: McpServer): void {
     lockDate: z.string(),
     authority: z.string(),
     reason: z.string(),
+    createdAt: z.string().optional().describe('Explicit ISO timestamp for determinism/reproducibility (recommended: provide fixed value instead of now)'),
   });
 
   server.registerTool(
@@ -451,7 +452,7 @@ export function registerTools(server: McpServer): void {
     },
     async (args) => {
       try {
-        const l = L.createPeriodLock(args.lock.id, args.lock.lockDate, args.lock.authority, args.lock.reason);
+        const l = L.createPeriodLock(args.lock.id, args.lock.lockDate, args.lock.authority, args.lock.reason, args.lock.createdAt || '1970-01-01T00:00:00.000Z'); // explicit for determinism; callers should supply fixed ISO
         return ok({ ok: true, lock: l });
       } catch (e) { return fail((e as Error).message); }
     },
@@ -472,7 +473,7 @@ export function registerTools(server: McpServer): void {
       try {
         const ledger = parseLedger(args.ledger);
         const entry = toUnvalidatedEntry(args.entry as EntryInput);
-        const locks = (args.periodLocks || []).map((pl: any) => L.createPeriodLock(pl.id, pl.lockDate, pl.authority, pl.reason));
+        const locks = (args.periodLocks || []).map((pl: any) => L.createPeriodLock(pl.id, pl.lockDate, pl.authority, pl.reason, pl.createdAt || '1970-01-01T00:00:00.000Z')); // explicit for determinism; prefer fixed ISO in input
         const res = L.guardedApply(ledger, entry, { periodLocks: locks });
         if (!res.result.ok) {
           return ok({ ok: false, posted: false, violations: res.result.violations });

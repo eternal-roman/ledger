@@ -19,8 +19,12 @@ import { registerPrompts } from './prompts.js';
 export function createServer(): McpServer {
   // Wire asset decimal scales (BTC=8, ETH=18, USDC=6, …) into the kernel so the
   // server accepts native-precision crypto amounts instead of capping them at the
-  // 2-dp fiat default. The resolver is process-global but installed once here, so
-  // every call this server handles resolves scales identically (deterministic).
+  // 2-dp fiat default.
+  //
+  // DETERMINISM NOTE (per research compaction): this remains process-global mutable state
+  // (see src/core/money.ts). For AI/deterministic use across contexts, prefer explicit
+  // scale when constructing Money (Money.from(value, cur, asOf, prov, explicitScale))
+  // or use the thin safe helper. install here makes *this server process* consistent.
   installAssetScales(defaultAssetRegistry());
   const server = new McpServer({
     name: 'ledger',

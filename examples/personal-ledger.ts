@@ -62,7 +62,7 @@ function main() {
   console.log('Income statement net:', ledger.incomeStatement().netIncome.toString());
   console.log('Balance sheet balanced:', ledger.balanceSheet().balanced);
   console.log('Zero check (savings after tx):', ledger.balance(savings).isZero() ? 'zero' : 'non-zero');
-  const snap = ledger.snapshot();
+  const snap = ledger.snapshot('2026-06-29'); // explicit date for determinism (no default now())
   console.log('Snapshot asOf + entries:', snap.asOf, snap.entries.length);
 
   // All entries were validated at apply time

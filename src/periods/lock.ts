@@ -29,7 +29,7 @@ export function createPeriodLock(
   lockDate: string,
   authority: string,
   reason: string,
-  createdAt = new Date().toISOString(),
+  createdAt: string,
   tags?: Record<string, string>
 ): PeriodLock {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(lockDate)) {

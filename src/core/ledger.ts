@@ -197,7 +197,7 @@ export class Ledger {
   }
 
   /** Capture current immutable snapshot (useful for audit / reporting). */
-  snapshot(asOf = new Date().toISOString().slice(0, 10)): LedgerSnapshot {
+  snapshot(asOf: string): LedgerSnapshot {
     return { entries: this.entries, asOf };
   }
 

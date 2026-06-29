@@ -13,14 +13,16 @@ export const ROUND_HALF_UP = 4; // decimal.js ROUND_HALF_UP
  * Consulted ONLY after the built-in fiat map misses, so the fiat path stays
  * byte-identical. Installed additively via `installAssetScales` in src/instruments.
  *
- * Determinism note: this is process-global mutable state. Install a frozen,
- * immutable registry before posting and persist it alongside any serialized Ledger
- * so asset Money rehydrates at the correct scale.
+ * Determinism note (per audit + compaction): this is process-global mutable state.
+ * For AI, reproducible, cross-process or "Blueprint First" use: prefer the explicit
+ * bypass Money.from(..., scale) or Money.fromWithExplicitScale(value, cur, scale).
+ * Never rely on pre-install for determinism; pass + persist the scale with any ledger.
  */
 type ScaleResolver = (symbol: string) => number | undefined;
 let extraResolver: ScaleResolver | undefined;
 
-/** Register a resolver that supplies decimal scales for non-fiat asset symbols. */
+/** Register a resolver that supplies decimal scales for non-fiat asset symbols.
+ * Prefer explicit scale in Money.from / fromWithExplicitScale for determinism instead of this global. */
 export function registerScaleResolver(resolver: ScaleResolver | undefined): void {
   extraResolver = resolver;
 }
@@ -109,7 +111,9 @@ export class Money {
   }
 
   /**
-   * Money.from(value, currency). String coercion prevents float traps. Optional scale override.
+   * Money.from(value, currency). String coercion prevents float traps. Optional scale override
+   * (5th param) bypasses the global resolver entirely for determinism (see fromWithExplicitScale).
+   * For AI/financial reproducibility, always supply explicit scale for non-fiat when possible.
    */
   static from(value: string | number, currency: string, asOf?: string, provenance?: string, scale?: number): Money {
     // VULN-02: isSafeInteger rejects both non-integers (0.1) and values above MAX_SAFE_INTEGER
@@ -127,6 +131,18 @@ export class Money {
       );
     }
     return new Money(dec, currency, scale, asOf, provenance);
+  }
+
+  /**
+   * Explicit-scale factory that *never* consults the global/process resolver.
+   * Use for determinism in AI agents, cross-process, or when you want to avoid installAssetScales side-effects.
+   * The scale is mandatory and used verbatim for validation + storage.
+   */
+  static fromWithExplicitScale(value: string | number, currency: string, scale: number, asOf?: string, provenance?: string): Money {
+    if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0) {
+      throw new Error('fromWithExplicitScale: scale must be a finite non-negative number');
+    }
+    return Money.from(value, currency, asOf, provenance, scale);
   }
 
   /** Zero for currency (preferred over from(0)). */

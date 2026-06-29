@@ -62,6 +62,25 @@ Same shape under their MCP config (`command: npx`, `args: ["-y", "@eternal-roman
 State is passed as JSON between calls (`ledger_post` returns a ledger you feed back
 in), so every call is **stateless, reproducible, and replayable**.
 
+**For determinism (per research):** always pass explicit `scale` for non-fiat via the library
+(`Money.from(amount, cur, asOf, prov, scale)` or `Money.fromWithExplicitScale`) and explicit
+dates to `snapshot(asOf)` / `createPeriodLock(..., createdAt)`. The global resolver and
+`new Date()` defaults are the known leaks; explicit use is the safe surface.
+
+## Safety for Agent Use (Hybrid Deterministic Guard)
+
+For production financial use, tool execution can be fronted by the optional
+**Hybrid Deterministic Guard** (`mcp/src/guard/`).
+
+- Stage 1: small SLM classifier proposes a tool with confidence.
+- Stage 2: full Zod + business rules.
+- Only both succeed → real kernel execution.
+- All other cases return a clean standardized `no-op`.
+
+See `mcp/src/guard/README.md` and `example-integration.ts` for wiring into
+`server.tool()` handlers. The guard is the recommended pattern when exposing
+Ledger MCP tools to untrusted or LLM-driven callers.
+
 ## Resources
 
 Read-only context a client can pull in so the agent knows the rules and the flow

@@ -24,20 +24,20 @@ function makeCap(id: string, date: string, amt = '1000') {
 
 describe('Period locks (anti-fraud hard close)', () => {
   it('createPeriodLock freezes and validates ISO date', () => {
-    const lock = createPeriodLock('Q2-2026', '2026-06-30', 'CFO', 'Quarter close');
+    const lock = createPeriodLock('Q2-2026', '2026-06-30', 'CFO', 'Quarter close', '2026-06-29T12:00:00.000Z');
     expect(Object.isFrozen(lock)).toBe(true);
     expect(lock.lockDate).toBe('2026-06-30');
   });
 
   it('validateEntryWithPeriodLocks passes open-period entries', () => {
-    const lock = createPeriodLock('Q2', '2026-06-30', 'Board', 'Close');
+    const lock = createPeriodLock('Q2', '2026-06-30', 'Board', 'Close', '2026-06-29T12:00:00.000Z');
     const e = makeCap('open-1', '2026-07-01');
     const res = validateEntryWithPeriodLocks(e, [lock]);
     expect(res.ok).toBe(true);
   });
 
   it('validateEntryWithPeriodLocks rejects historical on or before lock (inclusive)', () => {
-    const lock = createPeriodLock('Q2', '2026-06-30', 'CFO', 'Q2 close');
+    const lock = createPeriodLock('Q2', '2026-06-30', 'CFO', 'Q2 close', '2026-06-29T12:00:00.000Z');
     const e = makeCap('backdate', '2026-06-30');
     const res = validateEntryWithPeriodLocks(e, [lock]);
     expect(res.ok).toBe(false);
@@ -46,7 +46,7 @@ describe('Period locks (anti-fraud hard close)', () => {
   });
 
   it('guardedApply rejects locked date and leaves ledger unchanged', () => {
-    const lock = createPeriodLock('lock1', '2026-06-30', 'Audit', 'Hard close');
+    const lock = createPeriodLock('lock1', '2026-06-30', 'Audit', 'Hard close', '2026-06-29T12:00:00.000Z');
     let l = emptyLedger();
     const good = makeCap('g1', '2026-07-01');
     const r1 = guardedApply(l, good, { periodLocks: [lock] });
@@ -62,8 +62,8 @@ describe('Period locks (anti-fraud hard close)', () => {
 
   it('multiple locks: earliest effective lock wins for rejection', () => {
     const locks = [
-      createPeriodLock('Q1', '2026-03-31', 'CFO', 'Q1'),
-      createPeriodLock('Q2', '2026-06-30', 'CFO', 'Q2'),
+      createPeriodLock('Q1', '2026-03-31', 'CFO', 'Q1', '2026-06-29T12:00:00.000Z'),
+      createPeriodLock('Q2', '2026-06-30', 'CFO', 'Q2', '2026-06-29T12:00:00.000Z'),
     ];
     const e = makeCap('q1', '2026-03-15'); // before Q1 lock
     const res = validateEntryWithPeriodLocks(e, locks);
@@ -74,7 +74,7 @@ describe('Period locks (anti-fraud hard close)', () => {
   });
 
   it('guarded sequence + apply of valid open entries keeps equation and determinism', () => {
-    const lock = createPeriodLock('close-2026-06', '2026-06-30', 'CFO', 'June close');
+    const lock = createPeriodLock('close-2026-06', '2026-06-30', 'CFO', 'June close', '2026-06-29T12:00:00.000Z');
     let l = emptyLedger();
 
     const e1 = makeCap('c1', '2026-07-01', '5000');
@@ -93,7 +93,7 @@ describe('Period locks (anti-fraud hard close)', () => {
   });
 
   it('core validateEntry is never polluted — locked violation only via guard', () => {
-    const lock = createPeriodLock('x', '2026-01-01', 'x', 'x');
+    const lock = createPeriodLock('x', '2026-01-01', 'x', 'x', '2026-06-29T12:00:00.000Z');
     const e = makeCap('old', '2025-12-31');
     // pure core accepts the date
     expect(validateEntry(e).ok).toBe(true);
