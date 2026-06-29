@@ -12,6 +12,8 @@ See src/knowledge/seeds/*.ts for full list (conceptual framework, ASC 606, IFRS 
 
 **This is a starter set.** For production regulatory work always verify against the current official standards and your jurisdiction's current law. Use `ledger-cite` or `fetch` with levers to retrieve what is present.
 
+Tests exercising citations and the knowledge graph are due diligence verification of the seeds and lookup mechanism; they do not substitute for official canon review. See the Disclaimer in README.md and root LICENSE (MIT).
+
 ## Example lever queries (for /ledger-cite or direct fetch)
 ```ts
 fetch(graph, 'revenue recognition', { standard_family: ['IFRS'], domain: ['revenue'] })

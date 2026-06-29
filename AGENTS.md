@@ -54,6 +54,8 @@ Failure does not ship. All monetary operations must use the kernel primitives an
 
 (Reference implementation + verification harness lives in this package.)
 
+**Disclaimer:** Enforcer persona + tooling. Not advice. See root README Disclaimer and MIT LICENSE. Tests/harnesses = due diligence.
+
 ## Developing the Library
 Use Ledger primitives + host tooling when available:
 

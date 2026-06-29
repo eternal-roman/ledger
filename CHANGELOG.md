@@ -4,6 +4,8 @@
 
 **MCP first-class kernel citizen + mandatory result verification (patch).**
 
+- Added minimal legal disclaimers across primary locations (root+mcp READMEs, SCOPE-AND-LAYERS.md, CITATION-COVERAGE.md, skills/ledger/SKILL.md, SECURITY.md, AGENTS.md, Python ref README) referencing MIT license. Explicitly frames tests/adversarial harnesses/benchmarks as "due diligence".
+- Added deep adversarial MCP loop test (direct in-memory MCP client, 12+ rounds of malicious attempts: unbalanced, sub-scale, bad dates, number-rate injection, etc.). All attempts rejected or returned with `kernelVerified` + equation + determinism proofs. No bad data emitted. 27 MCP tests total pass deterministically.
 - MCP now static top-level imports from kernel (no lazy/any/dynamic in tools layer).
 - All key operations (post, fx, dep, guarded, cashflow, reconcile, portfolio, settlement, closing) now re-verify output with kernel primitives before return: verifyFundamentalEquation, validateEntry on generated, auditHash, etc. Responses include `kernelVerified` proof.
 - Consistent exact string serialization ("N CUR") for report Money values (fx, dep schedules).
@@ -11,8 +13,9 @@
 - ledgerSchema stricter (v + entries shape).
 - Standardized {ok:false} responses for business failures.
 - New `scripts/check-versions.ts` + wired into verify:full/prepublish (audits all 7+ locations incl mcp/*).
-- Expanded MCP tests + smoke cover advanced + verification roundtrips + serialization + guarded paths + rate enforcement. All 22 MCP tests pass; smoke green.
+- Expanded MCP tests + smoke cover advanced + verification roundtrips + serialization + guarded paths + rate enforcement. All 24 MCP tests pass (incl. deep adversarial loop); smoke green.
 - Ensures MCP never returns mistakes: always kernel-correct or explicit fail.
+- Hardened MCP error handling: investigated and resolved inconsistent `isError` signaling, non-uniform failure payloads ({ok:false,violations} vs {ok:false,error} vs raw "MCP error" strings), and fragile client helpers. All 20 tools now follow documented response contract. Added robust call helpers, error shape tests to unit + smoke (schema, logical fail-closed, precondition), and "Response Contract" section in mcp/README.md. All diagnostics, 27 MCP tests, and smoke now green. Due diligence for agent reliability.
 
 Versions aligned, check:versions + verify:full + mcp smoke green.
 

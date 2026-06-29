@@ -30,6 +30,12 @@ type ToolResult = {
   isError?: boolean;
 };
 
+/**
+ * Success or logical failure envelope.
+ * All tools should return data with a top-level `ok: boolean`.
+ * Logical "fail-closed" (e.g. unbalanced, violations) use ok({ ok: false, ... }) -- isError is typically left unset.
+ * This allows the tool execution itself to succeed while reporting the kernel-level failure.
+ */
 function ok(data: Record<string, unknown>): ToolResult {
   return {
     content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
@@ -37,6 +43,11 @@ function ok(data: Record<string, unknown>): ToolResult {
   };
 }
 
+/**
+ * Unexpected / precondition / runtime error.
+ * Sets isError: true and { ok: false, error: ... }.
+ * Used for cases that should surface as MCP tool errors.
+ */
 function fail(message: string, extra: Record<string, unknown> = {}): ToolResult {
   const data = { ok: false, error: message, ...extra };
   return {
@@ -46,7 +57,7 @@ function fail(message: string, extra: Record<string, unknown> = {}): ToolResult 
   };
 }
 
-/** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response. */
+/** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response (consistent with other fail-closed). */
 function moneyConstructionViolation(e: unknown): ToolResult | null {
   const msg = (e as Error).message ?? '';
   if (msg.startsWith('Money.from:')) {

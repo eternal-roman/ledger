@@ -89,6 +89,50 @@ Guided templates that steer the agent to prove with the tools instead of computi
 2. `ledger_post` the corrected entry → get back `{ ledger, auditHash }`.
 3. `ledger_verify_equation` / `ledger_balance` on the returned ledger → prove the books.
 
+## Response Contract (Success + Errors)
+
+All tool responses are delivered as `content[0].text` (JSON string) + `structuredContent`.
+
+**Success and logical failures** (the common case):
+```json
+{ "ok": true, ...tool-specific fields... }     // success
+{ "ok": false, "posted": false, "violations": [...] }  // e.g. entry_validate, ledger_post fail-closed
+{ "ok": false, "violations": [...] }                   // entry_validate guardrail
+```
+
+- `ok: false` signals a kernel-level or semantic failure (unbalanced, sub-scale, period lock, oversell, etc.).
+- These are returned without `isError` (the tool executed successfully and reported the failure).
+- Always inspect `parsed.ok`.
+
+**Precondition / runtime / unexpected errors**:
+```json
+{ "ok": false, "error": "..." }
+```
+- Returned with top-level `isError: true` on the CallToolResult.
+- Used for missing required args, unknown ops, internal throws, etc.
+
+**Schema / invocation errors** (SDK level, before handler):
+- `isError: true`
+- `content[0].text` starts with `"MCP error -32602: Input validation error: ..."`
+- This happens for type violations (e.g. number instead of required string for rates/amounts).
+- The strict Zod schemas in input declarations are intentional: they prevent float literals and bad data at the MCP boundary.
+
+**Client guidance**:
+```js
+const res = await client.callTool(...);
+const text = res.content?.[0]?.text ?? '{}';
+let parsed = {};
+try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+const failed = res.isError || parsed.ok === false;
+if (failed) { /* handle violation or error */ }
+```
+
+The contract guarantees that semantic money failures are always structured with `ok` and never silently succeed.
+
 ## License
 
 MIT — see the [root repository](https://github.com/eternal-roman/ledger).
+
+## Disclaimer
+
+The MCP server and `@eternal-roman/ledger` kernel supply exact-decimal arithmetic tools and double-entry guardrails for agents. **Not financial, tax, legal, or accounting advice.** The caller (or integrating system) is responsible for regulatory compliance, correct inputs/assumptions, and application of outputs. MCP tests, smoke, and kernel verifications are due diligence; the MIT License provides the supporting warranty disclaimer (see root LICENSE). Deterministic by construction on valid inputs; fail-closed on violations.

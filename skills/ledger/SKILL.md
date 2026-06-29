@@ -51,6 +51,8 @@ Ledger governs financial value handling and structural integrity. Strict enforce
 
 Failure does not ship. Mistakes do not ship.
 
+**Disclaimer:** This skill and the underlying kernel provide deterministic primitives and guardrails. Not financial/tax/legal advice. Responsibility for compliance and input correctness rests with the user/integrator. Verification tests (including adversarial) are due diligence only. MIT License (see LICENSE) supplies the legal disclaimer.
+
 See the package `AGENTS.md` and core implementation for the executable truth. Reference implementation lives here.
 
 ## Plugin Integration (when available)

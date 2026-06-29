@@ -5,3 +5,5 @@ Ledger uses exact arithmetic (decimal.js) and enforces invariants at constructio
 Report vulnerabilities via GitHub issues with "financial invariant violation" label or security contact if available.
 
 No external dependencies beyond decimal.js for core math.
+
+**Note:** Verification and adversarial tests (kernel + MCP) provide due diligence. See Disclaimer in README.md + MIT LICENSE for legal terms.
