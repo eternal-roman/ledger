@@ -159,6 +159,24 @@ describe('JournalEntry + validateEntry (double-entry kernel)', () => {
     expect(legs.length).toBe(2);
   });
 
+  it('createFxConversion rejects exactly-one-minor-unit drift (no rounding-skim)', () => {
+    const jpyCash = new Account('110', 'JPY Cash', AccountType.Asset);
+    const usdCash = new Account('100', 'USD Cash', AccountType.Asset);
+    const clrJpy = new Account('900', 'FX Clear JPY', AccountType.Liability);
+    const clrUsd = new Account('901', 'FX Clear USD', AccountType.Liability);
+    const rate = new FXRate('JPY', 'USD', '0.006789');
+    // 100 JPY × 0.006789 = 0.6789 → rounds to 0.68 USD
+    // 0.67 is exactly 1 minor unit off — must be rejected
+    expect(() => createFxConversion('fx-skim', '2026-06-21', jpyCash, usdCash,
+      Money.from(100, 'JPY'), Money.from('0.67', 'USD'), clrJpy, clrUsd,
+      'skim attempt', 'test', rate)).toThrow(/inconsisten/i);
+    // 0.68 (exact match) must still be accepted
+    const legs = createFxConversion('fx-exact', '2026-06-21', jpyCash, usdCash,
+      Money.from(100, 'JPY'), Money.from('0.68', 'USD'), clrJpy, clrUsd,
+      'exact match', 'test', rate);
+    expect(legs.length).toBe(2);
+  });
+
   it('freezes line and entry tags (deep immutability)', () => {
     const line = makeLine(cash, usd(10), 'debit', { project: 'X' });
     expect(() => { (line as any).side = 'credit'; }).toThrow();
