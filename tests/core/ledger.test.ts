@@ -222,6 +222,21 @@ describe('Ledger (immutable append + projections)', () => {
     expect(res.hash).toBe(emptyLedger().apply(e1).ledger.auditHash());
   });
 
+  it('verifyDeterminism proves a JSON serialization roundtrip reproduces the hash (M3)', () => {
+    const e1 = capEntry('1000');
+    const e2 = new JournalEntry('d2', '2026-01-02', [
+      makeLine(equity, Money.from('100', 'USD'), 'debit'),
+      makeLine(cash, Money.from('100', 'USD'), 'credit')
+    ], 'draw');
+    const res = verifyDeterminism([e1, e2]);
+    expect(res.ok).toBe(true);
+    // The check now independently rebuilds via fromJSON(toJSON) and reports it.
+    expect(res.roundtripOk).toBe(true);
+    // And the reported hash matches that independent rebuild.
+    const rebuilt = Ledger.fromJSON(res.ledger.toJSON());
+    expect(rebuilt.auditHash()).toBe(res.hash);
+  });
+
   it('Ledger and JournalEntry support exact deterministic (de)serialization (closes persistence gap)', () => {
     const rev = new Account('4100', 'Revenue', AccountType.Income);
     const e1 = capEntry('10000');
