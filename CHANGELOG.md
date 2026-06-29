@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.1] - 2026-06-29
+
+**Persona language cleanup (patch).**
+
+- Removed all hyperbolic meme-chat ("Ledger Chad", "Alpha Maxxing", "Float-Phobic", "GAAP-Pilled", "Double-Entry Maxxing", "Get beta", "diamond hands", "bro", etc.) from AGENTS.md, skills/ledger/*, CLAUDE.md, docs/*, hooks/*, commands/*, README.md, package.json, Python references, and other instruction files.
+- Deleted duplicate persona rule files for other AI tools (.clinerules, .cursor, .kiro, .windsurf).
+- All substantive technical rules, Zero-Skip protocol, kernel primitives (Money.from, JournalEntry, validateEntry, Ledger.apply), citations, and MCP safety preserved and presented cleanly.
+- Full /ledger-audit + /ponytail-audit + test suite + determinism verified clean. No impact on Kernel or MCP data integrity.
+- PR #60 merged after CI green.
+
+Versions aligned across all 7 locations.
+
 ## [0.16.0] - 2026-06-29
 
 **Core financial utilities release.**
