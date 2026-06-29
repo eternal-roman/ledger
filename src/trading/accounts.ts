@@ -80,3 +80,23 @@ export function revaluationReserveAccount(asset: string): Account {
 export function ownerFundingAccount(): Account {
   return new Account('FUNDING:OWNER', 'Owner funding', AccountType.Equity);
 }
+
+/**
+ * Settlement-date (T+N) accounting accounts. On the trade date the cash leg is
+ * recognized but not yet moved: a sale creates a receivable (we are owed cash), a
+ * purchase creates a payable (we owe cash). The settlement entry on the later
+ * settlement date swaps the receivable/payable for actual cash, so the account
+ * nets to zero once settled.
+ *
+ *   SETTLE:RECV:{VENUE}:{FIAT}  Asset      — unsettled cash receivable (after a sell)
+ *   SETTLE:PAY:{VENUE}:{FIAT}   Liability  — unsettled cash payable (after a buy)
+ */
+export function settlementReceivableAccount(venue: string, fiat: string): Account {
+  const v = norm(venue), f = norm(fiat);
+  return new Account(`SETTLE:RECV:${v}:${f}`, `${f} settlement receivable @ ${v}`, AccountType.Asset);
+}
+
+export function settlementPayableAccount(venue: string, fiat: string): Account {
+  const v = norm(venue), f = norm(fiat);
+  return new Account(`SETTLE:PAY:${v}:${f}`, `${f} settlement payable @ ${v}`, AccountType.Liability);
+}

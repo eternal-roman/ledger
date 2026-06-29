@@ -15,6 +15,20 @@ export interface Lot {
   readonly costBasis: Money;      // remaining total basis, in quote currency
 }
 
+export type HoldingTerm = 'short' | 'long';
+
+/** A single lot slice consumed by a disposal, with its holding period classified. */
+export interface DisposalLot {
+  readonly lotId: string;
+  readonly acquiredDate: string;
+  readonly quantity: Money;       // qty taken from this lot, in asset units
+  readonly basis: Money;          // basis of this slice, quote
+  readonly proceeds: Money;       // proceeds allocated to this slice, quote
+  readonly gain: Money;           // proceeds - basis, quote
+  readonly holdingDays: number;   // disposal date - acquisition date, in whole days
+  readonly term: HoldingTerm;     // short vs long per the threshold
+}
+
 export interface RealizedDisposal {
   readonly tradeId: string;
   readonly date: string;
@@ -23,6 +37,27 @@ export interface RealizedDisposal {
   readonly proceeds: Money;       // quote
   readonly basis: Money;          // quote
   readonly gain: Money;           // quote (negative = loss)
+  /** Per-lot breakdown with holding-period classification (one per consumed slice). */
+  readonly lots: DisposalLot[];
+  /** Aggregate term across slices: 'short', 'long', or 'mixed' when both appear. */
+  readonly term: HoldingTerm | 'mixed';
+}
+
+export interface ReliefOptions {
+  /**
+   * Holding-period threshold in days at/above which a disposal slice is "long"
+   * term (US long-term capital gains default = 365). Tax jurisdictions vary.
+   */
+  readonly longTermThresholdDays?: number;
+}
+
+/** Whole-day difference between two strict YYYY-MM-DD dates (UTC), disposal - acquired. */
+function daysBetween(acquired: string, disposed: string): number {
+  const [ay, am, ad] = acquired.split('-').map(Number);
+  const [dy, dm, dd] = disposed.split('-').map(Number);
+  const a = Date.UTC(ay, am - 1, ad);
+  const d = Date.UTC(dy, dm - 1, dd);
+  return Math.round((d - a) / 86_400_000);
 }
 
 export interface ReliefResult {
@@ -97,11 +132,17 @@ function pickLot(lots: Lot[], method: LotMethod): number {
  * Reconstruct open lots and realized P&L for one asset from the immutable ledger.
  * Pure, deterministic projection — no parallel state. Fails closed on oversell.
  */
-export function reliefFor(ledger: Ledger, asset: string, method: LotMethod = 'FIFO'): ReliefResult {
+export function reliefFor(
+  ledger: Ledger,
+  asset: string,
+  method: LotMethod = 'FIFO',
+  opts: ReliefOptions = {},
+): ReliefResult {
   const A = asset.toUpperCase();
   const { events, quote } = eventsFor(ledger, A);
   const q = quote ?? 'USD';
   const quoteScale = Money.zero(q).scale;
+  const thresholdDays = opts.longTermThresholdDays ?? 365;
   const lots: Lot[] = [];
   const realized: RealizedDisposal[] = [];
   let totalRealized = Money.zero(q);
@@ -122,6 +163,7 @@ export function reliefFor(ledger: Ledger, asset: string, method: LotMethod = 'FI
     const qtyTotal = ev.qty.toDecimal();
     let basisSum = Money.zero(q);
     let proceedsAllocated = Money.zero(q);
+    const sliceLots: DisposalLot[] = [];
 
     while (remaining.gt(0)) {
       const idx = pickLot(lots, method);
@@ -147,6 +189,20 @@ export function reliefFor(ledger: Ledger, asset: string, method: LotMethod = 'FI
       basisSum = basisSum.add(basisTake);
       proceedsAllocated = proceedsAllocated.add(proceedsTake);
 
+      // Record the consumed slice with its holding-period classification.
+      const holdingDays = daysBetween(lot.acquiredDate, ev.date);
+      const term: HoldingTerm = holdingDays >= thresholdDays ? 'long' : 'short';
+      sliceLots.push({
+        lotId: lot.id,
+        acquiredDate: lot.acquiredDate,
+        quantity: Money.from(take.toString(), A),
+        basis: basisTake,
+        proceeds: proceedsTake,
+        gain: proceedsTake.sub(basisTake),
+        holdingDays,
+        term,
+      });
+
       // shrink or remove the lot
       if (full) {
         lots.splice(idx, 1);
@@ -161,9 +217,13 @@ export function reliefFor(ledger: Ledger, asset: string, method: LotMethod = 'FI
     }
 
     const gain = ev.proceeds.sub(basisSum);
+    const hasShort = sliceLots.some(s => s.term === 'short');
+    const hasLong = sliceLots.some(s => s.term === 'long');
+    const term: HoldingTerm | 'mixed' = hasShort && hasLong ? 'mixed' : hasLong ? 'long' : 'short';
     realized.push({
       tradeId: ev.tradeId, date: ev.date, asset: A,
       quantity: ev.qty, proceeds: ev.proceeds, basis: basisSum, gain,
+      lots: sliceLots, term,
     });
     totalRealized = totalRealized.add(gain);
   }
