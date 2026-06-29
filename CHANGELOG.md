@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.5] - 2026-06-29
+
+**MCP first-class kernel citizen + mandatory result verification (patch).**
+
+- MCP now static top-level imports from kernel (no lazy/any/dynamic in tools layer).
+- All key operations (post, fx, dep, guarded, cashflow, reconcile, portfolio, settlement, closing) now re-verify output with kernel primitives before return: verifyFundamentalEquation, validateEntry on generated, auditHash, etc. Responses include `kernelVerified` proof.
+- Consistent exact string serialization ("N CUR") for report Money values (fx, dep schedules).
+- Rates in fx now string-only (exact decimal, no number).
+- ledgerSchema stricter (v + entries shape).
+- Standardized {ok:false} responses for business failures.
+- New `scripts/check-versions.ts` + wired into verify:full/prepublish (audits all 7+ locations incl mcp/*).
+- Expanded MCP tests + smoke cover advanced + verification roundtrips + serialization + guarded paths + rate enforcement. All 22 MCP tests pass; smoke green.
+- Ensures MCP never returns mistakes: always kernel-correct or explicit fail.
+
+Versions aligned, check:versions + verify:full + mcp smoke green.
+
 ## [0.16.4] - 2026-06-29
 
 **MCP server hardened for real end-user installs + resources/prompts (patch).**

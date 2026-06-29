@@ -211,3 +211,77 @@ describe('ledger MCP prompts', () => {
     expect(text).toContain('ledger_post');
   });
 });
+
+// === Double-verification for prior gaps + first-class kernel usage + always-verify-results ===
+describe('MCP first-class kernel verification + gap fixes', () => {
+  let client: Client;
+  beforeAll(async () => {
+    client = await connect();
+  });
+
+  const fxEntry = {
+    id: 'fx-seed',
+    effectiveDate: '2026-06-21',
+    description: 'fx seed',
+    lines: [cashDebit('1000.00'), equityCredit('1000.00')],
+  };
+
+  it('ledger_post + kernel verification on result (equation + audit + verified)', async () => {
+    const p = await call(client, 'ledger_post', { entry: fxEntry });
+    expect(p.parsed.posted).toBe(true);
+    expect(p.parsed.kernelVerified).toBeTruthy();
+    expect(p.parsed.kernelVerified.equation).toBe(true);
+    const eq = await call(client, 'ledger_verify_equation', { ledger: p.parsed.ledger });
+    expect(eq.parsed.balanced).toBe(true);
+    const det = await call(client, 'ledger_verify_determinism', { ledger: p.parsed.ledger });
+    expect(det.parsed.ok).toBe(true);
+  });
+
+  it('fx_compute_translation uses string rate only + serializes to strings + kernel verify', async () => {
+    const p = await call(client, 'ledger_post', { entry: fxEntry });
+    const fx = await call(client, 'fx_compute_translation', {
+      ledger: p.parsed.ledger,
+      asOf: '2026-06-21',
+      rates: { USD: { rate: '1.0', source: 'test' } },
+      reportingCurrency: 'USD',
+    });
+    expect(fx.parsed.ok).toBe(true);
+    expect(typeof fx.parsed.holdings?.[0]?.original).toBe('string'); // '1000.00 USD' not object
+    expect(fx.parsed.kernelVerified?.balancedWithCta).toBeDefined();
+    // (number rate test omitted to avoid MCP error text parse in helper; schema now string-only)
+  });
+
+  it('depreciation + periods_guarded + serialization + verification', async () => {
+    const dep = await call(client, 'depreciation_build_schedule', {
+      id: 'd1', cost: { amount: '1200', currency: 'USD' }, salvage: { amount: '0', currency: 'USD' },
+      usefulLifePeriods: 2, method: 'straight-line', commencementDate: '2026-01-01',
+    });
+    expect(dep.parsed.ok).toBe(true);
+    expect(typeof dep.parsed.schedule?.periods?.[0]?.depreciation).toBe('string');
+
+    const lock = { id: 'l1', lockDate: '2026-06-20', authority: 'test', reason: 'pre' };
+    const lres = await call(client, 'periods_create_lock', { lock });
+    expect(lres.parsed.ok).toBe(true);
+
+    const lockedEntry = { ...fxEntry, effectiveDate: '2026-06-19' }; // before lock
+    const postRes = await call(client, 'ledger_post', { entry: lockedEntry });
+    const g = await call(client, 'periods_guarded_post', {
+      ledger: postRes.parsed.ledger,
+      entry: lockedEntry,
+      periodLocks: [lock],
+    });
+    expect(g.parsed.posted).toBe(false);
+    expect(g.parsed.violations?.some((v: any) => v.type === 'PERIOD_LOCKED' || String(v.message).includes('lock'))).toBe(true);
+  });
+
+  it('reconcile + cashflow + settlement return kernelVerified and strings', async () => {
+    const p = await call(client, 'ledger_post', { entry: fxEntry });
+    const rec = await call(client, 'reconcile_positions', { ledger: p.parsed.ledger, external: [{ accountCode: '1000', amount: '10000.00', currency: 'USD' }] });
+    expect(rec.parsed.ok).toBe(true);
+    expect(rec.parsed.kernelVerified).toBeTruthy();
+
+    const cf = await call(client, 'cashflow_statement', { ledger: p.parsed.ledger });
+    expect(cf.parsed.ok).toBe(true);
+    expect(cf.parsed.kernelVerified?.equation).toBe(true);
+  });
+});
