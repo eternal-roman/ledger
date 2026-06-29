@@ -2,8 +2,10 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fc from 'fast-check';
 import { Money, registerScaleResolver } from '../../src/core/money.js';
 import { Ledger, emptyLedger } from '../../src/core/ledger.js';
+import { JournalEntry, makeLine, createEntry } from '../../src/core/journal.js';
+import { Account, AccountType } from '../../src/core/account.js';
 import { AssetRegistry, installAssetScales } from '../../src/instruments/index.js';
-import { Fill, fillToEntries, depositToEntry, custodyAccount } from '../../src/trading/index.js';
+import { Fill, fillToEntries, depositToEntry, custodyAccount, LOT_TAGS } from '../../src/trading/index.js';
 import { reliefFor, buildLots, realizedPnL, unrealizedPnL } from '../../src/portfolio/index.js';
 
 // A unit-scale test asset keeps property quantities integer and exact.
@@ -55,6 +57,42 @@ describe('cost-basis lots & realized P&L', () => {
   it('fails closed on oversell', () => {
     const l = applyAll([buy('b1', '5', '100'), sell('s1', '10', '110')]);
     expect(() => reliefFor(l, 'SH', 'FIFO')).toThrow(/oversell/i);
+  });
+
+  it('VULN-03: rejects acquire tag on a credit line (phantom lot prevention)', () => {
+    // Construct a kernel-valid balanced entry where the custody line is incorrectly
+    // tagged 'acquire' but sits on the credit side — reducing custody while opening a lot.
+    const custAcct = new Account('CUST:V:SH', 'SH custody @ V', AccountType.Asset);
+    const counterAcct = new Account('CLR:V:SH', 'SH clearing @ V', AccountType.Liability);
+    const qty = Money.from('10', 'SH');
+    const badEntry = createEntry('bad-1', '2026-06-22', [
+      makeLine(counterAcct, qty, 'debit'),
+      makeLine(custAcct, qty, 'credit', {
+        [LOT_TAGS.tradeId]: 'bad-1', [LOT_TAGS.role]: 'acquire',
+        [LOT_TAGS.quote]: 'USD', [LOT_TAGS.costBasis]: '1000',
+      }),
+    ], 'Mistagged acquire on credit');
+
+    let l = emptyLedger();
+    l = l.apply(badEntry).ledger;
+    expect(() => reliefFor(l, 'SH', 'FIFO')).toThrow(/acquire.*credit|credit.*acquire/i);
+  });
+
+  it('VULN-03: rejects dispose tag on a debit line (side integrity)', () => {
+    const custAcct = new Account('CUST:V:SH', 'SH custody @ V', AccountType.Asset);
+    const counterAcct = new Account('CLR:V:SH', 'SH clearing @ V', AccountType.Liability);
+    const qty = Money.from('5', 'SH');
+    const badEntry = createEntry('bad-2', '2026-06-22', [
+      makeLine(custAcct, qty, 'debit', {
+        [LOT_TAGS.tradeId]: 'bad-2', [LOT_TAGS.role]: 'dispose',
+        [LOT_TAGS.quote]: 'USD', [LOT_TAGS.proceeds]: '600',
+      }),
+      makeLine(counterAcct, qty, 'credit'),
+    ], 'Mistagged dispose on debit');
+
+    let l = emptyLedger();
+    l = l.apply(badEntry).ledger;
+    expect(() => reliefFor(l, 'SH', 'FIFO')).toThrow(/dispose.*debit|debit.*dispose/i);
   });
 
   it('unrealized P&L marks open lots against a cited price', () => {

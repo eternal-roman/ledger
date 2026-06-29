@@ -4,6 +4,7 @@ import { emptyLedger } from '../../src/core/ledger.js';
 import { validateEntry } from '../../src/core/journal.js';
 import { defaultAssetRegistry, installAssetScales } from '../../src/instruments/index.js';
 import { Fill, fillToEntries, depositToEntry, custodyAccount, cashAccount, tradingFeeAccount, rebateAccount } from '../../src/trading/index.js';
+import { custodyAccount as custAcct } from '../../src/trading/accounts.js';
 
 beforeAll(() => installAssetScales(defaultAssetRegistry()));
 afterAll(() => registerScaleResolver(undefined));
@@ -70,5 +71,20 @@ describe('fillToEntries (trades -> balanced kernel entries)', () => {
       side: 'buy' as const, quantity: Money.from('1', 'BTC'), price: Money.from('1', 'USD') };
     expect(() => fillToEntries({ ...base, fee: Money.from('1', 'USD'), rebate: Money.from('1', 'USD') })).toThrow(/fee OR rebate/i);
     expect(() => fillToEntries({ ...base, fee: Money.from('1', 'EUR') })).toThrow(/quote/i);
+  });
+});
+
+describe('VULN-04: account norm preserves symbol identity across separators', () => {
+  it('distinct symbols with separators get distinct account codes', () => {
+    const usdtClean = custAcct('BINANCE', 'USDT');
+    const usdtHyphen = custAcct('BINANCE', 'USD-T');
+    expect(usdtClean.code).toBe('CUST:BINANCE:USDT');
+    expect(usdtHyphen.code).toBe('CUST:BINANCE:USD_T');
+    expect(usdtClean.code).not.toBe(usdtHyphen.code);
+  });
+
+  it('clean symbols are unaffected by the change', () => {
+    expect(custAcct('KRAKEN', 'BTC').code).toBe('CUST:KRAKEN:BTC');
+    expect(custAcct('Kraken', 'btc').code).toBe('CUST:KRAKEN:BTC');
   });
 });

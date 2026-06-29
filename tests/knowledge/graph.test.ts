@@ -94,6 +94,28 @@ describe('Knowledge Graph (dimension fetch)', () => {
     expect(res.nodes.some(n => n.id === 'note-syntax')).toBe(false); // 'syntax' must NOT match 'tax'
   });
 
+  it('VULN-06: matches query terms that begin with non-word characters (e.g. "$100")', () => {
+    let g = createGraph();
+    g = loadSeed(g, { nodes: [{
+      id: 'price-note', type: 'Fact',
+      content: { text: 'The market price is $100 per unit.' },
+      provenance: { source_id: 'test', locator: 'p1', effective_from: '2020' },
+      dimensions: { domain: ['trading'] }, confidence: 0.8,
+    }] as any });
+    // "$100" starts with a non-word char; \b\$100\b previously returned false
+    expect(fetch(g, '$100', {}).nodes.some(n => n.id === 'price-note')).toBe(true);
+    // plain word term still works
+    expect(fetch(g, 'price', {}).nodes.some(n => n.id === 'price-note')).toBe(true);
+    // "tax" must NOT match "syntax" (word boundary for word-char terms preserved)
+    g = loadSeed(g, { nodes: [{
+      id: 'syntax-note', type: 'Concept',
+      content: { statement: 'syntax highlighting only' },
+      provenance: { source_id: 'misc', locator: 'n/a', effective_from: '2020' },
+      dimensions: { domain: ['misc'] }, confidence: 0.5,
+    }] as any });
+    expect(fetch(g, 'tax', {}).nodes.some(n => n.id === 'syntax-note')).toBe(false);
+  });
+
   it('orders results by confidence (desc), then id, deterministically', () => {
     let g = createGraph();
     g = loadSeed(g, { nodes: [

@@ -33,6 +33,24 @@ function scaleFor(currency: string): number {
 }
 
 /**
+ * Central guard for every external numeric entry point. decimal.js accepts the
+ * strings "Infinity"/"-Infinity"/"NaN" (and the number forms), which silently poison
+ * all downstream arithmetic and comparisons (NaN comparisons are always false, so
+ * positive/scale/balance guards pass). Reject them at the door so a non-finite value
+ * can never enter a Money amount, an FX rate, a scalar, or an allocation ratio.
+ */
+function toFiniteDecimal(value: string | number, context: string): any {
+  if (typeof value === 'number' && !Number.isFinite(value)) {
+    throw new Error(`${context}: non-finite number ${value}`);
+  }
+  const dec = new Decimal(String(value));
+  if (!dec.isFinite()) {
+    throw new Error(`${context}: must be a finite number; got "${value}"`);
+  }
+  return dec;
+}
+
+/**
  * FXRate(from, to, rate, asOf?, source?). Rate is an exact conversion factor (not a monetary amount).
  * Stored exactly as a decimal string — never a float, never parseFloat — so high-precision rates
  * survive intact. Used only for explicit multi-currency legs.
@@ -48,10 +66,9 @@ export class FXRate {
   constructor(from: string, to: string, rate: number | string, asOf?: string, source?: string) {
     this.from = from.toUpperCase();
     this.to = to.toUpperCase();
-    if (typeof rate === 'number' && !Number.isFinite(rate)) {
-      throw new Error(`FXRate: non-finite rate ${rate}`);
-    }
-    this._rate = new Decimal(String(rate)); // exact; String() captures full digits, no parseFloat
+    // Reject Infinity/NaN from BOTH number and string forms (string "Infinity" otherwise
+    // slips past a number-only check and yields an infinite rate that poisons convert()).
+    this._rate = toFiniteDecimal(rate, 'FXRate'); // exact; String() captures full digits, no parseFloat
     this.rate = this._rate.toString();
     this.asOf = asOf;
     this.source = source;
@@ -84,12 +101,14 @@ export class Money {
    * Money.from(value, currency). String coercion prevents float traps. Optional scale override.
    */
   static from(value: string | number, currency: string, asOf?: string, provenance?: string, scale?: number): Money {
-    if (typeof value === 'number' && !Number.isInteger(value)) {
-      // A non-integer JS number may already carry IEEE-754 error (e.g. 0.1 + 0.2).
-      // Force exact input: pass a string for any fractional amount.
-      throw new Error(`Money.from: non-integer number ${value} risks float imprecision — pass a string (e.g. "${value}")`);
+    // VULN-02: isSafeInteger rejects both non-integers (0.1) and values above MAX_SAFE_INTEGER
+    // where String() already returns the wrong number.
+    if (typeof value === 'number' && !Number.isSafeInteger(value)) {
+      throw new Error(`Money.from: number ${value} is non-integer or outside safe-integer range — pass a string to preserve precision`);
     }
-    const dec = new Decimal(String(value));
+    // VULN-01: Decimal supports "Infinity" / "NaN" as strings; reject non-finite input before
+    // any guard that relies on arithmetic comparisons (all false for NaN/Infinity).
+    const dec = toFiniteDecimal(value, 'Money.from');
     const resolvedScale = scale ?? scaleFor(currency.toUpperCase());
     if (dec.decimalPlaces() > resolvedScale) {
       throw new Error(
@@ -138,14 +157,14 @@ export class Money {
 
   /** mul(scalar) — roundingMode passed to toDecimalPlaces if provided. */
   mul(scalar: string | number, roundingMode?: number): Money {
-    let r = this._amount.mul(new Decimal(String(scalar)));
+    let r = this._amount.mul(toFiniteDecimal(scalar, 'Money.mul'));
     if (roundingMode !== undefined) r = r.toDecimalPlaces(this.scale, roundingMode);
     return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
 
   /** div(scalar) — optional roundingMode. */
   div(scalar: string | number, roundingMode?: number): Money {
-    let r = this._amount.div(new Decimal(String(scalar)));
+    let r = this._amount.div(toFiniteDecimal(scalar, 'Money.div'));
     if (roundingMode !== undefined) r = r.toDecimalPlaces(this.scale, roundingMode);
     return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
@@ -171,7 +190,7 @@ export class Money {
    */
   allocate(ratios: (string | number)[]): Money[] {
     if (ratios.length === 0) return [];
-    const ps = ratios.map(r => new Decimal(String(r)));
+    const ps = ratios.map(r => toFiniteDecimal(r, 'Money.allocate'));
     const tot = ps.reduce((a, b) => a.add(b), new Decimal(0));
     if (tot.isZero()) return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
 

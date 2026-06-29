@@ -21,8 +21,10 @@ import { Account, AccountType } from '../core/account.js';
  *   FUNDING:OWNER          Equity     — external funding (deposits/withdrawals)
  */
 
+// VULN-04: stripping all non-alphanumeric chars collapses distinct symbols (e.g. "USD-T" == "USDT").
+// Replace runs of separators with "_" so "USD-T" -> "USD_T", preserving identity.
 function norm(s: string): string {
-  return s.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
+  return s.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
 export function custodyAccount(venue: string, asset: string): Account {

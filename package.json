@@ -1,6 +1,6 @@
 {
   "name": "@eternal-roman/ledger",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "description": "Exact-decimal Money and double-entry primitives for TypeScript. Enforces balanced, non-float entries via validateEntry and immutable Ledger.apply. Ships with MCP server and mechanical verification tools. No database required.",
   "type": "module",
   "main": "dist/index.cjs",

@@ -53,9 +53,16 @@ function nodeMatchesQuery(node: KnowledgeNode, query: string): boolean {
   if (terms.length === 0) return false;
   const idTokens = node.id.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   const contentStr = JSON.stringify(node.content).toLowerCase();
-  return terms.some(t =>
-    idTokens.includes(t) || new RegExp(`\\b${escapeRegExp(t)}\\b`, 'i').test(contentStr)
-  );
+  return terms.some(t => {
+    if (idTokens.includes(t)) return true;
+    const escaped = escapeRegExp(t);
+    // VULN-06: \b before a non-word char (e.g. "$") requires a preceding word char, which
+    // is never true after whitespace — so "$100" silently fails to match. Only use \b when
+    // the boundary position is adjacent to a word character.
+    const lb = /^\w/.test(t) ? '\\b' : '';
+    const rb = /\w$/.test(t) ? '\\b' : '';
+    return new RegExp(`${lb}${escaped}${rb}`, 'i').test(contentStr);
+  });
 }
 
 export function fetch(

@@ -140,12 +140,29 @@ describe('Money - exact arithmetic (no floats ever)', () => {
 
   it('rejects non-integer number input (no silent float capture)', () => {
     // The float trap: 0.1 + 0.2 === 0.30000000000000004 in IEEE-754.
-    expect(() => Money.from(0.1 + 0.2, 'USD')).toThrow(/string|float|integer/i);
-    expect(() => Money.from(0.1, 'USD')).toThrow(/string|float|integer/i);
+    expect(() => Money.from(0.1 + 0.2, 'USD')).toThrow(/string|float|integer|safe/i);
+    expect(() => Money.from(0.1, 'USD')).toThrow(/string|float|integer|safe/i);
     // Strings (exact) and whole-number integers remain valid.
     expect(Money.from('0.30', 'USD').toString()).toBe('0.30 USD');
     expect(Money.from(100, 'USD').toString()).toBe('100.00 USD');
     expect(Money.from(-5, 'USD').toDecimal().toString()).toBe('-5');
+  });
+
+  it('VULN-01: rejects Infinity and NaN string inputs before they can poison balances', () => {
+    expect(() => Money.from('Infinity', 'USD')).toThrow(/finite/i);
+    expect(() => Money.from('-Infinity', 'USD')).toThrow(/finite/i);
+    expect(() => Money.from('NaN', 'USD')).toThrow(/finite/i);
+    // Number Infinity/NaN also rejected (caught by isSafeInteger or isFinite)
+    expect(() => Money.from(Infinity, 'USD')).toThrow();
+    expect(() => Money.from(-Infinity, 'USD')).toThrow();
+  });
+
+  it('VULN-02: rejects numbers above MAX_SAFE_INTEGER that carry silent precision loss', () => {
+    const unsafe = Number.MAX_SAFE_INTEGER + 2; // JS already stores this as MAX_SAFE_INTEGER + 1
+    expect(() => Money.from(unsafe, 'USD')).toThrow(/safe.integer|range|precision/i);
+    // Safe integers still accepted
+    expect(Money.from(Number.MAX_SAFE_INTEGER, 'USD').toDecimal().toString())
+      .toBe(String(Number.MAX_SAFE_INTEGER));
   });
 });
 
@@ -179,5 +196,36 @@ describe('FXRate - exact conversion (never floats)', () => {
     const eur = Money.from('100', 'EUR');
     const r = new FXRate('USD', 'EUR', '0.9');
     expect(() => eur.convert(r)).toThrow(/FX|mismatch/i);
+  });
+
+  it('VULN-01 (FXRate): rejects non-finite rate from string AND number forms', () => {
+    // A string "Infinity" previously slipped past the number-only guard and produced
+    // an infinite rate, poisoning convert() and every balance derived from it.
+    expect(() => new FXRate('USD', 'EUR', 'Infinity')).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', '-Infinity')).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', 'NaN')).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', Infinity)).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', NaN)).toThrow(/finite/i);
+    // A finite high-precision string rate still works exactly.
+    expect(new FXRate('USD', 'EUR', '0.918273645').rate).toBe('0.918273645');
+  });
+});
+
+describe('Money scalar guards (no non-finite poison via mul/div/allocate)', () => {
+  it('mul/div reject Infinity and NaN scalars', () => {
+    const m = Money.from('100', 'USD');
+    expect(() => m.mul('Infinity')).toThrow(/finite/i);
+    expect(() => m.div('NaN')).toThrow(/finite/i);
+    expect(() => m.mul(Infinity)).toThrow(/finite/i);
+    // Finite scalars unaffected.
+    expect(m.mul('2').toString()).toBe('200.00 USD');
+    expect(m.div('4').toString()).toBe('25.00 USD');
+  });
+
+  it('allocate rejects a non-finite ratio', () => {
+    const m = Money.from('100', 'USD');
+    expect(() => m.allocate(['1', 'Infinity'])).toThrow(/finite/i);
+    // Finite ratios still split exactly.
+    expect(m.allocate([1, 1]).map(p => p.toString())).toEqual(['50.00 USD', '50.00 USD']);
   });
 });
