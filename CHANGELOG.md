@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.16.7] - 2026-06-29
+
+**Conciseness patch + release sequencing hardening.**
+
+- Tightened MD files, notes and CHANGELOG (fewer words, no loss of value or depth): RELEASING.md (removed stale DEFERRED), README (precise claims), SCOPE/CITATION (minimal disclaimers), mcp/README, and repeated alignment boilerplate collapsed.
+- Evaluated /release skill: Critical Sequencing Rules already forbade the prior "merge feature then bump on main" violation; added explicit "distinct + subsequent commit", post-merge `git log` check, bump-PR wording, and updated todo confirm list.
+- All changes follow guarded process + check:versions.
+
+Manifests synced; check:versions + verify:full green.
+
 ## [0.16.6] - 2026-06-29
 
 **MCP error response contract hardening + disclaimers (patch).**
