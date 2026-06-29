@@ -197,4 +197,35 @@ describe('FXRate - exact conversion (never floats)', () => {
     const r = new FXRate('USD', 'EUR', '0.9');
     expect(() => eur.convert(r)).toThrow(/FX|mismatch/i);
   });
+
+  it('VULN-01 (FXRate): rejects non-finite rate from string AND number forms', () => {
+    // A string "Infinity" previously slipped past the number-only guard and produced
+    // an infinite rate, poisoning convert() and every balance derived from it.
+    expect(() => new FXRate('USD', 'EUR', 'Infinity')).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', '-Infinity')).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', 'NaN')).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', Infinity)).toThrow(/finite/i);
+    expect(() => new FXRate('USD', 'EUR', NaN)).toThrow(/finite/i);
+    // A finite high-precision string rate still works exactly.
+    expect(new FXRate('USD', 'EUR', '0.918273645').rate).toBe('0.918273645');
+  });
+});
+
+describe('Money scalar guards (no non-finite poison via mul/div/allocate)', () => {
+  it('mul/div reject Infinity and NaN scalars', () => {
+    const m = Money.from('100', 'USD');
+    expect(() => m.mul('Infinity')).toThrow(/finite/i);
+    expect(() => m.div('NaN')).toThrow(/finite/i);
+    expect(() => m.mul(Infinity)).toThrow(/finite/i);
+    // Finite scalars unaffected.
+    expect(m.mul('2').toString()).toBe('200.00 USD');
+    expect(m.div('4').toString()).toBe('25.00 USD');
+  });
+
+  it('allocate rejects a non-finite ratio', () => {
+    const m = Money.from('100', 'USD');
+    expect(() => m.allocate(['1', 'Infinity'])).toThrow(/finite/i);
+    // Finite ratios still split exactly.
+    expect(m.allocate([1, 1]).map(p => p.toString())).toEqual(['50.00 USD', '50.00 USD']);
+  });
 });
