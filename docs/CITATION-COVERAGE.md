@@ -18,4 +18,4 @@ fetch(graph, 'revenue recognition', { standard_family: ['IFRS'], domain: ['reven
 fetch(graph, 'lot relief', { domain: ['lot-relief'], jurisdiction: ['US'] })
 ```
 
-Last seed update: 2026-06 (see ifrs.ts, gaap.ts, instruments.ts).
+Last seed update: 2026-06 (see ifrs.ts, gaap.ts, instruments.ts; added period-cutoff, closing-entries-re, ias21-foreign-currency-translation for new features).

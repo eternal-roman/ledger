@@ -195,12 +195,15 @@ valuePortfolio(l, priceBook, 'USD');                 // mark-to-market into a re
 Cost basis rides in the kernel's audit-hashed line `tags`, so lots and P&L are reproducible from the
 ledger alone. See `examples/crypto-cex.ts`, `examples/portfolio-rebalance.ts`, `examples/returns.ts`.
 
-## Accounting standards — IFRS 16 (Leases, lessee)
+## Accounting standards + production core features
 
-A concrete implementation for IFRS 16 (lessee) that emits balanced kernel journal entries.
-It computes the initial lease liability (present value of payments), the ROU
-asset, and the full schedule of interest accretion, principal reduction, and
-straight-line depreciation, with paragraph-level citations.
+- IFRS 16 (Leases, lessee): full schedule + entries (PV, interest, straight-line dep via allocate, citations). Golden-master verified.
+- Period locks / hard close (anti-fraud): `createPeriodLock` + `guardedApply` (rejects effectiveDate <= lockDate).
+- Closing engine: `generateClosingEntries(ledger, closeDate, reAccount)` — zeros Income/Expense into RE using actual accounts discovered from the ledger.
+- FX translation + CTA: `computeFxTranslation(ledger, asOf, rates, reportingCurrency)` returns translated balances and the exact CTA plug for consolidated reporting.
+- General depreciation/amortization: `buildDepreciationSchedule` (straight-line via allocate for exact sums; declining) + `depreciationToEntries`.
+
+All new surfaces produce only kernel-validated `JournalEntry` objects, preserve the equation, and are deterministic. See `examples/alpha-max-core.ts`.
 
 ```ts
 import { Money, buildSchedule, leaseToEntries } from '@eternal-roman/ledger';

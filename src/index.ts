@@ -19,6 +19,14 @@ export * from './crypto/index.js';
 // first fully-tested standard (golden-master verified to the cent).
 export * from './standards/ifrs16/index.js';
 
+// Period governance (hard close / anti-fraud), closing engine, FX translation + CTA,
+// and general depreciation/amortization schedules. All built on the kernel primitives
+// with the same golden-master, determinism, and equation guarantees.
+export * from './periods/lock.js';
+export * from './closing/closing.js';
+export * from './fx/translation.js';
+export * from './standards/depreciation/index.js';
+
 // Kernel (Money, Account, JournalEntry, Ledger) + recognition rules, a small
 // IFRS/GAAP citation graph, and the verify harness.
 //

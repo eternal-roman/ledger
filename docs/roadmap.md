@@ -17,17 +17,20 @@ foundation (`src/time`), along with overstated claims in the docs. The kernel ke
 one real dependency on that code — calendar-date validation (`isISODate`) — which now
 lives in `src/core/journal.ts`.
 
-## Deferred decision: the next layer
+IFRS 16 (lessee) has been implemented as a faithful, golden-master verified standard.
+Additional production utilities (period locks/hard close, closing/RE engine, FX translation
++ CTA, general straight-line and declining depreciation schedules) have been added
+following the same rigorous pattern: exact `Money` + kernel factories only, determinism,
+equation proofs, citations.
 
-The reduction is deliberately a clean base. The next major step is a **fork in the road**
-that has not yet been chosen:
+## Current state and extensions
 
-**Option A — Expand the current kernel with a real financial framework.**
-Build one faithful, fully-tested standard rather than broad stubs. The natural first
-target is an **IFRS 16 lessee** engine (initial liability = PV of payments; ROU asset;
-subsequent amortization + interest unwind), verified by golden-master tests against the
-standard's Illustrative Examples to the cent, with citations and a validated time/discounting
-foundation. Revenue (IFRS 15 core) would follow a similar pattern.
+The kernel + standards layer now provides focused support for common production needs
+(period controls, closing, multi-curr reporting translation, asset schedules) while
+staying small and enforcing invariants at the boundary. No broad stubs. 
+
+Future work (e.g. IFRS 15 revenue) can follow the same "one faithful implementation"
+approach.
 
 **Option B — Build a purpose-built alternative kernel.**
 If a specific use case (e.g. a bank ledger, a tax engine, a portfolio/valuation tool)

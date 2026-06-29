@@ -71,10 +71,46 @@ export const gaapSeed = {
         domain: ["accounting", "revenue", "expense"]
       },
       confidence: 0.95
+    },
+    {
+      id: "gaap-period-cutoff-closing",
+      type: "Rule",
+      content: {
+        statement: "GAAP requires formal period-end cutoff procedures. After books for a period are closed, no entries with effective dates in the closed period may be recorded without specific approval and adjusting entries posted in the open period. Prevents backdating and management override."
+      },
+      provenance: {
+        source_id: "fasb-conceptual-framework",
+        locator: "CON 8 / AU-C 560 / internal control frameworks (COSO)",
+        effective_from: "ongoing",
+        jurisdiction: ["US"]
+      },
+      dimensions: {
+        standard_family: ["GAAP", "US-GAAP"],
+        domain: ["accounting", "period-end", "internal-control"]
+      },
+      confidence: 0.95
+    },
+    {
+      id: "gaap-closing-entries-re",
+      type: "Rule",
+      content: {
+        statement: "At the end of an accounting period, temporary accounts (revenues, expenses, dividends) are closed to Retained Earnings (or equivalent equity account) so that the next period begins with zero balances in income statement accounts. Net income/loss is transferred; the accounting equation is preserved."
+      },
+      provenance: {
+        source_id: "gaap-accounting-cycle",
+        locator: "FASB Concepts / intermediate accounting standards",
+        effective_from: "ongoing"
+      },
+      dimensions: {
+        standard_family: ["GAAP"],
+        domain: ["accounting", "closing", "retained-earnings"]
+      },
+      confidence: 1.0
     }
   ] satisfies KnowledgeNode[],
   edges: [
     { from: "gaap-revenue-606", to: "gaap-matching-principle", type: "requires" as const },
-    { from: "gaap-asset-recognition", to: "gaap-revenue-606", type: "applies_to" as const }
+    { from: "gaap-asset-recognition", to: "gaap-revenue-606", type: "applies_to" as const },
+    { from: "gaap-matching-principle-detail", to: "gaap-closing-entries-re", type: "requires" as const }
   ]
 };

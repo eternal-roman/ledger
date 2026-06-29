@@ -49,6 +49,11 @@ Same shape under their MCP config (`command: npx`, `args: ["-y", "@eternal-roman
 | `trace_run` | Step-by-step replay with per-step balances, equation, and hash prefix. |
 | `cite_lookup` | Grounded IFRS/GAAP citations from the kernel knowledge graph. |
 | `artifact_make` | Assemble a Canonical Financial Artifact (proof bundle). |
+| `periods_create_lock` | Create a PeriodLock (hard close fact). |
+| `periods_guarded_post` | Post an entry but reject if effectiveDate is on/after a period lock (anti-fraud). |
+| `closing_generate_entries` | Generate balanced closing entries (Income/Expense → Retained Earnings) using kernel. |
+| `fx_compute_translation` | Translate balances to reporting currency + compute exact CTA plug. |
+| `depreciation_build_schedule` | Build exact straight-line (allocate) or declining depreciation schedule. |
 
 State is passed as JSON between calls (`ledger_post` returns a ledger you feed back
 in), so every call is **stateless, reproducible, and replayable**.
