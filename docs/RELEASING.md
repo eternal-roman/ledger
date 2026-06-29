@@ -31,16 +31,14 @@ node --input-type=module -e "import * as L from '@eternal-roman/ledger'; console
 
 ## 2. Publish the MCP server — `@eternal-roman/ledger-mcp`
 
-The kernel must be published first. Then, in `mcp/package.json`, change the kernel
-dependency from the local link to the published range before publishing:
-
-```jsonc
-// dev (in-repo):     "@eternal-roman/ledger": "file:.."
-// release:           "@eternal-roman/ledger": "^0.14.0"
-```
+The kernel must be published first. The kernel dependency in `mcp/package.json` is
+already a published semver range (`"@eternal-roman/ledger": "^0.16.4"`) — npm
+workspaces satisfies it from the in-repo kernel during development (no `file:..`
+link to swap), so it is publish-safe as-is. **No edit is needed before
+publishing.** Just keep the range in step with the kernel version on each release.
 
 ```bash
-npm -w @eternal-roman/ledger-mcp run build
+npm run verify:mcp                     # builds kernel + MCP, runs the stdio smoke
 cd mcp && npm publish --access public
 ```
 

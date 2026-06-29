@@ -54,9 +54,34 @@ Same shape under their MCP config (`command: npx`, `args: ["-y", "@eternal-roman
 | `closing_generate_entries` | Generate balanced closing entries (Income/Expense → Retained Earnings) using kernel. |
 | `fx_compute_translation` | Translate balances to reporting currency + compute exact CTA plug. |
 | `depreciation_build_schedule` | Build exact straight-line (allocate) or declining depreciation schedule. |
+| `cashflow_statement` | Exact direct-method cash flow statement derived from cash-account movements. |
+| `reconcile_positions` | Reconcile ledger balances against an external snapshot (exchange/custodian/bank). |
+| `portfolio_relief` | Lot relief (FIFO/LIFO/HIFO) with exact cost basis and short/long-term classification. |
+| `settlement_build_entries` | Split a fill into trade-date and settlement-date (T+N) balanced entries. |
 
 State is passed as JSON between calls (`ledger_post` returns a ledger you feed back
 in), so every call is **stateless, reproducible, and replayable**.
+
+## Resources
+
+Read-only context a client can pull in so the agent knows the rules and the flow
+before it acts:
+
+| URI | What it is |
+|-----|------------|
+| `ledger://canon/rules` | The non-negotiable kernel invariants (markdown). |
+| `ledger://canon/workflow` | The recommended end-to-end flow: compute → validate → post → prove → ground. |
+| `ledger://tools/catalog` | Machine-readable list of every tool with one-line "use when" guidance (JSON). |
+
+## Prompts
+
+Guided templates that steer the agent to prove with the tools instead of computing in-token:
+
+| Prompt | Arguments | What it does |
+|--------|-----------|--------------|
+| `post_entry` | `intent` | Draft → `entry_validate` → fix → `ledger_post` → prove. |
+| `audit_ledger` | `ledger?` | Run trial balance, equation, audit hash, and determinism over a ledger. |
+| `cite_treatment` | `concept` | `cite_lookup` first, then ground the treatment in canon. |
 
 ## Example flow
 

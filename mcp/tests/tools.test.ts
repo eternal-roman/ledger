@@ -3,6 +3,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createServer } from '../src/server.js';
 import { TOOL_NAMES } from '../src/tools.js';
+import { RESOURCE_URIS, TOOL_USE_WHEN } from '../src/resources.js';
+import { PROMPT_NAMES } from '../src/prompts.js';
 
 /** Spin up the real server + a client over an in-memory transport pair. */
 async function connect() {
@@ -152,5 +154,60 @@ describe('ledger MCP server', () => {
     });
     expect(isError).toBe(true);
     expect(parsed.ok).toBe(false);
+  });
+});
+
+describe('ledger MCP resources', () => {
+  let client: Client;
+  beforeAll(async () => {
+    client = await connect();
+  });
+
+  it('exposes the expected resources', async () => {
+    const list = await client.listResources();
+    const uris = list.resources.map((r) => r.uri).sort();
+    expect(uris).toEqual([...RESOURCE_URIS].sort());
+  });
+
+  it('serves the canon rules as markdown', async () => {
+    const res = await client.readResource({ uri: 'ledger://canon/rules' });
+    expect(res.contents[0].mimeType).toBe('text/markdown');
+    expect(String(res.contents[0].text)).toContain('non-negotiable');
+  });
+
+  it('serves a tool catalog that covers every tool', async () => {
+    const res = await client.readResource({ uri: 'ledger://tools/catalog' });
+    const catalog = JSON.parse(String(res.contents[0].text));
+    expect(catalog.count).toBe(TOOL_NAMES.length);
+    const names = catalog.tools.map((t: any) => t.name).sort();
+    expect(names).toEqual([...TOOL_NAMES].sort());
+  });
+
+  it('keeps the use-when map in lockstep with the tool surface (drift guard)', () => {
+    expect(Object.keys(TOOL_USE_WHEN).sort()).toEqual([...TOOL_NAMES].sort());
+  });
+});
+
+describe('ledger MCP prompts', () => {
+  let client: Client;
+  beforeAll(async () => {
+    client = await connect();
+  });
+
+  it('exposes the expected prompts', async () => {
+    const list = await client.listPrompts();
+    const names = list.prompts.map((p) => p.name).sort();
+    expect(names).toEqual([...PROMPT_NAMES].sort());
+  });
+
+  it('post_entry expands the intent into validate-then-post guidance', async () => {
+    const res = await client.getPrompt({
+      name: 'post_entry',
+      arguments: { intent: 'Receive $5,000 capital from the owner' },
+    });
+    const text = res.messages.map((m: any) => m.content.text).join('\n');
+    expect(text).toContain('Receive $5,000 capital from the owner');
+    expect(text).toContain('entry_validate');
+    expect(text).toContain('ledger_post');
   });
 });

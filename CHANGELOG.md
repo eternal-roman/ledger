@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.16.4] - 2026-06-29
+
+**MCP server hardened for real end-user installs + resources/prompts (patch).**
+
+Made `@eternal-roman/ledger-mcp` fully usable over the published `npx -y @eternal-roman/ledger-mcp` path and added MCP resources and prompts. No kernel behavior or serialization change.
+
+- **Publish blocker fixed:** the MCP's kernel dependency was `"@eternal-roman/ledger": "file:.."`, unresolvable for an end-user installing from npm. It is now a publish-safe semver range (`^0.16.4`) that npm workspaces still satisfies from the in-repo kernel during development — no dev↔release rewrite step.
+- **Build robustness:** `build:mcp` now builds the kernel first (the MCP's `.d.ts` build type-checks against the kernel's emitted types), so a stale root `dist/` can no longer break the MCP build. Added `verify:mcp` (build kernel + MCP, then a real stdio smoke) and wired it into `verify:full`.
+- **Built-binary stdio smoke:** new `mcp/scripts/smoke.mjs` spawns the compiled `dist/server.js` over stdio and asserts the full surface (20 tools, 3 resources, 3 prompts, exact arithmetic, fail-closed posting, audit hash). The prior in-memory tests never exercised the compiled binary, so packaging regressions went uncaught.
+- **MCP resources** (read-only context): `ledger://canon/rules`, `ledger://canon/workflow`, `ledger://tools/catalog` — the catalog is kept in lockstep with the tool surface by a drift-guard test.
+- **MCP prompts** (guided templates): `post_entry`, `audit_ledger`, `cite_treatment`.
+- **Docs:** README documents all 20 tools plus resources/prompts; RELEASING reflects the no-rewrite dependency.
+- **Version sync:** the MCP package + `server.json` were stranded at 0.14.0 while the kernel was 0.16.x; all locations aligned to 0.16.4.
+
+Full suite green (kernel + MCP unit tests + stdio smoke); determinism verified; both packages build.
+
+Versions aligned across all locations.
+
 ## [0.16.3] - 2026-06-29
 
 **Operational FinEx extensions (patch).**
