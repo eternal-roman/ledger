@@ -75,3 +75,5 @@ This package is the reference for **Phase 0** of any Python target audit.
 After proving the canonical, use it for all inventory modeling, traces, and proofs.
 
 See `skills/ledger-audit/SKILL.md` for how it is used in audits.
+
+**Disclaimer:** Reference implementation of deterministic kernel primitives. Not advice. User responsible for compliance and inputs. Python tests are due diligence. MIT license applies (root LICENSE).

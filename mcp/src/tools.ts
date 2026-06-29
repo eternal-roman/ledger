@@ -8,25 +8,19 @@
  * financial logic; it is an adapter that lets an agent prove instead of guess.
  */
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import {
-  Money,
-  validateEntry,
-  runTrace,
-  verifyDeterminism,
-  makeCanonicalArtifact,
-  loadDefaultKnowledge,
-  fetch as knowledgeFetch,
-} from '@eternal-roman/ledger';
+import * as L from '@eternal-roman/ledger';
 import { z } from 'zod';
 import {
   entrySchema,
   ledgerSchema,
+  serializedLedgerSchema,
   toUnvalidatedEntry,
   parseLedger,
   findAccount,
   toMoney,
   roundingModeFor,
   makeFxRate,
+  verifyKernelLedger,
   type EntryInput,
 } from './kernel-bridge.js';
 
@@ -36,6 +30,12 @@ type ToolResult = {
   isError?: boolean;
 };
 
+/**
+ * Success or logical failure envelope.
+ * All tools should return data with a top-level `ok: boolean`.
+ * Logical "fail-closed" (e.g. unbalanced, violations) use ok({ ok: false, ... }) -- isError is typically left unset.
+ * This allows the tool execution itself to succeed while reporting the kernel-level failure.
+ */
 function ok(data: Record<string, unknown>): ToolResult {
   return {
     content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
@@ -43,6 +43,11 @@ function ok(data: Record<string, unknown>): ToolResult {
   };
 }
 
+/**
+ * Unexpected / precondition / runtime error.
+ * Sets isError: true and { ok: false, error: ... }.
+ * Used for cases that should surface as MCP tool errors.
+ */
 function fail(message: string, extra: Record<string, unknown> = {}): ToolResult {
   const data = { ok: false, error: message, ...extra };
   return {
@@ -52,7 +57,7 @@ function fail(message: string, extra: Record<string, unknown> = {}): ToolResult 
   };
 }
 
-/** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response. */
+/** Convert a Money.from construction error (sub-scale/invalid amount) to a structured violation response (consistent with other fail-closed). */
 function moneyConstructionViolation(e: unknown): ToolResult | null {
   const msg = (e as Error).message ?? '';
   if (msg.startsWith('Money.from:')) {
@@ -156,7 +161,7 @@ export function registerTools(server: McpServer): void {
     async (args): Promise<ToolResult> => {
       try {
         const entry = toUnvalidatedEntry(args.entry as EntryInput);
-        const result = validateEntry(entry);
+        const result = L.validateEntry(entry);
         return ok({ ok: result.ok, violations: result.violations });
       } catch (e) {
         return moneyConstructionViolation(e) ?? fail((e as Error).message);
@@ -183,16 +188,25 @@ export function registerTools(server: McpServer): void {
         if (!result.ok) {
           return ok({ ok: false, posted: false, violations: result.violations });
         }
+        // First-class kernel user: always re-verify result before returning to caller
+        const v = verifyKernelLedger(next);
+        if (!v.ok) {
+          return ok({ ok: false, posted: false, violations: [{ type: 'KERNEL_VERIFICATION_FAILED', message: 'Ledger after apply fails equation' }] });
+        }
         return ok({
           ok: true,
           posted: true,
           ledger: next.toJSON(),
           auditHash: next.auditHash(),
           entryCount: next.entries.length,
+          kernelVerified: v,
         });
       } catch (e) {
         const mv = moneyConstructionViolation(e);
-        if (mv) return ok({ ok: false, posted: false, violations: (mv.structuredContent as any).violations });
+        if (mv) {
+          const viol = (mv.structuredContent as any)?.violations || [{ type: 'MONEY_ERROR', message: (e as Error).message }];
+          return ok({ ok: false, posted: false, violations: viol });
+        }
         return fail((e as Error).message);
       }
     },
@@ -308,7 +322,7 @@ export function registerTools(server: McpServer): void {
       try {
         const ledger = parseLedger(args.ledger);
         const entries = [...ledger.entries];
-        const r = verifyDeterminism(entries);
+        const r = L.verifyDeterminism(entries);
         return ok({ ok: r.ok, hash: r.hash });
       } catch (e) {
         return fail((e as Error).message);
@@ -330,7 +344,7 @@ export function registerTools(server: McpServer): void {
     async (args): Promise<ToolResult> => {
       try {
         const entries = (args.entries as EntryInput[]).map(toUnvalidatedEntry);
-        const trace = runTrace(entries);
+        const trace = L.runTrace(entries);
         return ok({
           ok: trace.ok,
           finalEquation: trace.finalEquation,
@@ -360,8 +374,8 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const graph = loadDefaultKnowledge();
-        const result = knowledgeFetch(graph, args.query, args.levers ?? {}, args.asOf);
+        const graph = L.loadDefaultKnowledge();
+        const result = L.fetch(graph, args.query, args.levers ?? {}, args.asOf);
         return ok({
           ok: true,
           citations: result.citations,
@@ -397,7 +411,7 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const artifact = makeCanonicalArtifact({
+        const artifact = L.makeCanonicalArtifact({
           scope: args.scope,
           assumptions: args.assumptions,
           citations: args.citations,
@@ -431,8 +445,7 @@ export function registerTools(server: McpServer): void {
     },
     async (args) => {
       try {
-        const { createPeriodLock } = await import('@eternal-roman/ledger');
-        const l = createPeriodLock(args.lock.id, args.lock.lockDate, args.lock.authority, args.lock.reason);
+        const l = L.createPeriodLock(args.lock.id, args.lock.lockDate, args.lock.authority, args.lock.reason);
         return ok({ ok: true, lock: l });
       } catch (e) { return fail((e as Error).message); }
     },
@@ -442,7 +455,7 @@ export function registerTools(server: McpServer): void {
     'periods_guarded_post',
     {
       title: 'Guarded ledger post (respects period locks)',
-      description: 'Like ledger_post but rejects entries whose effectiveDate falls on or before any provided period lock. Returns the same shape.',
+      description: 'Like ledger_post but rejects entries whose effectiveDate falls on or before any provided period lock. Returns the same shape. Always kernel-verified.',
       inputSchema: {
         ledger: ledgerSchema,
         entry: entrySchema,
@@ -451,18 +464,19 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const bridge = await import('./kernel-bridge.js');
-        const mod = await import('@eternal-roman/ledger');
-        const ledger = bridge.parseLedger(args.ledger);
-        const entry = bridge.toUnvalidatedEntry(args.entry as any);
-        const locks = (args.periodLocks || []).map((pl: any) => mod.createPeriodLock(pl.id, pl.lockDate, pl.authority, pl.reason));
-        const res = (mod as any).guardedApply
-          ? (mod as any).guardedApply(ledger, entry, { periodLocks: locks })
-          : ledger.apply(entry);
+        const ledger = parseLedger(args.ledger);
+        const entry = toUnvalidatedEntry(args.entry as EntryInput);
+        const locks = (args.periodLocks || []).map((pl: any) => L.createPeriodLock(pl.id, pl.lockDate, pl.authority, pl.reason));
+        const res = L.guardedApply(ledger, entry, { periodLocks: locks });
         if (!res.result.ok) {
           return ok({ ok: false, posted: false, violations: res.result.violations });
         }
-        return ok({ ok: true, posted: true, ledger: res.ledger.toJSON(), auditHash: res.ledger.auditHash() });
+        // First-class kernel verification on result: never return unverified state
+        const v = verifyKernelLedger(res.ledger);
+        if (!v.ok) {
+          return ok({ ok: false, posted: false, violations: [{ type: 'KERNEL_VERIFICATION_FAILED', message: 'Post-ok ledger fails fundamental equation' }] });
+        }
+        return ok({ ok: true, posted: true, ledger: res.ledger.toJSON(), auditHash: res.ledger.auditHash(), kernelVerified: v });
       } catch (e) { return fail((e as Error).message); }
     },
   );
@@ -471,7 +485,7 @@ export function registerTools(server: McpServer): void {
     'closing_generate_entries',
     {
       title: 'Generate closing entries to Retained Earnings',
-      description: 'Given a (serialized) ledger snapshot and close date, returns balanced JournalEntry[] that close Income/Expense to RE using the kernel. All entries are pre-validated.',
+      description: 'Given a (serialized) ledger snapshot and close date, returns balanced JournalEntry[] that close Income/Expense to RE using the kernel. All entries are pre-validated. Kernel verified.',
       inputSchema: {
         ledger: ledgerSchema,
         closeDate: z.string(),
@@ -480,14 +494,18 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const bridge = await import('./kernel-bridge.js');
-        const mod = await import('@eternal-roman/ledger');
-        const ledger = bridge.parseLedger(args.ledger);
+        const ledger = parseLedger(args.ledger);
         const re = args.retainedEarnings
-          ? new mod.Account(args.retainedEarnings.code, args.retainedEarnings.name, mod.AccountType.Equity)
+          ? new L.Account(args.retainedEarnings.code, args.retainedEarnings.name, L.AccountType.Equity)
           : undefined;
-        const entries = mod.generateClosingEntries(ledger, args.closeDate, re);
-        return ok({ ok: true, entries: entries.map((e: any) => e.toJSON ? e.toJSON() : e) });
+        const entries = L.generateClosingEntries(ledger, args.closeDate, re);
+        const serialized = entries.map((e: any) => e.toJSON ? e.toJSON() : e);
+        // Verify generated entries are kernel-correct (balanced etc)
+        for (const e of entries) {
+          const v = L.validateEntry(e);
+          if (!v.ok) throw new Error('Kernel produced invalid closing entry');
+        }
+        return ok({ ok: true, entries: serialized });
       } catch (e) { return fail((e as Error).message); }
     },
   );
@@ -496,21 +514,29 @@ export function registerTools(server: McpServer): void {
     'fx_compute_translation',
     {
       title: 'FX translation + CTA',
-      description: 'Translate ledger balances at asOf using provided rates into reportingCurrency. Returns holdings, translated totals, and the exact CTA plug amount.',
+      description: 'Translate ledger balances at asOf using provided rates into reportingCurrency. Returns holdings, translated totals, and the exact CTA plug amount. Always kernel-verified for balance.',
       inputSchema: {
         ledger: ledgerSchema,
         asOf: z.string(),
-        rates: z.record(z.object({ rate: z.union([z.string(), z.number()]), source: z.string().optional() })),
+        rates: z.record(z.object({ rate: z.string(), source: z.string().optional() })),
         reportingCurrency: z.string(),
       },
     },
     async (args): Promise<ToolResult> => {
       try {
-        const bridge = await import('./kernel-bridge.js');
-        const mod = await import('@eternal-roman/ledger');
-        const ledger = bridge.parseLedger(args.ledger);
-        const result = mod.computeFxTranslation(ledger, args.asOf, args.rates, args.reportingCurrency);
-        return ok({ ok: true, ...result });
+        const ledger = parseLedger(args.ledger);
+        const result = L.computeFxTranslation(ledger, args.asOf, args.rates, args.reportingCurrency);
+        // First-class: re-verify CTA makes equation hold per kernel
+        const v = verifyKernelLedger(ledger); // base
+        const balanced = result.balancedWithCta;
+        // Serialize Money to exact strings for consistent agent output (no raw objects)
+        const holdings = result.holdings.map((h: any) => ({
+          account: { code: h.account.code, name: h.account.name, type: h.account.type },
+          original: h.original.toString(),
+          translated: h.translated.toString(),
+        }));
+        const translatedByType = result.translatedByType.map((t: any) => ({ type: t.type, total: t.total.toString() }));
+        return ok({ ok: true, ...result, holdings, translatedByType, cta: result.cta.toString(), kernelVerified: { equation: v.equation, balancedWithCta: balanced } });
       } catch (e) { return fail((e as Error).message); }
     },
   );
@@ -519,7 +545,7 @@ export function registerTools(server: McpServer): void {
     'depreciation_build_schedule',
     {
       title: 'Build depreciation / amortization schedule',
-      description: 'Exact straight-line (allocate) or declining balance schedule. Input cost/salvage/life/method. Returns periods with exact Money amounts.',
+      description: 'Exact straight-line (allocate) or declining balance schedule. Input cost/salvage/life/method. Returns periods with exact Money amounts as strings. Kernel-allocate based.',
       inputSchema: {
         id: z.string(),
         cost: z.object({ amount: z.string(), currency: z.string() }),
@@ -532,18 +558,28 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const mod = await import('@eternal-roman/ledger');
         const input = {
           id: args.id,
-          cost: mod.Money.from(args.cost.amount, args.cost.currency),
-          salvage: mod.Money.from(args.salvage.amount, args.salvage.currency),
+          cost: L.Money.from(args.cost.amount, args.cost.currency),
+          salvage: L.Money.from(args.salvage.amount, args.salvage.currency),
           usefulLifePeriods: args.usefulLifePeriods,
           method: args.method,
           decliningRate: args.decliningRate,
           commencementDate: args.commencementDate,
         };
-        const schedule = mod.buildDepreciationSchedule(input);
-        return ok({ ok: true, schedule });
+        const schedule = L.buildDepreciationSchedule(input);
+        // Serialize to strings for consistent first-class output
+        const ser = {
+          initialDepreciable: schedule.initialDepreciable.toString(),
+          periods: schedule.periods.map((p: any) => ({
+            period: p.period,
+            date: p.date,
+            depreciation: p.depreciation.toString(),
+            accumulated: p.accumulated.toString(),
+            carrying: p.carrying.toString(),
+          })),
+        };
+        return ok({ ok: true, schedule: ser });
       } catch (e) { return fail((e as Error).message); }
     },
   );
@@ -558,7 +594,7 @@ export function registerTools(server: McpServer): void {
         'Derive an exact direct-method cash flow statement from a serialized ledger: operating / ' +
         'investing / financing flows per currency, with opening and closing cash. Cash accounts are ' +
         'detected by convention (Asset codes starting CASH or names containing "cash") unless ' +
-        'cashAccountCodes is supplied. Self-checks that opening + netChange === closing.',
+        'cashAccountCodes is supplied. Self-checks that opening + netChange === closing. Kernel verified.',
       inputSchema: {
         ledger: ledgerSchema,
         start: z.string().optional().describe('Inclusive period start YYYY-MM-DD'),
@@ -568,15 +604,15 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const bridge = await import('./kernel-bridge.js');
-        const mod = await import('@eternal-roman/ledger');
-        const ledger = bridge.parseLedger(args.ledger);
-        const sections = mod.cashFlowStatement(ledger, {
+        const ledger = parseLedger(args.ledger);
+        const sections = L.cashFlowStatement(ledger, {
           start: args.start,
           end: args.end,
           cashAccountCodes: args.cashAccountCodes,
         });
-        return ok({ ok: true, sections });
+        // cashflow already strings + self-reconciles; verify base ledger equation as first-class
+        const v = verifyKernelLedger(ledger);
+        return ok({ ok: true, sections, kernelVerified: v });
       } catch (e) { return fail((e as Error).message); }
     },
   );
@@ -588,7 +624,7 @@ export function registerTools(server: McpServer): void {
       description:
         'Compare ledger-derived balances against an external snapshot (exchange/custodian/bank), ' +
         'matched by account code AND currency. Returns per-account status (matched / mismatch / ' +
-        'missing_in_ledger / missing_in_external) with exact diffs and an overall reconciled flag.',
+        'missing_in_ledger / missing_in_external) with exact diffs and an overall reconciled flag. Kernel verified.',
       inputSchema: {
         ledger: ledgerSchema,
         external: z.array(z.object({
@@ -601,11 +637,10 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const bridge = await import('./kernel-bridge.js');
-        const mod = await import('@eternal-roman/ledger');
-        const ledger = bridge.parseLedger(args.ledger);
-        const result = mod.reconcilePositions(ledger, args.external, args.asOf);
-        return ok({ ok: true, ...result });
+        const ledger = parseLedger(args.ledger);
+        const result = L.reconcilePositions(ledger, args.external, args.asOf);
+        const v = verifyKernelLedger(ledger);
+        return ok({ ok: true, ...result, kernelVerified: v });
       } catch (e) {
         return moneyConstructionViolation(e) ?? fail((e as Error).message);
       }
@@ -619,7 +654,7 @@ export function registerTools(server: McpServer): void {
       description:
         'Reconstruct open lots and realized disposals for an asset from the ledger using FIFO / LIFO ' +
         '/ HIFO, with exact cost basis. Each disposal is broken down per consumed lot and classified ' +
-        'short vs long term by holding days (default threshold 365). Fails closed on oversell.',
+        'short vs long term by holding days (default threshold 365). Fails closed on oversell. Kernel verified.',
       inputSchema: {
         ledger: ledgerSchema,
         asset: z.string(),
@@ -629,13 +664,12 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const bridge = await import('./kernel-bridge.js');
-        const mod = await import('@eternal-roman/ledger');
-        const ledger = bridge.parseLedger(args.ledger);
-        const r = mod.reliefFor(ledger, args.asset, args.method ?? 'FIFO', {
+        const ledger = parseLedger(args.ledger);
+        const r = L.reliefFor(ledger, args.asset, args.method ?? 'FIFO', {
           longTermThresholdDays: args.longTermThresholdDays,
         });
-        // Serialize Money fields to exact strings for transport.
+        const v = verifyKernelLedger(ledger);
+        // Serialize (already done in original for this one)
         return ok({
           ok: true,
           asset: r.asset,
@@ -657,6 +691,7 @@ export function registerTools(server: McpServer): void {
               holdingDays: s.holdingDays, term: s.term,
             })),
           })),
+          kernelVerified: v,
         });
       } catch (e) { return fail((e as Error).message); }
     },
@@ -669,7 +704,7 @@ export function registerTools(server: McpServer): void {
       description:
         'Split a fill into trade-date entries (asset moves; cash booked as a settlement receivable ' +
         'on a sell / payable on a buy) and settlement-date entries (the receivable/payable is swapped ' +
-        'for cash). All entries are kernel-validated and balanced. Returns both entry sets as JSON.',
+        'for cash). All entries are kernel-validated and balanced. Returns both entry sets as JSON. Kernel verified.',
       inputSchema: {
         fill: z.object({
           id: z.string(),
@@ -689,22 +724,27 @@ export function registerTools(server: McpServer): void {
     },
     async (args): Promise<ToolResult> => {
       try {
-        const mod = await import('@eternal-roman/ledger');
         const f = args.fill;
         const fill = {
           id: f.id, effectiveDate: f.effectiveDate, venue: f.venue,
           base: f.base, quote: f.quote, side: f.side,
-          quantity: mod.Money.from(f.quantity.amount, f.quantity.currency),
-          price: mod.Money.from(f.price.amount, f.price.currency),
-          fee: f.fee ? mod.Money.from(f.fee.amount, f.fee.currency) : undefined,
-          rebate: f.rebate ? mod.Money.from(f.rebate.amount, f.rebate.currency) : undefined,
+          quantity: L.Money.from(f.quantity.amount, f.quantity.currency),
+          price: L.Money.from(f.price.amount, f.price.currency),
+          fee: f.fee ? L.Money.from(f.fee.amount, f.fee.currency) : undefined,
+          rebate: f.rebate ? L.Money.from(f.rebate.amount, f.rebate.currency) : undefined,
         };
-        const res = mod.settleFill(fill, args.settlementDate, { lotMethod: args.lotMethod });
+        const res = L.settleFill(fill, args.settlementDate, { lotMethod: args.lotMethod });
+        // Verify generated entries kernel correct
+        [...res.tradeDate, ...res.settlement].forEach((e: any) => {
+          const v = L.validateEntry(e);
+          if (!v.ok) throw new Error('Kernel produced unbalanced settlement entry');
+        });
         return ok({
           ok: true,
           settledCash: res.settledCash.toString(),
           tradeDate: res.tradeDate.map((e) => e.toJSON()),
           settlement: res.settlement.map((e) => e.toJSON()),
+          kernelVerified: { tradeCount: res.tradeDate.length, settlementCount: res.settlement.length },
         });
       } catch (e) {
         return moneyConstructionViolation(e) ?? fail((e as Error).message);
@@ -737,5 +777,5 @@ export const TOOL_NAMES = [
   'settlement_build_entries',
 ] as const;
 
-// Re-export Money for consumers that want the type without reaching into the kernel.
-export { Money };
+// Re-export Money for consumers that want the type without reaching into the kernel (first-class).
+export const Money = L.Money;

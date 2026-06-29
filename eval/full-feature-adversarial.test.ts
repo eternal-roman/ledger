@@ -1,5 +1,5 @@
 /**
- * 3-round adversarial verification for the four new feature extensions plus the
+ * 3-round adversarial verification (due diligence) for the four new feature extensions plus the
  * kernel they build on:
  *   - cash flow statement (reporting/cashflow)
  *   - position reconciliation (reconcile/reconcile)

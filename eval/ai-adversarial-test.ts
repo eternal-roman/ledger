@@ -1,5 +1,5 @@
 /**
- * Adversarial tests: cases where a bare LLM (no guardrail) would silently corrupt books.
+ * Adversarial tests (due diligence): cases where a bare LLM (no guardrail) would silently corrupt books.
  * Each section is labelled with the failure mode it targets.
  *
  * Real API quirks discovered and documented inline.

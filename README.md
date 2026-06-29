@@ -303,3 +303,7 @@ correctness guarantees so the library reads as engineering first.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Disclaimer
+
+This software and the MCP server provide deterministic computational primitives and verification tools (exact decimal `Money`, kernel-enforced double-entry via `validateEntry` + `Ledger.apply`, audit hashing, determinism checks, and citation lookup). **This is not financial, tax, legal, or accounting advice.** Users are solely responsible for compliance with all applicable laws, GAAP/IFRS standards, tax rules, and jurisdiction requirements, and for the accuracy of their inputs, assumptions, rates, and interpretations. Tests, benchmarks, adversarial suites, and verification harnesses constitute due diligence and reproducibility checks only; they do not constitute guarantees, certifications, or warranties of correctness for any use case. The MIT License disclaims all warranties; see LICENSE for full terms. Mistakes do not ship.
