@@ -174,7 +174,7 @@ export function createFxConversion(
     const s = domesticAmount.scale;
     const minorUnit = Money.from(s === 0 ? '1' : '0.' + '0'.repeat(s - 1) + '1', domesticAmount.currency);
     const diff = expected.sub(domesticAmount).abs();
-    if (diff.compare(minorUnit) > 0) {
+    if (diff.compare(minorUnit) >= 0) {
       throw new Error(
         `FX inconsistent with rate: ${foreignAmount.toString()} @ ${rate.rate} = ${expected.toString()}, but domestic is ${domesticAmount.toString()}`
       );
