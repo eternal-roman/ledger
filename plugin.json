@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "version": "0.14.0",
-  "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact Money.from (no floats), kernel-enforced double-entry via JournalEntry + validateEntry + Ledger.apply, audit-hashed ledgers, canon citations. Provides /ledger-* skills and slash commands.",
+  "description": "Exact-decimal Money and double-entry primitives for TypeScript (Money.from, JournalEntry, validateEntry, Ledger.apply). Includes audit hash, determinism checks, citations, MCP server, and /ledger-* skills for agents.",
   "author": {
     "name": "eternal-roman / Ledger maintainers"
   },

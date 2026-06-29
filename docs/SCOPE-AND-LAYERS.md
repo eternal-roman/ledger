@@ -1,6 +1,6 @@
 # Scope and Layers (What the Kernel + Skills Actually Deliver Today)
 
-## Kernel Guarantees (src/core + src/verify)
+## What the Kernel Enforces (src/core + src/verify)
 - `Money.from` (exact Decimal, rejects non-int JS numbers, see money.ts:86-93).
 - `JournalEntry` + `validateEntry` (balance per currency, >=2 lines, positive amounts, scale, ISO date, no currency mix in one entry).
 - Immutable `Ledger.apply` (re-validates on every apply).

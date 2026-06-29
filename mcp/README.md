@@ -1,17 +1,13 @@
 # @eternal-roman/ledger-mcp
 
-**The deterministic financial-correctness tools AI agents call.**
-
 An [MCP](https://modelcontextprotocol.io) server that exposes the
-[`@eternal-roman/ledger`](https://github.com/eternal-roman/ledger) kernel —
-exact decimal money, kernel-enforced double-entry, immutable audit-hashed
-ledgers — as tools an agent can invoke.
+[`@eternal-roman/ledger`](https://github.com/eternal-roman/ledger) kernel
+as tools an agent can invoke.
 
-LLMs do pattern-matching, not arithmetic: they hallucinate numbers, miscategorize,
-and are confidently wrong. The fix the industry converges on is to **offload the
-math and the invariants to a deterministic tool**. This server is that tool for
-money. The agent decides *what*; the kernel computes *how*, and **provably cannot
-emit unbalanced or float-based entries** — an invalid entry is rejected, not posted.
+The server provides exact decimal arithmetic and kernel-enforced double-entry
+validation so agents can call `money_compute`, `entry_validate`, `ledger_post`
+and related operations instead of performing financial calculations in tokens.
+Invalid entries are rejected and not posted.
 
 ## Install / run
 
