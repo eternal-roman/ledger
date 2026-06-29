@@ -71,9 +71,11 @@ export class JournalEntry {
 }
 
 export interface ValidationViolation {
-  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE' | 'DUPLICATE_ID';
+  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE' | 'DUPLICATE_ID' | 'PERIOD_LOCKED';
   message: string;
   diff?: string;
+  /** Present for PERIOD_LOCKED to identify the offending lock. */
+  lockDate?: string;
 }
 
 export interface ValidationResult {
