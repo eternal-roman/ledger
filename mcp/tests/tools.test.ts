@@ -84,6 +84,49 @@ describe('ledger MCP server', () => {
     expect(parsed.parts).toEqual(['3.33 USD', '3.33 USD', '3.34 USD']);
   });
 
+  it('money_compute allocate reports a verified sumsToOriginal and rejects zero-sum ratios (M1)', async () => {
+    const okRes = await call(client, 'money_compute', {
+      op: 'allocate', a: { amount: '100.00', currency: 'USD' }, ratios: ['1', '1', '1'],
+    });
+    expect(okRes.parsed.ok).toBe(true);
+    expect(okRes.parsed.sumsToOriginal).toBe(true);
+    const bad = await call(client, 'money_compute', {
+      op: 'allocate', a: { amount: '100.00', currency: 'USD' }, ratios: ['0', '0'],
+    });
+    expect(bad.parsed.ok).toBe(false);
+  });
+
+  it('accepts native-precision crypto amounts (BTC 8dp) (M2)', async () => {
+    const { parsed } = await call(client, 'entry_validate', {
+      entry: {
+        id: 'btc-1', effectiveDate: '2026-06-28', description: 'BTC buy',
+        lines: [
+          { accountCode: 'BTC-WALLET', accountName: 'BTC Wallet', accountType: 'Asset', amount: '0.12345678', currency: 'BTC', side: 'debit' },
+          { accountCode: 'BTC-EQUITY', accountName: 'Crypto Equity', accountType: 'Equity', amount: '0.12345678', currency: 'BTC', side: 'credit' },
+        ],
+      },
+    });
+    expect(parsed.ok).toBe(true);
+    expect(parsed.violations).toHaveLength(0);
+  });
+
+  it('labels sub-scale vs non-finite money errors distinctly (L2)', async () => {
+    const subScale = await call(client, 'entry_validate', {
+      entry: { id: 's1', effectiveDate: '2026-06-28', description: 'x', lines: [
+        { accountCode: '1', accountName: 'A', accountType: 'Asset', amount: '1.001', currency: 'USD', side: 'debit' },
+        { accountCode: '2', accountName: 'B', accountType: 'Equity', amount: '1.001', currency: 'USD', side: 'credit' },
+      ] },
+    });
+    expect(subScale.parsed.violations[0].type).toBe('SUB_SCALE');
+    const nonFinite = await call(client, 'entry_validate', {
+      entry: { id: 'n1', effectiveDate: '2026-06-28', description: 'x', lines: [
+        { accountCode: '1', accountName: 'A', accountType: 'Asset', amount: 'Infinity', currency: 'USD', side: 'debit' },
+        { accountCode: '2', accountName: 'B', accountType: 'Equity', amount: 'Infinity', currency: 'USD', side: 'credit' },
+      ] },
+    });
+    expect(nonFinite.parsed.violations[0].type).toBe('NON_FINITE');
+  });
+
   it('entry_validate accepts a balanced entry', async () => {
     const { parsed } = await call(client, 'entry_validate', { entry: balancedEntry });
     expect(parsed.ok).toBe(true);

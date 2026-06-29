@@ -19,7 +19,7 @@ lands). We then count how many invariant violations reach the committed books.
 | Rejected by the guardrail before commit | — | 4 |
 | Entries committed | 8 | 4 |
 | Books balance (debits = credits / equation) | **no** | yes |
-| Tamper-evident audit hash | — | `ff473d1a24f3be0e…` |
+| Tamper-evident audit hash | — | `c069ab8dc18226c2…` |
 | Deterministic (rebuild = identical hash) | — | yes |
 
 Baseline silently commits **4** corrupt entries and

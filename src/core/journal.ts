@@ -71,7 +71,7 @@ export class JournalEntry {
 }
 
 export interface ValidationViolation {
-  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE' | 'DUPLICATE_ID' | 'PERIOD_LOCKED';
+  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE' | 'DUPLICATE_ID' | 'PERIOD_LOCKED' | 'ACCOUNT_REDEFINED';
   message: string;
   diff?: string;
   /** Present for PERIOD_LOCKED to identify the offending lock. */
@@ -228,6 +228,20 @@ export function validateEntry(entry: JournalEntry): ValidationResult {
       violations.push({
         type: 'SUB_SCALE',
         message: `Amount ${line.amount.toDecimal().toString()} ${line.amount.currency} is finer than the ${line.amount.scale}-dp currency scale`,
+      });
+    }
+  }
+
+  // Account identity must be consistent within the entry: one code => one (type, name).
+  const seenAccts = new Map<string, { type: string; name: string }>();
+  for (const line of entry.lines) {
+    const a = line.account;
+    const prev = seenAccts.get(a.code);
+    if (!prev) seenAccts.set(a.code, { type: a.type, name: a.name });
+    else if (prev.type !== a.type || prev.name !== a.name) {
+      violations.push({
+        type: 'ACCOUNT_REDEFINED',
+        message: `Account code ${a.code} used with conflicting definitions (${prev.type}/${prev.name} vs ${a.type}/${a.name})`,
       });
     }
   }

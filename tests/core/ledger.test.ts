@@ -222,6 +222,21 @@ describe('Ledger (immutable append + projections)', () => {
     expect(res.hash).toBe(emptyLedger().apply(e1).ledger.auditHash());
   });
 
+  it('verifyDeterminism proves a JSON serialization roundtrip reproduces the hash (M3)', () => {
+    const e1 = capEntry('1000');
+    const e2 = new JournalEntry('d2', '2026-01-02', [
+      makeLine(equity, Money.from('100', 'USD'), 'debit'),
+      makeLine(cash, Money.from('100', 'USD'), 'credit')
+    ], 'draw');
+    const res = verifyDeterminism([e1, e2]);
+    expect(res.ok).toBe(true);
+    // The check now independently rebuilds via fromJSON(toJSON) and reports it.
+    expect(res.roundtripOk).toBe(true);
+    // And the reported hash matches that independent rebuild.
+    const rebuilt = Ledger.fromJSON(res.ledger.toJSON());
+    expect(rebuilt.auditHash()).toBe(res.hash);
+  });
+
   it('Ledger and JournalEntry support exact deterministic (de)serialization (closes persistence gap)', () => {
     const rev = new Account('4100', 'Revenue', AccountType.Income);
     const e1 = capEntry('10000');
@@ -359,6 +374,41 @@ describe('Ledger (immutable append + projections)', () => {
     expect(h(diffMemo)).not.toBe(h(base));    // rewritten memo must change the hash
   });
 
+  it('auditHash is tamper-evident: account TYPE change alters the hash (H1)', () => {
+    const mk = (type: AccountType) => {
+      const acct = new Account('1000', 'Cash', type);
+      const eq = new Account('3000', 'Equity', AccountType.Equity);
+      return emptyLedger().apply(new JournalEntry('e1', '2026-06-21', [
+        makeLine(acct, Money.from('100', 'USD'), 'debit'),
+        makeLine(eq, Money.from('100', 'USD'), 'credit'),
+      ], 'open')).ledger.auditHash();
+    };
+    expect(mk(AccountType.Asset)).not.toBe(mk(AccountType.Expense));
+  });
+
+  it('auditHash is tamper-evident: account NAME change alters the hash (H1)', () => {
+    const mk = (name: string) => {
+      const acct = new Account('1000', name, AccountType.Asset);
+      const eq = new Account('3000', 'Equity', AccountType.Equity);
+      return emptyLedger().apply(new JournalEntry('e1', '2026-06-21', [
+        makeLine(acct, Money.from('100', 'USD'), 'debit'),
+        makeLine(eq, Money.from('100', 'USD'), 'credit'),
+      ], 'open')).ledger.auditHash();
+    };
+    expect(mk('Cash')).not.toBe(mk('Owner Drawings'));
+  });
+
+  it('auditHash is independent of tag key order (L3)', () => {
+    const cash = new Account('1000', 'Cash', AccountType.Asset);
+    const eq = new Account('3000', 'Equity', AccountType.Equity);
+    const mk = (tags: Record<string, string>) =>
+      emptyLedger().apply(new JournalEntry('e1', '2026-06-21', [
+        { account: cash, amount: Money.from('100', 'USD'), side: 'debit', tags },
+        { account: eq, amount: Money.from('100', 'USD'), side: 'credit' },
+      ] as any, 'open')).ledger.auditHash();
+    expect(mk({ a: '1', b: '2' })).toBe(mk({ b: '2', a: '1' }));
+  });
+
   it('auditHash is a reproducible 64-char hex digest', () => {
     const h1 = emptyLedger().apply(capEntry('1000')).ledger.auditHash();
     const h2 = emptyLedger().apply(capEntry('1000')).ledger.auditHash();
@@ -421,5 +471,25 @@ describe('Ledger (immutable append + projections)', () => {
       expect(multiRows.length).toBe(2);
       expect(l.verifyFundamentalEquation()).toBe(true);
     });
+  });
+});
+
+describe('account identity consistency (H2)', () => {
+  it('apply rejects reusing an account code with a different type', () => {
+    const asset1000 = new Account('1000', 'Cash', AccountType.Asset);
+    const liab1000 = new Account('1000', 'Loan', AccountType.Liability);
+    const eq = new Account('3000', 'Equity', AccountType.Equity);
+    let led = emptyLedger();
+    led = led.apply(new JournalEntry('e1', '2026-01-01', [
+      makeLine(asset1000, Money.from('100', 'USD'), 'debit'),
+      makeLine(eq, Money.from('100', 'USD'), 'credit'),
+    ], 'open')).ledger;
+    const r = led.apply(new JournalEntry('e2', '2026-01-02', [
+      makeLine(liab1000, Money.from('40', 'USD'), 'credit'),
+      makeLine(eq, Money.from('40', 'USD'), 'debit'),
+    ], 'redefine'));
+    expect(r.result.ok).toBe(false);
+    expect(r.result.violations.some(v => v.type === 'ACCOUNT_REDEFINED')).toBe(true);
+    expect(r.ledger.entries.length).toBe(1);
   });
 });

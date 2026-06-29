@@ -183,3 +183,17 @@ describe('JournalEntry + validateEntry (double-entry kernel)', () => {
     expect(() => { (e.tags as any).dept = 'B'; }).toThrow();
   });
 });
+
+describe('account identity consistency (H2)', () => {
+  it('validateEntry rejects one code used as two different account types', () => {
+    const asCash = new Account('1000', 'Cash', AccountType.Asset);
+    const asLoan = new Account('1000', 'Loan', AccountType.Liability);
+    const e = new JournalEntry('e1', '2026-06-21', [
+      makeLine(asCash, Money.from('40', 'USD'), 'debit'),
+      makeLine(asLoan, Money.from('40', 'USD'), 'credit'),
+    ], 'collision');
+    const r = validateEntry(e);
+    expect(r.ok).toBe(false);
+    expect(r.violations.some(v => v.type === 'ACCOUNT_REDEFINED')).toBe(true);
+  });
+});

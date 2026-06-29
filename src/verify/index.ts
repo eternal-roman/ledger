@@ -56,7 +56,7 @@ export function fullVerify(ledger: Ledger, entries?: JournalEntry[], levers: any
  * via their audit hashes (not just the same length). `ok` requires hash equality AND a
  * holding fundamental equation. Returns the audit hash for proof bundles.
  */
-export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledger: Ledger; hash: string } {
+export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledger: Ledger; hash: string; roundtripOk: boolean } {
   const build = () => {
     let l = emptyLedger();
     for (const e of entries) {
@@ -68,9 +68,14 @@ export function verifyDeterminism(entries: JournalEntry[]): { ok: boolean; ledge
   };
   const a = build();
   const b = build();
+  // Independent derivation via serialization: a true reproducibility proof must
+  // survive toJSON -> fromJSON, not just re-applying the same in-memory objects
+  // (which is tautological for a pure hash). This catches serialization drift.
+  const c = Ledger.fromJSON(a.toJSON());
   const hash = a.auditHash();
-  const ok = hash === b.auditHash() && a.verifyFundamentalEquation();
-  return { ok, ledger: a, hash };
+  const roundtripOk = hash === c.auditHash();
+  const ok = hash === b.auditHash() && roundtripOk && a.verifyFundamentalEquation();
+  return { ok, ledger: a, hash, roundtripOk };
 }
 
 /** One checkpoint captured during a kernel-powered transaction trace (used by audits that model flows with the kernel). */

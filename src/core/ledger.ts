@@ -13,6 +13,13 @@ export interface SerializedLedger {
   entries: SerializedJournalEntry[];
 }
 
+/** Canonical, key-order-independent serialization of a tag map for hashing. */
+function stableTags(tags: Record<string, string> | undefined): string {
+  if (!tags) return 'null';
+  const keys = Object.keys(tags).sort();
+  return JSON.stringify(keys.map((k) => [k, tags[k]]));
+}
+
 export class Ledger {
   private readonly _entries: JournalEntry[];
 
@@ -35,6 +42,24 @@ export class Ledger {
         ledger: this,
         result: { ok: false, violations: [{ type: 'DUPLICATE_ID', message: `Entry ID "${entry.id}" already exists in this ledger` }] }
       };
+    }
+    // Account identity is a ledger-level invariant: a code may not be redefined
+    // with a different type or name across entries (type drives the normal-balance
+    // side, so a silent redefinition would corrupt every balance and the equation).
+    const known = new Map<string, { type: string; name: string }>();
+    for (const e of this._entries) {
+      for (const l of e.lines) {
+        if (!known.has(l.account.code)) known.set(l.account.code, { type: l.account.type, name: l.account.name });
+      }
+    }
+    for (const l of entry.lines) {
+      const prev = known.get(l.account.code);
+      if (prev && (prev.type !== l.account.type || prev.name !== l.account.name)) {
+        return {
+          ledger: this,
+          result: { ok: false, violations: [{ type: 'ACCOUNT_REDEFINED', message: `Account code ${l.account.code} already defined as ${prev.type}/${prev.name}; cannot redefine as ${l.account.type}/${l.account.name}` }] },
+        };
+      }
     }
     const newEntries = [...this._entries, entry];
     return {
@@ -195,18 +220,30 @@ export class Ledger {
 
   /** Stable SHA-256 audit hash (tamper-evident chain over all entries/fields). */
   auditHash(): string {
-    // Tamper-evident SHA-256 chain. Every field is individually length-prefixed
-    // (`${f.length}:${f}`) before hashing, so differing field *content* and
+    // Tamper-evident SHA-256 chain (format v2). Every field is individually
+    // length-prefixed (`${f.length}:${f}`), so differing field *content* and
     // differing line *counts* both yield distinct token streams — two entries
-    // cannot collide by regrouping lines (locked by ledger.test.ts). Tag is the
-    // format version; bump it only on an intentional, breaking format change.
-    let chain = createHash('sha256').update('ledger-audit-v1').digest('hex');
+    // cannot collide by regrouping lines (locked by ledger.test.ts).
+    //
+    // v2 (breaking vs v1): each line now hashes the account *type* and *name* in
+    // addition to its code. Type drives the normal-balance side and therefore the
+    // meaning of every balance and the fundamental equation; name is the human
+    // identity. Omitting them (v1) left the hash blind to a type flip or a rename.
+    // Tags are canonicalized by sorted key so key order never affects the digest.
+    let chain = createHash('sha256').update('ledger-audit-v2').digest('hex');
     for (const e of this._entries) {
       const fields: string[] = [e.id, e.effectiveDate, e.description];
       for (const l of e.lines) {
-        fields.push(l.side, l.account.code, l.amount.toHashable(), JSON.stringify(l.tags ?? null));
+        fields.push(
+          l.side,
+          l.account.code,
+          l.account.type,
+          l.account.name,
+          l.amount.toHashable(),
+          stableTags(l.tags),
+        );
       }
-      fields.push(JSON.stringify(e.tags ?? null), JSON.stringify(e.citations ?? null));
+      fields.push(stableTags(e.tags), JSON.stringify(e.citations ?? null));
       const h = createHash('sha256').update(chain);
       for (const f of fields) h.update(`${f.length}:${f}`);
       chain = h.digest('hex');

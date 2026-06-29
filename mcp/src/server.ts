@@ -11,12 +11,17 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { VERSION } from '@eternal-roman/ledger';
+import { VERSION, installAssetScales, defaultAssetRegistry } from '@eternal-roman/ledger';
 import { registerTools } from './tools.js';
 import { registerResources } from './resources.js';
 import { registerPrompts } from './prompts.js';
 
 export function createServer(): McpServer {
+  // Wire asset decimal scales (BTC=8, ETH=18, USDC=6, …) into the kernel so the
+  // server accepts native-precision crypto amounts instead of capping them at the
+  // 2-dp fiat default. The resolver is process-global but installed once here, so
+  // every call this server handles resolves scales identically (deterministic).
+  installAssetScales(defaultAssetRegistry());
   const server = new McpServer({
     name: 'ledger',
     version: VERSION,

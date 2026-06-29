@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.17.0] - 2026-06-29
+
+**Security & MCP integrity audit remediation.**
+
+### Changed (BREAKING)
+- **Audit hash format `ledger-audit-v1` → `ledger-audit-v2`.** The hash now covers
+  each line's account `type` and `name` (previously tamper-blind — a type flip or
+  rename left the digest unchanged) and canonicalizes tag key order. Hashes
+  produced by ≤0.16.x will differ; re-baseline any stored hashes. (H1, L3)
+
+### Fixed
+- `Money.div` rejects division by zero, and `mul`/`div`/`convert` reject non-finite
+  results instead of silently yielding `Infinity`/`NaN`. (H3)
+- `Money.allocate` rejects negative ratios and ratios summing to zero; the MCP
+  `money_compute` allocate now reports a *verified* `sumsToOriginal`. (M1)
+- `Ledger.apply` and `validateEntry` reject reusing an account code with a
+  conflicting type/name (`ACCOUNT_REDEFINED`), so balances and the fundamental
+  equation can no longer be silently corrupted. (H2)
+- `verifyDeterminism` now proves a JSON serialization roundtrip reproduces the
+  hash (reports `roundtripOk`), instead of re-hashing the same in-memory objects. (M3)
+- The MCP server installs asset decimal scales, so native-precision crypto
+  (BTC 8dp, ETH 18dp, …) is accepted instead of capped at 2dp. (M2)
+- MCP money-construction errors are labeled `SUB_SCALE` / `NON_FINITE` /
+  `INVALID_AMOUNT` distinctly. (L2)
+
+### Security
+- Private vulnerability reporting via GitHub Security Advisories; honest
+  documentation of the best-effort release-signing posture; removed a stray
+  empty `.sig` artifact. (L1)
+
 ## [0.16.7] - 2026-06-29
 
 **Conciseness patch + release sequencing hardening.**
