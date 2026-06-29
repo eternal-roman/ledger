@@ -51,6 +51,17 @@ function toFiniteDecimal(value: string | number, context: string): any {
 }
 
 /**
+ * Guard the RESULT of an operation. decimal.js division by zero yields Infinity
+ * (it does not throw), and an Infinity/NaN result would silently poison every
+ * downstream comparison (all false for non-finite). Reject it so a Money can
+ * never hold a non-finite amount, even though its inputs were finite.
+ */
+function assertFiniteResult(dec: any, context: string): any {
+  if (!dec.isFinite()) throw new Error(`${context}: non-finite result`);
+  return dec;
+}
+
+/**
  * FXRate(from, to, rate, asOf?, source?). Rate is an exact conversion factor (not a monetary amount).
  * Stored exactly as a decimal string — never a float, never parseFloat — so high-precision rates
  * survive intact. Used only for explicit multi-currency legs.
@@ -157,14 +168,16 @@ export class Money {
 
   /** mul(scalar) — roundingMode passed to toDecimalPlaces if provided. */
   mul(scalar: string | number, roundingMode?: number): Money {
-    let r = this._amount.mul(toFiniteDecimal(scalar, 'Money.mul'));
+    let r = assertFiniteResult(this._amount.mul(toFiniteDecimal(scalar, 'Money.mul')), 'Money.mul');
     if (roundingMode !== undefined) r = r.toDecimalPlaces(this.scale, roundingMode);
     return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
 
-  /** div(scalar) — optional roundingMode. */
+  /** div(scalar) — optional roundingMode. Division by zero is rejected (no Infinity). */
   div(scalar: string | number, roundingMode?: number): Money {
-    let r = this._amount.div(toFiniteDecimal(scalar, 'Money.div'));
+    const d = toFiniteDecimal(scalar, 'Money.div');
+    if (d.isZero()) throw new Error('Money.div: division by zero');
+    let r = assertFiniteResult(this._amount.div(d), 'Money.div');
     if (roundingMode !== undefined) r = r.toDecimalPlaces(this.scale, roundingMode);
     return new Money(r, this.currency, this.scale, this.asOf, this.provenance);
   }
@@ -173,7 +186,10 @@ export class Money {
   convert(rate: FXRate, roundingMode: number = ROUND_HALF_UP): Money {
     if (this.currency !== rate.from) throw new Error(`FX mismatch: ${this.currency} vs ${rate.from}`);
     const targetScale = scaleFor(rate.to);
-    const amt = this._amount.times(rate.rateDecimal()).toDecimalPlaces(targetScale, roundingMode);
+    const amt = assertFiniteResult(
+      this._amount.times(rate.rateDecimal()).toDecimalPlaces(targetScale, roundingMode),
+      'Money.convert',
+    );
     return new Money(amt, rate.to, targetScale, rate.asOf, rate.source || this.provenance);
   }
 
@@ -191,8 +207,13 @@ export class Money {
   allocate(ratios: (string | number)[]): Money[] {
     if (ratios.length === 0) return [];
     const ps = ratios.map(r => toFiniteDecimal(r, 'Money.allocate'));
+    if (ps.some(p => p.isNegative())) {
+      throw new Error('Money.allocate: ratios must be non-negative');
+    }
     const tot = ps.reduce((a, b) => a.add(b), new Decimal(0));
-    if (tot.isZero()) return ratios.map(() => Money.zero(this.currency, this.asOf, this.provenance));
+    if (tot.isZero()) {
+      throw new Error('Money.allocate: ratios sum to zero');
+    }
 
     const res: Money[] = [];
     let alloc = new Decimal(0);

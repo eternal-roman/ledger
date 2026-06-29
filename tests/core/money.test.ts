@@ -228,4 +228,29 @@ describe('Money scalar guards (no non-finite poison via mul/div/allocate)', () =
     // Finite ratios still split exactly.
     expect(m.allocate([1, 1]).map(p => p.toString())).toEqual(['50.00 USD', '50.00 USD']);
   });
+
+  it('div by zero throws instead of producing Infinity (H3)', () => {
+    const m = Money.from('10', 'USD');
+    expect(() => m.div('0')).toThrow(/division by zero/i);
+    expect(() => m.div(0)).toThrow(/division by zero/i);
+    // Normal division path unaffected.
+    expect(m.div('2').toString()).toBe('5.00 USD');
+  });
+
+  it('a finite Money can never silently become non-finite (H3)', () => {
+    const m = Money.from('10', 'USD');
+    expect(() => m.div('0')).toThrow();
+    // No operation should yield an Infinity/NaN-bearing Money.
+    expect(m.mul('3').toDecimal().isFinite()).toBe(true);
+  });
+
+  it('allocate rejects negative ratios (M1)', () => {
+    const m = Money.from('100', 'USD');
+    expect(() => m.allocate(['-1', '2'])).toThrow(/non-negative/i);
+  });
+
+  it('allocate rejects ratios that sum to zero (M1)', () => {
+    const m = Money.from('100', 'USD');
+    expect(() => m.allocate(['0', '0'])).toThrow(/sum to zero/i);
+  });
 });
