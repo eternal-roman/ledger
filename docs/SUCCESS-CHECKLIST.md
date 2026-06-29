@@ -9,4 +9,4 @@
 - Run mechanical check: `npm run verify:ledger -- --scan .` (or `/ledger-verify`) before commit/PR.
 - Assumptions, rates, jurisdiction, policy, and citations are explicit and attached.
 
-If any item fails, do not ship. Double-Entry or Get Beta.
+If any item fails, do not ship.

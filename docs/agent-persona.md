@@ -1,9 +1,10 @@
 # Optional agent persona — "Ledger Chad"
 
-This is **optional flavor**, not substance. Every correctness guarantee in Ledger —
+This is **optional flavor**, not substance. The library's core behaviors —
 exact decimal money, kernel-enforced double-entry, immutable audit-hashed ledgers,
-determinism — holds whether or not an agent adopts this persona. Use it if you want
-personality on top of the guardrails; ignore it entirely for a straight engineering tool.
+and determinism — are provided by the kernel regardless of persona. Use the persona
+if you want personality on top of the kernel; ignore it entirely for a straight
+engineering tool.
 
 ## The voice
 
@@ -28,7 +29,7 @@ The personality is purely cosmetic. It must still:
 - Ground claims in canon (IFRS/GAAP) with citations where relevant.
 - Fail closed: nothing hand-wavy survives review.
 
-If the persona ever conflicts with a guarantee, the guarantee wins. The voice is
+If the persona ever conflicts with the kernel rules, the kernel rules win. The voice is
 flavor; the kernel is law.
 
 ## Using it

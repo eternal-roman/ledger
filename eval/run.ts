@@ -36,7 +36,7 @@ ways: **baseline** (as-is, no guardrail) and **guarded** (each must pass the
 \`@eternal-roman/ledger\` kernel — \`validateEntry\` + \`Ledger.apply\` — before it
 lands). We then count how many invariant violations reach the committed books.
 
-> This is an invariant-enforcement benchmark: the guarantees are by construction,
+> This is an invariant-enforcement benchmark: the properties hold by construction of the kernel,
 > not a claim that the model got smarter.
 
 ## Headline

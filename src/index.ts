@@ -35,6 +35,6 @@ function resolveVersion(): string {
 }
 export const VERSION: string = resolveVersion();
 export const DESCRIPTION =
-  'Execution as Proof for money — the deterministic correctness layer AI agents call. ' +
-  'Exact decimal arithmetic, kernel-enforced double-entry, immutable audit-hashed ledgers, ' +
-  'deterministic and reproducible. Provably cannot emit unbalanced or float-based entries.';
+  'Exact-decimal Money and double-entry primitives for TypeScript. ' +
+  'Enforces balanced, non-float entries via validateEntry and immutable Ledger.apply. ' +
+  'Includes audit hash, determinism checks and verification tools.';

@@ -2,11 +2,11 @@
 
 ## Where things stand
 
-Ledger is a small, exact-decimal, double-entry **kernel** plus thin, honest layers:
+Ledger provides a focused exact-decimal, double-entry **kernel** plus thin, honest layers:
 
 - `src/core/*` — `Money` (exact decimal, no floats), `Account`, `JournalEntry` /
   `validateEntry`, `Ledger` (immutable, append-only, tamper-evident `auditHash`,
-  fundamental-equation check). This is the proven core.
+  fundamental-equation check). This is the kernel.
 - `src/rules/*` — structural recognition checks (revenue/expense/asset/liability/lease).
 - `src/knowledge/*` — a small citation graph with IFRS + US-GAAP seeds.
 - `src/verify/*` — determinism harness + a Canonical Financial Artifact structure check.
@@ -25,10 +25,9 @@ that has not yet been chosen:
 **Option A — Expand the current kernel with a real financial framework.**
 Build one faithful, fully-tested standard rather than broad stubs. The natural first
 target is an **IFRS 16 lessee** engine (initial liability = PV of payments; ROU asset;
-subsequent amortization + interest unwind), verified by **golden-master tests against the
-standard's Illustrative Examples** to the cent, with real (not decorative) citations and a
-proper validated `time`/discounting foundation. Revenue (IFRS 15 core) follows the same
-pattern.
+subsequent amortization + interest unwind), verified by golden-master tests against the
+standard's Illustrative Examples to the cent, with citations and a validated time/discounting
+foundation. Revenue (IFRS 15 core) would follow a similar pattern.
 
 **Option B — Build a purpose-built alternative kernel.**
 If a specific use case (e.g. a bank ledger, a tax engine, a portfolio/valuation tool)
