@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.16.0] - 2026-06-29
+
+**Core financial utilities release.**
+
+- Period-End Lock / Hard Close (anti-fraud protocol)
+- Closing / Retained Earnings Engine
+- Multi-Currency FX Translation & CTA
+- Standard Depreciation & Amortization Schedules
+
+All implemented on the kernel. Versions aligned across all 7 locations.
+
 ## [0.15.0] - 2026-06-28
 
 **Factual cleanup + release hygiene for the kernel.**
