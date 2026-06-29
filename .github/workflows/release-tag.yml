@@ -1,17 +1,23 @@
 name: Release Tag
 
-# Creates an annotated git tag + GitHub Release from the version in package.json.
+# Creates (if needed):
+#   - a fallback unsigned annotated git tag (when local signed tag push is blocked by relay)
+#   - the GitHub Release object (with notes extracted from CHANGELOG.md)
 #
-# Why this exists: tags cannot be pushed from the sandboxed development
-# environment (the git relay rejects tag-ref pushes with HTTP 403). This
-# workflow uses the repository's own GITHUB_TOKEN, which is permitted, so a
-# release is tagged automatically the moment a version bump lands on main.
+# Design:
+#   - Local /release process does `git tag -s -a` (signed) + push --follow-tags.
+#   - This workflow is the safety net + GH Release creator because direct tag-ref
+#     pushes are often rejected (HTTP 403 from git relay in sandboxed envs).
+#   - Tag existence check only gates the *unsigned tag creation*.
+#   - Separate GH Release existence check ensures the rich release (title + notes)
+#     is always created, even for pre-existing tags (local signed or historical).
+#   - Supports backfill via workflow_dispatch (ref=sha) for older versions.
 #
 # Triggers:
-#   - push to main that touches package.json  -> tags the new version if untagged
-#   - workflow_dispatch                        -> tag on demand; pass `ref` to
-#                                                 backfill a historical release
-#                                                 (e.g. ref=26f1581 for v0.16.2)
+#   - push to main touching package.json  -> ensure tag + GH Release for the version
+#   - workflow_dispatch (optional `ref`) -> backfill/create for a specific commit
+#
+# See: /release skill, the "Publish" section, and verification via grok_com_github__get_release_by_tag.
 
 on:
   push:
@@ -40,24 +46,40 @@ jobs:
       - name: Resolve version from package.json
         id: ver
         run: |
+          set -euo pipefail
           v=$(node -p "require('./package.json').version")
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "tag=v$v" >> "$GITHUB_OUTPUT"
           echo "Resolved version: v$v"
 
-      - name: Check whether the tag already exists
+      - name: Check whether the tag already exists (for unsigned fallback only)
         id: check
         run: |
+          set -euo pipefail
           if git ls-remote --tags origin "refs/tags/${{ steps.ver.outputs.tag }}" | grep -q .; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ steps.ver.outputs.tag }} already exists — nothing to do."
+            echo "Tag ${{ steps.ver.outputs.tag }} already exists on remote (local signed tag or prior CI)."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check whether GitHub Release already exists
+        id: release-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "${{ steps.ver.outputs.tag }}" --json tagName > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub Release for ${{ steps.ver.outputs.tag }} already exists."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Extract release notes from CHANGELOG.md
-        if: steps.check.outputs.exists == 'false'
+        if: steps.check.outputs.exists == 'false' || steps.release-check.outputs.exists == 'false'
         run: |
+          set -euo pipefail
           v="${{ steps.ver.outputs.version }}"
           awk -v ver="$v" '
             $0 ~ "^## \\[" ver "\\]" { f=1; print; next }
@@ -65,12 +87,16 @@ jobs:
             f { print }
           ' CHANGELOG.md > RELEASE_NOTES.md || true
           if [ ! -s RELEASE_NOTES.md ]; then
+            echo "ERROR: No CHANGELOG section found for version ${v} (expected '## [${v}] ...')." >&2
+            echo "The release bump commit must include an updated CHANGELOG entry (per /release skill)."
             echo "Release ${{ steps.ver.outputs.tag }}" > RELEASE_NOTES.md
+            # Do not hard-fail the extraction (allow minimal release), but surface loudly.
+            # To enforce strictly, uncomment: exit 1
           fi
           echo "----- release notes -----"
           cat RELEASE_NOTES.md
 
-      - name: Create and push annotated tag
+      - name: Create and push annotated tag (unsigned fallback)
         if: steps.check.outputs.exists == 'false'
         env:
           GIT_AUTHOR_NAME: 'github-actions[bot]'
@@ -78,15 +104,29 @@ jobs:
           GIT_COMMITTER_NAME: 'github-actions[bot]'
           GIT_COMMITTER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
         run: |
+          set -euo pipefail
+          echo "Creating unsigned annotated tag (CI fallback). Local signed tag (-s) preferred when push succeeds."
           git tag -a "${{ steps.ver.outputs.tag }}" -m "Release ${{ steps.ver.outputs.tag }}"
           git push origin "${{ steps.ver.outputs.tag }}"
 
       - name: Create GitHub Release
-        if: steps.check.outputs.exists == 'false'
+        if: steps.release-check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          target_sha="$(git rev-parse HEAD)"
           gh release create "${{ steps.ver.outputs.tag }}" \
             --title "${{ steps.ver.outputs.tag }}" \
             --notes-file RELEASE_NOTES.md \
-            --target "$(git rev-parse HEAD)"
+            --target "$target_sha"
+          echo "GitHub Release created for ${{ steps.ver.outputs.tag }}"
+
+      - name: Confirm GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "Confirming GitHub Release for ${{ steps.ver.outputs.tag }}..."
+          gh release view "${{ steps.ver.outputs.tag }}" --json tagName,name,url,createdAt | cat
+          echo "✅ GitHub Release confirmed for ${{ steps.ver.outputs.tag }}"
