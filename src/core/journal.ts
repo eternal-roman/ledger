@@ -71,7 +71,7 @@ export class JournalEntry {
 }
 
 export interface ValidationViolation {
-  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE';
+  type: 'UNBALANCED' | 'TOO_FEW_LINES' | 'CURRENCY_MIX' | 'INVALID_AMOUNT' | 'SUB_SCALE' | 'INVALID_DATE' | 'DUPLICATE_ID';
   message: string;
   diff?: string;
 }
