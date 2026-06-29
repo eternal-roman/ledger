@@ -84,12 +84,17 @@ export class Money {
    * Money.from(value, currency). String coercion prevents float traps. Optional scale override.
    */
   static from(value: string | number, currency: string, asOf?: string, provenance?: string, scale?: number): Money {
-    if (typeof value === 'number' && !Number.isInteger(value)) {
-      // A non-integer JS number may already carry IEEE-754 error (e.g. 0.1 + 0.2).
-      // Force exact input: pass a string for any fractional amount.
-      throw new Error(`Money.from: non-integer number ${value} risks float imprecision — pass a string (e.g. "${value}")`);
+    // VULN-02: isSafeInteger rejects both non-integers (0.1) and values above MAX_SAFE_INTEGER
+    // where String() already returns the wrong number.
+    if (typeof value === 'number' && !Number.isSafeInteger(value)) {
+      throw new Error(`Money.from: number ${value} is non-integer or outside safe-integer range — pass a string to preserve precision`);
     }
     const dec = new Decimal(String(value));
+    // VULN-01: Decimal supports "Infinity" / "NaN" as strings; reject them before any guard
+    // that relies on arithmetic comparisons (which all evaluate to false for NaN/Infinity).
+    if (!dec.isFinite()) {
+      throw new Error(`Money.from: amount must be a finite number; got "${value}"`);
+    }
     const resolvedScale = scale ?? scaleFor(currency.toUpperCase());
     if (dec.decimalPlaces() > resolvedScale) {
       throw new Error(

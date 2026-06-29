@@ -53,11 +53,19 @@ function eventsFor(ledger: Ledger, asset: string): { events: (Acquire | Dispose)
         quote = q;
       }
       if (t[LOT_TAGS.role] === 'acquire') {
+        // VULN-03: tag alone is not enough — verify the ledger side matches the economic direction
+        // to prevent phantom lots from a mistagged credit line.
+        if (line.side !== 'debit') {
+          throw new Error(`lots: 'acquire' tag on a ${line.side} line for ${A} in entry ${entry.id} — acquisition must debit the custody account`);
+        }
         events.push({
           kind: 'acquire', date: entry.effectiveDate, entryId: entry.id,
           qty: line.amount, basis: Money.from(t[LOT_TAGS.costBasis]!, q!),
         });
       } else if (t[LOT_TAGS.role] === 'dispose') {
+        if (line.side !== 'credit') {
+          throw new Error(`lots: 'dispose' tag on a ${line.side} line for ${A} in entry ${entry.id} — disposal must credit the custody account`);
+        }
         events.push({
           kind: 'dispose', date: entry.effectiveDate, tradeId: t[LOT_TAGS.tradeId]!,
           qty: line.amount, proceeds: Money.from(t[LOT_TAGS.proceeds]!, q!),
