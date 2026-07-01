@@ -32,9 +32,11 @@ a real kernel plan, not an assumed one).
 - CI (`npm run verify:full`): fail-closed, non-LLM (`scripts/ledger-verify.ts`,
   `scripts/verify-determinism.ts`).
 - Claude Code Stop hook (`hooks/verify-proof-binding.cjs`, registered via the `Stop` key in
-  `hooks/hooks.json` so it ships with the plugin): fail-closed on a detected mismatch between the
-  assistant's final message and real tool output, fail-open on its own infrastructure failures.
-  This is what makes AI *engagement* with the kernel accountable, not just the kernel's own math —
-  see `hooks/README.md`.
+  `hooks/claude-code-hooks.json` — a Claude-Code-only file referenced explicitly by
+  `.claude-plugin/plugin.json`'s `"hooks"` field, kept separate from the shared `hooks/hooks.json`
+  that Grok also auto-discovers, so it ships with the plugin without risking Grok's activation):
+  fail-closed on a detected mismatch between the assistant's final message and real tool output,
+  fail-open on its own infrastructure failures. This is what makes AI *engagement* with the kernel
+  accountable, not just the kernel's own math — see `hooks/README.md`.
 
 Failure does not ship. All operations must be exact, balanced, and kernel-enforced.

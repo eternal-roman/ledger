@@ -45,7 +45,17 @@
 
 const fs = require('node:fs');
 
+// Bare decimal, e.g. Money.toJSON()'s "a" field ("1800.00") where amount and
+// currency are already split into separate fields.
 const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
+// Money.toString()'s own format ("1800.00 USD") — amount and currency/asset
+// code combined in one string. This is what money_compute's `result`,
+// ledger_balance's `balance`, and most other single-value tool outputs
+// actually return (see the pervasive `.toString()` calls in mcp/src/tools.ts).
+// Without this, harvesting only bare decimals would miss nearly every
+// legitimate proof and block the single most common interaction pattern in
+// the whole system: compute or look up one value, then state it.
+const MONEY_TOSTRING_RE = /^(-?\d+(?:\.\d+)?)\s\S+$/;
 const HASH_RE = /^[0-9a-f]{64}$/i;
 const HASH_IN_TEXT_RE = /\b[0-9a-f]{64}\b/gi;
 
@@ -89,16 +99,26 @@ function normalizeAmount(raw) {
 /** Recursively harvest decimal/hash leaves from an already-parsed, already
  * shape-verified ledger envelope. No re-detection here — callers only ever
  * invoke this on an object confirmed to be `{ ok: boolean, ... }` sourced
- * from a real tool_result block (see extractLedgerEnvelopes). */
+ * from a real tool_result block (see extractLedgerEnvelopes).
+ *
+ * String leaves only, deliberately — every ledger MCP tool serializes money
+ * as an exact decimal STRING (Money.toString()/toJSON(), never a native
+ * number; see mcp/src/tools.ts, which calls .toString() on every monetary
+ * value it returns). A raw `number` leaf in these envelopes is always
+ * incidental metadata (entryCount, compare's -1/0/1, array lengths, ...),
+ * never an amount. Treating numbers as "proven" amounts would let a
+ * fabricated small claim like "$1" pass just because some unrelated
+ * entryCount happened to equal 1. */
 function harvestLeaves(node, pool, depth) {
   if (depth > 14) return; // guard against pathological/cyclic-looking nesting
   if (typeof node === 'string') {
-    if (DECIMAL_RE.test(node)) pool.decimals.add(round(Number.parseFloat(node)));
+    if (DECIMAL_RE.test(node)) {
+      pool.decimals.add(round(Number.parseFloat(node)));
+    } else {
+      const m = node.match(MONEY_TOSTRING_RE);
+      if (m) pool.decimals.add(round(Number.parseFloat(m[1])));
+    }
     if (HASH_RE.test(node)) pool.hashes.add(node.toLowerCase());
-    return;
-  }
-  if (typeof node === 'number') {
-    pool.decimals.add(round(node));
     return;
   }
   if (Array.isArray(node)) {
@@ -106,7 +126,17 @@ function harvestLeaves(node, pool, depth) {
     return;
   }
   if (node && typeof node === 'object') {
-    for (const v of Object.values(node)) harvestLeaves(v, pool, depth + 1);
+    for (const [key, v] of Object.entries(node)) {
+      // "v" is this kernel's schema-version tag, always the string "1"
+      // (Ledger.toJSON, JournalEntry.toJSON, Money.toJSON all use it — see
+      // src/core/{ledger,journal,money}.ts). It is never an amount, but it
+      // IS decimal-shaped, so without this exclusion any Money/entry/ledger
+      // object anywhere in a real tool result would pollute the proven pool
+      // with a spurious "1" — which would then rubber-stamp any fabricated
+      // "$1" / "1 <asset>" claim regardless of what was actually posted.
+      if (key === 'v') continue;
+      harvestLeaves(v, pool, depth + 1);
+    }
   }
 }
 

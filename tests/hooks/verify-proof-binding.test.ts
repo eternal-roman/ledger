@@ -57,6 +57,13 @@ function ledgerPostToolResult(amount: string, currency: string, auditHash: strin
   };
 }
 
+// money_compute's actual shape: `result` is Money.toString() ("0.30 USD"),
+// amount and currency combined in one string — NOT the split {a, c} shape
+// ledgerPostToolResult uses. Both shapes appear throughout mcp/src/tools.ts.
+function moneyComputeToolResult(result: string) {
+  return { ok: true, result };
+}
+
 function assistantText(text: string) {
   return { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } };
 }
@@ -186,6 +193,66 @@ describe('verify-proof-binding Stop hook', () => {
     const { status, decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
     expect(status).toBe(0);
     expect(decision).toBeNull();
+  });
+
+  // Regression: harvestLeaves used to treat any bare `number` leaf inside a
+  // real envelope as a "proven" amount too. entryCount/compare/etc. are
+  // always small integers (0, 1, -1, 2, ...) and are never money (money is
+  // always an exact decimal STRING per Money.toString()) — so a fabricated
+  // claim like "$1" would incorrectly match a real ledger_post response's
+  // unrelated entryCount: 1, purely by coincidence of value.
+  it('does not treat an unrelated integer field (entryCount) as proof of a claimed dollar amount', () => {
+    const transcriptPath = writeTranscript('entrycount-pollution.jsonl', [
+      toolResultLine(JSON.stringify(ledgerPostToolResult('500.00', 'USD', AUDIT_HASH))), // entryCount: 1
+      assistantText('Also posted 1.00 USD to the test account.'),
+    ]);
+    const { decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(decision?.decision).toBe('block');
+    expect(decision.reason).toMatch(/do not match any value returned[^.]*:\s*1\b/);
+  });
+
+  // Regression, SEVERE: money_compute's `result` field (and most other
+  // single-value tool outputs) is Money.toString() — "0.30 USD", amount and
+  // currency combined in ONE string, not the split {a: "0.30", c: "USD"}
+  // shape ledger_post's full ledger snapshot uses. An earlier version only
+  // recognized bare decimal strings, so this — the single most common
+  // interaction pattern in the whole system (compute or look up a value,
+  // then state it) — would have been blocked on EVERY use.
+  it('recognizes Money.toString() format ("0.30 USD") as proof, not just bare decimals', () => {
+    const transcriptPath = writeTranscript('money-compute-format.jsonl', [
+      toolResultLine(JSON.stringify(moneyComputeToolResult('0.30 USD'))),
+      assistantText('0.1 + 0.2 = 0.30 USD, computed exactly with money_compute.'),
+    ]);
+    const { status, decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(status).toBe(0);
+    expect(decision).toBeNull();
+  });
+
+  it('still blocks a Money.toString()-shaped claim that does not match the real result', () => {
+    const transcriptPath = writeTranscript('money-compute-wrong.jsonl', [
+      toolResultLine(JSON.stringify(moneyComputeToolResult('0.30 USD'))),
+      assistantText('0.1 + 0.2 = 0.40 USD.'),
+    ]);
+    const { decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(decision?.decision).toBe('block');
+    expect(decision.reason).toContain('0.4');
+  });
+
+  // Regression: Ledger.toJSON / JournalEntry.toJSON / Money.toJSON all tag
+  // their payload with a schema-version field literally named "v", always
+  // the string "1" (src/core/{ledger,journal,money}.ts). "1" is itself
+  // decimal-shaped, so without excluding this specific key, ANY real
+  // ledger_post response would pollute the proven pool with a spurious "1" —
+  // rubber-stamping a fabricated "$1" / "1 BTC" claim regardless of what was
+  // actually posted, via nothing more than an unrelated version tag.
+  it('does not treat the "v" schema-version tag as proof of a claimed "1"', () => {
+    const transcriptPath = writeTranscript('version-tag-pollution.jsonl', [
+      toolResultLine(JSON.stringify(ledgerPostToolResult('500.00', 'USD', AUDIT_HASH))),
+      assistantText('Also transferred 1.00 BTC, unrelated to the above.'),
+    ]);
+    const { decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(decision?.decision).toBe('block');
+    expect(decision.reason).toMatch(/do not match any value returned[^.]*:\s*1\b/);
   });
 
   it('is fail-open on a missing transcript file (infra failure, not a policy violation)', () => {
