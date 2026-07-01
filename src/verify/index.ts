@@ -4,6 +4,9 @@ import { loadDefaultKnowledge, fetch as knowledgeFetch } from '../knowledge/inde
 import { emptyLedger } from '../core/ledger.js';
 import { Money } from '../core/money.js';
 
+/** SHA-256 hex digest, as returned by Ledger.auditHash() / verifyDeterminism(). */
+const AUDIT_HASH_RE = /^[0-9a-f]{64}$/i;
+
 export interface CanonicalFinancialArtifact {
   scope: string;
   assumptions: string[];
@@ -11,21 +14,38 @@ export interface CanonicalFinancialArtifact {
   kernelPlan: string; // e.g. "Money.from + makeLine + createEntry + Ledger.apply + verify"
   proof: string; // e.g. "equation holds per currency"
   reproducibility: string; // seed or inputs
+  /**
+   * The exact auditHash string produced by a real kernel call in this session
+   * (ledger_post / ledger_audit_hash / ledger_verify_determinism / trace_run's
+   * finalHash). This is what lets a downstream checker confirm the artifact
+   * corresponds to an actual kernel proof rather than free-text asserted by
+   * the caller — `proof`/`reproducibility` alone are unverifiable prose.
+   */
+  auditHash: string;
 }
 
 /**
- * Minimal validator for Canonical Financial Artifact (Zero-Skip output contract).
- * Checks presence of required sections.
+ * Validator for Canonical Financial Artifact (Zero-Skip output contract).
+ * Checks presence AND shape of every required section. Deliberately has no
+ * fallback/default values: a field the caller didn't actually produce must
+ * fail here, not be silently backfilled by the artifact builder (that would
+ * make the check unable to ever fail).
  */
 export function validateCanonicalArtifact(artifact: Partial<CanonicalFinancialArtifact>): { ok: boolean; violations: string[] } {
   const violations: string[] = [];
   if (!artifact.scope) violations.push('scope required');
   if (!artifact.assumptions || artifact.assumptions.length === 0) violations.push('assumptions required');
-  if (!artifact.citations || artifact.citations.length === 0) violations.push('citations required');
+  if (!artifact.citations || artifact.citations.length === 0 || artifact.citations.some((c) => !c)) {
+    violations.push('citations required (real canon/kernel references, not defaulted)');
+  }
   if (!artifact.kernelPlan || !/Money\.from|createEntry|Ledger\.apply|validateEntry/.test(artifact.kernelPlan)) {
     violations.push('kernelPlan must reference core primitives');
   }
   if (!artifact.proof) violations.push('proof required');
+  if (!artifact.reproducibility) violations.push('reproducibility required');
+  if (!artifact.auditHash || !AUDIT_HASH_RE.test(artifact.auditHash)) {
+    violations.push('auditHash required: must be the exact SHA-256 hex digest returned by a real ledger_post / ledger_audit_hash / ledger_verify_determinism call, not a description of one');
+  }
   return { ok: violations.length === 0, violations };
 }
 
@@ -185,24 +205,30 @@ export function checkConformance(
 }
 
 /**
- * Build a minimal CanonicalFinancialArtifact for a trace or reconciliation.
- * Enforces the kernelPlan requirement.
+ * Build a CanonicalFinancialArtifact for a trace or reconciliation.
+ * Every field must be supplied by the caller and reflect real work done this
+ * call — no defaults. A defaulted `citations`/`kernelPlan` would make
+ * validateCanonicalArtifact's "required" checks unable to ever fail, which
+ * defeats the point of requiring them (a caller could always get `ok: true`
+ * without citing canon or naming the primitives it actually used).
  */
 export function makeCanonicalArtifact(params: {
   scope: string;
   assumptions: string[];
-  citations?: string[];
-  kernelPlan?: string;
+  citations: string[];
+  kernelPlan: string;
   proof: string;
   reproducibility: string;
+  auditHash: string;
 }): CanonicalFinancialArtifact {
   const artifact: CanonicalFinancialArtifact = {
     scope: params.scope,
     assumptions: params.assumptions,
-    citations: params.citations ?? ['core:double-entry', 'core:exact-decimal'],
-    kernelPlan: params.kernelPlan ?? 'Money.from + createEntry + Ledger.apply + validateEntry + verifyFundamentalEquation + auditHash',
+    citations: params.citations,
+    kernelPlan: params.kernelPlan,
     proof: params.proof,
     reproducibility: params.reproducibility,
+    auditHash: params.auditHash,
   };
   const v = validateCanonicalArtifact(artifact);
   if (!v.ok) throw new Error('Invalid CanonicalFinancialArtifact: ' + v.violations.join(', '));

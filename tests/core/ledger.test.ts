@@ -312,7 +312,8 @@ describe('Ledger (immutable append + projections)', () => {
       citations: ['ifrs-cf-2018'],
       kernelPlan: 'Money.from + makeLine + createEntry + Ledger.apply + verifyFundamentalEquation',
       proof: 'equation holds',
-      reproducibility: 'inputs:1000'
+      reproducibility: 'inputs:1000',
+      auditHash: 'a'.repeat(64),
     };
     expect(validateCanonicalArtifact(good).ok).toBe(true);
 
@@ -320,6 +321,20 @@ describe('Ledger (immutable append + projections)', () => {
     const res = validateCanonicalArtifact(bad);
     expect(res.ok).toBe(false);
     expect(res.violations.length).toBeGreaterThan(0);
+  });
+
+  it('Canonical Financial Artifact validator rejects a missing/malformed auditHash even when everything else is present', () => {
+    const base = {
+      scope: 'x',
+      assumptions: ['a'],
+      citations: ['core:double-entry'],
+      kernelPlan: 'Money.from + createEntry + Ledger.apply + validateEntry',
+      proof: 'p',
+      reproducibility: 'r',
+    };
+    expect(validateCanonicalArtifact(base).ok).toBe(false);
+    expect(validateCanonicalArtifact({ ...base, auditHash: 'not-a-hash' }).ok).toBe(false);
+    expect(validateCanonicalArtifact({ ...base, auditHash: 'a'.repeat(64) }).ok).toBe(true);
   });
 
 

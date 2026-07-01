@@ -195,15 +195,95 @@ describe('ledger MCP server', () => {
   });
 
   it('artifact_make rejects a kernel plan without core primitives', async () => {
+    const posted = await call(client, 'ledger_post', { entry: { ...balancedEntry, id: 'art-kp' } });
     const { parsed, isError } = await call(client, 'artifact_make', {
       scope: 'x',
       assumptions: ['a'],
+      citations: ['core:double-entry'],
       proof: 'p',
       reproducibility: 'r',
       kernelPlan: 'just vibes',
+      auditHash: posted.parsed.auditHash,
     });
     expect(isError).toBe(true);
     expect(parsed.ok).toBe(false);
+  });
+
+  it('artifact_make rejects an auditHash that is not a well-formed 64-hex digest (schema level)', async () => {
+    const res: any = await client.callTool({
+      name: 'artifact_make',
+      arguments: {
+        scope: 'x',
+        assumptions: ['a'],
+        citations: ['core:double-entry'],
+        proof: 'balances hold',
+        reproducibility: 'r',
+        kernelPlan: 'Money.from + createEntry + Ledger.apply + validateEntry',
+        auditHash: 'trust me, it balances',
+      },
+    });
+    // Free text is not a hash: the input schema itself rejects it, so a caller
+    // can't satisfy the "auditHash" field by describing a result in prose.
+    expect(res.isError).toBe(true);
+  });
+
+  it('artifact_make no longer silently defaults citations (schema requires at least one)', async () => {
+    const res: any = await client.callTool({
+      name: 'artifact_make',
+      arguments: {
+        scope: 'x',
+        assumptions: ['a'],
+        proof: 'p',
+        reproducibility: 'r',
+        kernelPlan: 'Money.from + createEntry + Ledger.apply + validateEntry',
+        auditHash: '0'.repeat(64),
+      },
+    });
+    // Missing required `citations` must be rejected at the schema level (MCP
+    // protocol error), not silently backfilled with a default value.
+    expect(res.isError).toBe(true);
+  });
+
+  it('artifact_make accepts a real auditHash produced by ledger_post this session', async () => {
+    const posted = await call(client, 'ledger_post', { entry: { ...balancedEntry, id: 'art-ok' } });
+    expect(posted.parsed.posted).toBe(true);
+    const { parsed, isError } = await call(client, 'artifact_make', {
+      scope: 'record initial capital',
+      assumptions: ['no FX involved'],
+      citations: ['core:double-entry'],
+      proof: 'ledger_post returned posted:true and ledger_verify_equation holds',
+      reproducibility: `replay entry art-ok on an empty ledger -> auditHash ${posted.parsed.auditHash}`,
+      kernelPlan: 'Money.from + createEntry + Ledger.apply + validateEntry',
+      auditHash: posted.parsed.auditHash,
+    });
+    expect(isError).toBe(false);
+    expect(parsed.ok).toBe(true);
+    expect(parsed.artifact.auditHash).toBe(posted.parsed.auditHash);
+  });
+
+  it('ledger_post rejects a tampered ledger snapshot instead of trusting the caller-supplied JSON', async () => {
+    const posted = await call(client, 'ledger_post', { entry: { ...balancedEntry, id: 'tamper-1' } });
+    expect(posted.parsed.posted).toBe(true);
+
+    // Mutate a posted amount directly in the serialized ledger, as an agent (or
+    // any MCP client) could if it edited the JSON between calls instead of
+    // round-tripping the kernel's own output untouched.
+    const tampered = JSON.parse(JSON.stringify(posted.parsed.ledger));
+    tampered.entries[0].lines[0].amount.a = '999999.00';
+
+    let threw = false;
+    try {
+      await call(client, 'ledger_balance', { ledger: tampered, accountCode: '1000' });
+    } catch {
+      threw = true;
+    }
+    // Either the call throws (fromJSON rejects the doctored entry) or it comes
+    // back as a structured error — either way it must NOT silently succeed with
+    // the tampered 999999.00 balance.
+    if (!threw) {
+      const { parsed, isError } = await call(client, 'ledger_balance', { ledger: tampered, accountCode: '1000' });
+      expect(isError || parsed.balance !== '999999.00 USD').toBe(true);
+    }
   });
 });
 

@@ -194,6 +194,7 @@ async function main() {
       kernelPlan: 'Money.from + createBalancedEntry + runTrace + validateEntry + auditHash',
       proof: trace.finalEquation ? 'equation holds + finalHash matches' : 'equation VIOLATION',
       reproducibility: p,
+      auditHash: trace.finalHash,
     });
 
     const result = { ok: trace.ok && trace.finalEquation, finalHash: trace.finalHash, checkpoints: trace.checkpoints.length, artifact: art };

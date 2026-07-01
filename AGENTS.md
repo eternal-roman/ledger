@@ -37,7 +37,7 @@ See docs/CORE-PROTOCOL.md for the single source Zero-Skip Execution Protocol and
    - Allow unbalanced/unverified state.
 
 4. **When generating or reviewing code**
-   - Emit full Canonical Financial Artifact (scope, assumptions, citations, kernel plan, proof, reproducibility) first.
+   - Emit full Canonical Financial Artifact (scope, assumptions, citations, kernel plan, proof, reproducibility, auditHash) first. The auditHash must be a real hash a kernel call actually returned, not restated prose.
    - Fewest lines satisfying kernel + citations.
    - Significant calc needs test exercising invariants.
    - Probabilistic/scenario work: seed + log exact assumptions.

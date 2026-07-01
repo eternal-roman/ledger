@@ -89,8 +89,10 @@ async function main() {
     scope: 'Depreciation schedule for SERVER-001',
     assumptions: ['SL 5yr, cost 12000 salvage 2000, 2026-01'],
     citations: ['IAS 16.48'],
+    kernelPlan: 'Money.from + buildDepreciationSchedule + depreciationToEntries + Ledger.apply + validateEntry',
     proof: 'allocate sums to base; entries validated; equation holds',
     reproducibility: 'buildDepreciationSchedule + depreciationToEntries with fixed inputs',
+    auditHash: r.ledger.auditHash(),
   });
   console.log('CFA for dep:', cfa.scope);
 

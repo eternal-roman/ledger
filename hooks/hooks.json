@@ -1,5 +1,5 @@
 {
-  "description": "Ledger kernel activation for Grok (SessionStart). Uses Money.from + double-entry invariants from the ledger kernel.",
+  "description": "Ledger kernel activation (SessionStart, all hosts) + proof-binding enforcement (Stop, Claude Code). Uses Money.from + double-entry invariants from the ledger kernel.",
   "hooks": {
     "SessionStart": [
       {
@@ -10,6 +10,18 @@
             "powershell": "if (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:GROK_PLUGIN_ROOT\\hooks\\ledger-activate.js\" } elseif (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\ledger-activate.js\" }",
             "timeout": 5,
             "statusMessage": "Loading Ledger kernel rules..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-proof-binding.cjs\" || true",
+            "timeout": 10,
+            "statusMessage": "Checking figures against ledger kernel proof..."
           }
         ]
       }
