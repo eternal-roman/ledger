@@ -4,7 +4,7 @@
   "author": {
     "name": "eternal-roman / Ledger maintainers"
   },
-  "version": "0.17.0",
+  "version": "0.17.1",
   "homepage": "https://github.com/eternal-roman/ledger",
   "hooks": "./hooks/claude-code-hooks.json",
   "tags": [
