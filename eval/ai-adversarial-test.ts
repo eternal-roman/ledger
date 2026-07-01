@@ -316,17 +316,43 @@ check('runTrace throws at the offending step (no partial trace on failure)', () 
 // ─── 7. makeCanonicalArtifact ─────────────────────────────────────────────────
 console.log('\n7. Canonical artifact — requires scope, assumptions, proof');
 
-check('artifact requires scope + assumptions + proof (no bare array call)', () => {
-  // makeCanonicalArtifact takes a params object, not an entries array
+check('artifact requires scope + assumptions + citations + kernelPlan + proof + reproducibility + a real auditHash', () => {
+  // makeCanonicalArtifact takes a params object, not an entries array. auditHash
+  // must be a real digest from a real trace, not a description of one (nothing
+  // here is silently defaulted for the caller).
+  const proofEntries = [createBalancedEntry('artifact-proof', '2026-06-28', cash, equity, Money.from('1.00', 'USD'), 'artifact proof entry')];
+  const proofTrace = runTrace(proofEntries);
   const artifact = makeCanonicalArtifact({
     scope: 'capital injection + revenue cycle test',
     assumptions: ['USD 2dp', 'entries validated before apply'],
+    citations: ['core:double-entry', 'core:exact-decimal'],
+    kernelPlan: 'Money.from + createBalancedEntry + runTrace + validateEntry',
     proof: 'verifyFundamentalEquation() = true; auditHash stable',
     reproducibility: 'deterministic: same entries → same hash',
+    auditHash: proofTrace.finalHash,
   });
   if (!artifact.scope) throw new Error('no scope');
   if (!artifact.proof) throw new Error('no proof');
+  if (artifact.auditHash !== proofTrace.finalHash) throw new Error('auditHash not preserved');
   // artifact is returned directly (no ok wrapper)
+});
+
+check('makeCanonicalArtifact rejects a fabricated (non-hash) auditHash instead of accepting prose', () => {
+  let threw = false;
+  try {
+    makeCanonicalArtifact({
+      scope: 'x',
+      assumptions: ['a'],
+      citations: ['core:double-entry'],
+      kernelPlan: 'Money.from + createEntry + Ledger.apply + validateEntry',
+      proof: 'trust me',
+      reproducibility: 'r',
+      auditHash: 'looks balanced to me',
+    });
+  } catch {
+    threw = true;
+  }
+  if (!threw) throw new Error('expected makeCanonicalArtifact to reject a non-hash auditHash');
 });
 
 // ─── 8. IFRS 16 — to the cent ─────────────────────────────────────────────────

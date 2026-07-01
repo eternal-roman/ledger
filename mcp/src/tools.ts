@@ -404,15 +404,23 @@ export function registerTools(server: McpServer): void {
       title: 'Build a canonical financial artifact',
       description:
         'Assemble a Canonical Financial Artifact (scope, assumptions, citations, kernel plan, ' +
-        'proof, reproducibility) — the structured proof bundle a financial answer should carry. ' +
-        'Validates that the kernel plan references core primitives; errors otherwise.',
+        'proof, reproducibility, auditHash) — the structured proof bundle a financial answer ' +
+        'should carry. Every field is required and unverifiable free text is not accepted for ' +
+        'auditHash: it must be the exact SHA-256 hex digest already returned by a ledger_post / ' +
+        'ledger_audit_hash / ledger_verify_determinism / trace_run call this session, not a ' +
+        'restated or invented value. Validates that the kernel plan references core primitives; ' +
+        'errors otherwise.',
       inputSchema: {
         scope: z.string(),
         assumptions: z.array(z.string()).min(1),
-        citations: z.array(z.string()).optional(),
-        kernelPlan: z.string().optional(),
+        citations: z.array(z.string()).min(1).describe('Real canon/kernel references (e.g. GAAP/IFRS cites from cite_lookup, or "core:double-entry"). Never defaulted.'),
+        kernelPlan: z.string().describe('The actual primitives used, e.g. "Money.from + createEntry + Ledger.apply + validateEntry"'),
         proof: z.string(),
         reproducibility: z.string(),
+        auditHash: z
+          .string()
+          .regex(/^[0-9a-f]{64}$/i)
+          .describe('The exact auditHash string returned by a prior ledger_post / ledger_audit_hash / ledger_verify_determinism call in this session — proves the claim instead of asserting it.'),
       },
     },
     async (args): Promise<ToolResult> => {
@@ -424,6 +432,7 @@ export function registerTools(server: McpServer): void {
           kernelPlan: args.kernelPlan,
           proof: args.proof,
           reproducibility: args.reproducibility,
+          auditHash: args.auditHash,
         });
         return ok({ ok: true, artifact });
       } catch (e) {

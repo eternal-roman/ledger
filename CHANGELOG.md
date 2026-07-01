@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.17.1] - 2026-07-01
+
+**AI-proof binding: make narration accountable to real kernel output, not just the kernel's own math.**
+
+### Added
+- Claude Code Stop hook (`hooks/verify-proof-binding.cjs`) checks every currency
+  amount / audit hash in the assistant's final message against real ledger MCP
+  tool results from that session before the turn ends; blocks on a confident
+  mismatch, fails open on its own infrastructure problems. Ships via
+  `hooks/claude-code-hooks.json`, referenced explicitly by
+  `.claude-plugin/plugin.json`'s `hooks` field so it stays isolated from
+  `hooks/hooks.json` (which Grok also auto-discovers independently — that file
+  is untouched).
+
+### Changed (BREAKING)
+- `makeCanonicalArtifact` / the `artifact_make` MCP tool now require `citations`,
+  `kernelPlan`, and a real `auditHash` (SHA-256 hex, format-validated) — none
+  are silently defaulted anymore. Previously a caller could get `ok: true`
+  back with zero real citations and fabricated `proof`/`reproducibility` text;
+  the "required" checks could never actually fail.
+
+### Fixed
+- The Stop hook's monetary-claim pattern no longer matches accounting/standard
+  citations (`IFRS 16`, `IAS 16.48`, `ASC 842`, `GAAP 2023`, `ISO 4217`, ...) as
+  unverified dollar amounts.
+- The Stop hook no longer trusts a JSON-shaped blob of plain assistant text as
+  proof — only content the transcript itself marks `tool_result` counts, and
+  its `tool_use_id` must resolve to a known ledger tool name (falls back to
+  shape-only trust if resolution isn't possible at all, so an undocumented
+  transcript-schema change can't silently disable proof-checking entirely).
+- The Stop hook now recognizes `Money.toString()`'s combined format
+  (`"0.30 USD"`), not just bare decimal strings — without this it would have
+  blocked the single most common interaction pattern in the system (compute or
+  look up a value, then state it) on every use.
+- The Stop hook no longer treats this kernel's `v` schema-version tag (always
+  the string `"1"`) or incidental integer fields (`entryCount`, `compare`, ...)
+  as a provable amount.
+
 ## [0.17.0] - 2026-06-29
 
 **Security & MCP integrity audit remediation.**

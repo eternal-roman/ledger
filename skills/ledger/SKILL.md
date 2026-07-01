@@ -34,7 +34,7 @@ Active for all financial value, accounts, recognition, measurement, risk. Kernel
 - Fewest lines + tests for invariants. Seed probabilistic work.
 
 ## Output Contract
-Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility. Then code. Use /ledger-verify.
+Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility, AuditHash. Then code. Use /ledger-verify.
 
 ## Commands (when the host supports)
 
