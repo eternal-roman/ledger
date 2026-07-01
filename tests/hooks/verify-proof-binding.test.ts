@@ -129,6 +129,33 @@ describe('verify-proof-binding Stop hook', () => {
     expect(decision).toBeNull();
   });
 
+  // Regression: an earlier version of MONEY_IN_TEXT_RE matched ANY 3-5 letter
+  // uppercase code adjacent to a number, which is exactly the shape of every
+  // standard citation in this domain (IFRS 16, IAS 16.48, ASC 842, GAAP 2023,
+  // ASU 2016-02, ISO 4217). That misfired on the one behavior the kernel rules
+  // exist to encourage: citing canon. No tool calls needed for any of these.
+  it('does not treat accounting/standard citations as monetary claims', () => {
+    const transcriptPath = writeTranscript('citations.jsonl', [
+      assistantText(
+        'Per IFRS 16, this is a finance lease (see IAS 16.48 for the depreciation ' +
+          'guidance, and note ASC 842 and GAAP 2023 take a similar view; also see ' +
+          'ASU 2016-02 and ISO 4217).',
+      ),
+    ]);
+    const { status, decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(status).toBe(0);
+    expect(decision).toBeNull();
+  });
+
+  it('still catches a fabricated crypto amount with fewer than 2 decimal digits (e.g. "0.5 BTC")', () => {
+    const transcriptPath = writeTranscript('crypto-amount.jsonl', [
+      assistantText('Transferred 0.5 BTC to the wallet.'),
+    ]);
+    const { decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(decision?.decision).toBe('block');
+    expect(decision.reason).toContain('0.5');
+  });
+
   it('is fail-open on a missing transcript file (infra failure, not a policy violation)', () => {
     const { status, decision } = runHook({ transcript_path: path.join(dir, 'does-not-exist.jsonl') });
     expect(status).toBe(0);

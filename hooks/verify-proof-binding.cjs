@@ -34,11 +34,31 @@ const fs = require('node:fs');
 const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
 const HASH_RE = /^[0-9a-f]{64}$/i;
 const HASH_IN_TEXT_RE = /\b[0-9a-f]{64}\b/gi;
+
+// Explicit allowlist of currency/asset codes, NOT a generic 3-5 uppercase-
+// letter pattern. Accounting/finance prose is full of standard citations that
+// look exactly like "3-5 letters + number" (IFRS 16, IAS 16.48, ASC 842, GAAP
+// 2023, ASU 2016-02, ISO 4217) — matching any such token as a "currency code"
+// would flag citing canon (the behavior the kernel rules exist to encourage)
+// as an unproven monetary claim. Biased toward under-triggering: an amount in
+// a currency not on this list simply isn't checked (fail-open on obscurity),
+// which is the safer direction for a heuristic backstop than blocking a
+// citation. Covers ISO 4217 majors + the kernel's default asset registry
+// (src/instruments/registry.ts) + common crypto not yet in that registry.
+const CURRENCY_CODES =
+  'USD|EUR|GBP|JPY|CHF|CAD|AUD|NZD|CNY|HKD|SGD|INR|MXN|BRL|ZAR|SEK|NOK|DKK|PLN|KRW|' +
+  'BTC|ETH|SOL|ADA|USDT|USDC|XRP|DOGE|LTC|BNB|DOT|MATIC';
+const CURRENCY_CODE_RE = `(?:${CURRENCY_CODES})`;
 // A monetary claim: a currency symbol adjacent to a number, or a decimal
-// number adjacent to a 3-4 letter currency/asset code. Deliberately does NOT
-// match bare integers/decimals (dates, counts, ids) with no currency signal.
-const MONEY_IN_TEXT_RE =
-  /(?:[$€£¥]\s?-?\d[\d,]*(?:\.\d+)?)|(?:-?\d[\d,]*\.\d{2,}\s?(?:[A-Z]{3,5})\b)|(?:\b[A-Z]{3,5}\s?-?\d[\d,]*(?:\.\d+)?)/g;
+// number adjacent to a known currency/asset code. Deliberately does NOT match
+// bare integers/decimals (dates, counts, ids, standard citations) with no
+// currency signal.
+const MONEY_IN_TEXT_RE = new RegExp(
+  `(?:[$€£¥]\\s?-?\\d[\\d,]*(?:\\.\\d+)?)` +
+    `|(?:-?\\d[\\d,]*(?:\\.\\d+)?\\s?${CURRENCY_CODE_RE}\\b)` +
+    `|(?:\\b${CURRENCY_CODE_RE}\\s?-?\\d[\\d,]*(?:\\.\\d+)?)`,
+  'g',
+);
 
 function round(n) {
   // Collapse float noise from JSON number leaves (e.g. compare: -1/0/1); the
