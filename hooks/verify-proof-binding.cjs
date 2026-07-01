@@ -32,11 +32,16 @@
 //   equality on values already produced by the real kernel, it does not
 //   re-derive them. It cannot catch every paraphrase (spelled-out numbers,
 //   rounding for display, split-across-sentences amounts) and isn't meant to.
-//   It also doesn't verify that a trusted tool_result's tool_use_id actually
-//   names a ledger tool (money_compute, ledger_post, ...) rather than some
-//   other MCP server's tool that happens to share the {ok: boolean} envelope
-//   shape — a real but low-severity residual gap (both the shape AND the
-//   specific number/hash would have to collide).
+// - Tool identity is checked on a best-effort basis: a tool_result's
+//   tool_use_id is resolved against the tool_use block that requested it
+//   (also standard Messages API taxonomy), and if that resolves to a name
+//   NOT in KNOWN_LEDGER_TOOL_NAMES, the result is not trusted — closes the
+//   gap where some other MCP server's tool coincidentally returns the same
+//   {ok: boolean} envelope shape with a colliding number/hash. But if
+//   resolution isn't possible at all (no id/name fields found anywhere,
+//   suggesting this Claude Code version doesn't expose them the way we
+//   expect), we fall back to trusting by shape alone rather than rejecting
+//   everything — a missing id must never turn into "nothing is ever proven".
 // - Fail-open on infrastructure failure (missing/unreadable transcript,
 //   malformed JSON, unexpected shape) — never brick a session because this
 //   script couldn't run. Only a confidently detected mismatch blocks the turn.
@@ -58,6 +63,34 @@ const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
 const MONEY_TOSTRING_RE = /^(-?\d+(?:\.\d+)?)\s\S+$/;
 const HASH_RE = /^[0-9a-f]{64}$/i;
 const HASH_IN_TEXT_RE = /\b[0-9a-f]{64}\b/gi;
+
+// Mirrors TOOL_NAMES in mcp/src/tools.ts. Kept in sync by
+// tests/hooks/verify-proof-binding.test.ts, which imports the real export
+// and diffs it against this list — drift fails CI instead of silently
+// widening (new tool omitted here) or narrowing (removed tool still
+// trusted) the set of names this hook will accept as ledger proof.
+const KNOWN_LEDGER_TOOL_NAMES = new Set([
+  'money_compute',
+  'entry_validate',
+  'ledger_post',
+  'ledger_balance',
+  'ledger_trial_balance',
+  'ledger_verify_equation',
+  'ledger_audit_hash',
+  'ledger_verify_determinism',
+  'trace_run',
+  'cite_lookup',
+  'artifact_make',
+  'periods_create_lock',
+  'periods_guarded_post',
+  'closing_generate_entries',
+  'fx_compute_translation',
+  'depreciation_build_schedule',
+  'cashflow_statement',
+  'reconcile_positions',
+  'portfolio_relief',
+  'settlement_build_entries',
+]);
 
 // Explicit allowlist of currency/asset codes, NOT a generic 3-5 uppercase-
 // letter pattern. Accounting/finance prose is full of standard citations that
@@ -152,6 +185,22 @@ function collectToolResultBlocks(node, out, depth) {
   if (typeof node === 'object') {
     if (node.type === 'tool_result') out.push(node);
     for (const v of Object.values(node)) collectToolResultBlocks(v, out, depth + 1);
+  }
+}
+
+/** Find every `tool_use` block (the request a `tool_result` answers), same
+ * structure-agnostic walk. Used only to resolve tool_use_id -> tool name. */
+function collectToolUseBlocks(node, out, depth) {
+  if (depth > 14 || node == null) return;
+  if (Array.isArray(node)) {
+    for (const v of node) collectToolUseBlocks(v, out, depth + 1);
+    return;
+  }
+  if (typeof node === 'object') {
+    if (node.type === 'tool_use' && typeof node.id === 'string' && typeof node.name === 'string') {
+      out.push(node);
+    }
+    for (const v of Object.values(node)) collectToolUseBlocks(v, out, depth + 1);
   }
 }
 
@@ -255,10 +304,23 @@ function main() {
     process.exit(0); // nothing that looks like a monetary/hash claim to check
   }
 
+  const toolUseBlocks = [];
+  for (const line of lines) collectToolUseBlocks(line, toolUseBlocks, 0);
+  const nameByToolUseId = new Map(toolUseBlocks.map((b) => [b.id, b.name]));
+
   const pool = { decimals: new Set(), hashes: new Set(), sawEnvelope: false };
   const toolResultBlocks = [];
   for (const line of lines) collectToolResultBlocks(line, toolResultBlocks, 0);
   for (const block of toolResultBlocks) {
+    // Resolve tool identity on a best-effort basis: if tool_use_id resolves
+    // to a name we don't recognize as a ledger tool, don't trust this
+    // block's envelopes even if they happen to match our {ok: boolean}
+    // shape. If it doesn't resolve at all (no tool_use_id, or no matching
+    // tool_use found), fall back to trusting by shape alone — see header
+    // comment for why an unresolvable id must not become "nothing is ever
+    // proven".
+    const resolvedName = typeof block.tool_use_id === 'string' ? nameByToolUseId.get(block.tool_use_id) : undefined;
+    if (resolvedName !== undefined && !KNOWN_LEDGER_TOOL_NAMES.has(resolvedName)) continue;
     for (const envelope of extractLedgerEnvelopes(block)) {
       pool.sawEnvelope = true;
       harvestLeaves(envelope, pool, 0);

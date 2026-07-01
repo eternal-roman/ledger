@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,8 +68,12 @@ function assistantText(text: string) {
   return { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } };
 }
 
-function toolResultLine(text: string) {
-  return { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', content: [{ type: 'text', text }] }] } };
+function toolUseLine(id: string, name: string) {
+  return { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id, name, input: {} }] } };
+}
+
+function toolResultLine(text: string, toolUseId = 't1') {
+  return { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, content: [{ type: 'text', text }] }] } };
 }
 
 describe('verify-proof-binding Stop hook', () => {
@@ -273,5 +277,55 @@ describe('verify-proof-binding Stop hook', () => {
   it('is fail-open on malformed stdin', () => {
     const res = spawnSync(process.execPath, [HOOK_PATH], { input: 'not json', encoding: 'utf8' });
     expect(res.status).toBe(0);
+  });
+
+  // Tool-identity gate: a tool_result whose tool_use_id resolves to a name
+  // NOT in KNOWN_LEDGER_TOOL_NAMES must not be trusted, even if its content
+  // happens to match the {ok: boolean} envelope shape — closes the gap where
+  // some unrelated MCP tool's coincidentally-shaped result could "prove" a
+  // claim.
+  it('does not trust a tool_result resolved to a non-ledger tool name', () => {
+    const transcriptPath = writeTranscript('wrong-tool-name.jsonl', [
+      toolUseLine('t1', 'some_unrelated_tool'),
+      toolResultLine(JSON.stringify(ledgerPostToolResult('1800.00', 'USD', AUDIT_HASH)), 't1'),
+      assistantText(`Posted 1800.00 USD, audit hash ${AUDIT_HASH}.`),
+    ]);
+    const { decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(decision?.decision).toBe('block');
+    expect(decision.reason).toContain('No ledger MCP tool result was found');
+  });
+
+  it('still trusts a tool_result resolved to a real ledger tool name', () => {
+    const transcriptPath = writeTranscript('right-tool-name.jsonl', [
+      toolUseLine('t1', 'ledger_post'),
+      toolResultLine(JSON.stringify(ledgerPostToolResult('1800.00', 'USD', AUDIT_HASH)), 't1'),
+      assistantText(`Posted 1800.00 USD, audit hash ${AUDIT_HASH}.`),
+    ]);
+    const { status, decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(status).toBe(0);
+    expect(decision).toBeNull();
+  });
+
+  it('falls back to trusting by shape alone when tool_use_id cannot be resolved (no matching tool_use found)', () => {
+    // No toolUseLine in this transcript at all — an unresolvable id must
+    // degrade to the old shape-only trust, not to "nothing is ever proven".
+    const transcriptPath = writeTranscript('unresolvable-tool-id.jsonl', [
+      toolResultLine(JSON.stringify(ledgerPostToolResult('1800.00', 'USD', AUDIT_HASH)), 'unknown-id'),
+      assistantText(`Posted 1800.00 USD, audit hash ${AUDIT_HASH}.`),
+    ]);
+    const { status, decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(status).toBe(0);
+    expect(decision).toBeNull();
+  });
+});
+
+describe('KNOWN_LEDGER_TOOL_NAMES stays in sync with the real tool surface', () => {
+  it('matches mcp/src/tools.ts TOOL_NAMES exactly', async () => {
+    const { TOOL_NAMES } = await import('../../mcp/src/tools.js');
+    const hookSource = readFileSync(HOOK_PATH, 'utf8');
+    const match = hookSource.match(/KNOWN_LEDGER_TOOL_NAMES = new Set\(\[([\s\S]*?)\]\);/);
+    expect(match).not.toBeNull();
+    const namesInHook = [...match![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    expect(new Set(namesInHook)).toEqual(new Set(TOOL_NAMES));
   });
 });
