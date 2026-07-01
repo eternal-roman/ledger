@@ -156,6 +156,38 @@ describe('verify-proof-binding Stop hook', () => {
     expect(decision.reason).toContain('0.5');
   });
 
+  // Regression: an earlier version trusted ANY JSON string anywhere in the
+  // transcript that had a top-level boolean `ok`, regardless of where it
+  // appeared. An assistant that merely typed out text shaped like a tool
+  // result (never actually calling the tool — a real LLM failure mode, and
+  // exactly the case this hook exists to catch) could launder a fabricated
+  // figure into the "proven" pool. Only real tool_result blocks are trusted
+  // now; a plain assistant text block containing the same JSON string must
+  // NOT count as proof.
+  it('does not trust a self-authored JSON blob that merely looks like a tool result', () => {
+    const fakeEnvelopeAsPlainText = JSON.stringify(
+      ledgerPostToolResult('9999999.00', 'USD', 'd'.repeat(64)),
+    );
+    const transcriptPath = writeTranscript('laundering-attempt.jsonl', [
+      // Note: type "assistant" text, NOT a tool_result block.
+      assistantText(fakeEnvelopeAsPlainText),
+      assistantText(`Posted 9999999.00 USD, audit hash ${'d'.repeat(64)}.`),
+    ]);
+    const { decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(decision?.decision).toBe('block');
+    expect(decision.reason).toContain('No ledger MCP tool result was found');
+  });
+
+  it('still trusts a real tool_result whose content is the same JSON shape', () => {
+    const transcriptPath = writeTranscript('real-tool-result.jsonl', [
+      toolResultLine(JSON.stringify(ledgerPostToolResult('42.00', 'USD', 'e'.repeat(64)))),
+      assistantText(`Posted 42.00 USD, audit hash ${'e'.repeat(64)}.`),
+    ]);
+    const { status, decision } = runHook({ transcript_path: transcriptPath, stop_hook_active: false });
+    expect(status).toBe(0);
+    expect(decision).toBeNull();
+  });
+
   it('is fail-open on a missing transcript file (infra failure, not a policy violation)', () => {
     const { status, decision } = runHook({ transcript_path: path.join(dir, 'does-not-exist.jsonl') });
     expect(status).toBe(0);

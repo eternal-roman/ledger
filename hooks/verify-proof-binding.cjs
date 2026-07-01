@@ -12,17 +12,31 @@
 //
 // Design constraints (read before "fixing" this):
 // - The transcript JSONL schema is undocumented and can change between Claude
-//   Code releases (see https://code.claude.com/docs/en/hooks.md). Rather than
-//   depending on exact field names, this script recognizes ledger tool output
-//   by a signature WE control: every ledger MCP tool response is a JSON object
-//   with a top-level boolean `ok` (see mcp/src/tools.ts `ok()`/`fail()`). Any
-//   string in the transcript that parses to such an object is treated as a
-//   real kernel result; its leaf values (decimal strings, SHA-256 hex hashes)
-//   are the "proven" pool a claim must match.
+//   Code releases (see https://code.claude.com/docs/en/hooks.md). This script
+//   still needs ONE structural fact to hold: only content blocks explicitly
+//   marked `type: "tool_result"` are treated as real tool output — this is
+//   part of the Anthropic Messages API content-block taxonomy Claude Code's
+//   transcripts are built on, not an internal implementation detail, so it's
+//   far more stable than exact field paths.
+// - That restriction is load-bearing, not incidental: an earlier version
+//   recognized "real tool output" purely by shape (any JSON string anywhere
+//   with a top-level boolean `ok`, matching mcp/src/tools.ts's ok()/fail()
+//   envelope) regardless of where it appeared. That meant an assistant text
+//   block that merely *described* or *hallucinated* what a tool call would
+//   return — a known LLM failure mode, and exactly the case this hook exists
+//   to catch — could launder a fabricated figure straight into the "proven"
+//   pool just by happening to be JSON-shaped. Only content Claude Code itself
+//   marks as a tool_result is trusted now; plain assistant/user text is never
+//   harvested for proof, no matter what it contains.
 // - This is a heuristic lint, not a second kernel: it does decimal-string
 //   equality on values already produced by the real kernel, it does not
 //   re-derive them. It cannot catch every paraphrase (spelled-out numbers,
 //   rounding for display, split-across-sentences amounts) and isn't meant to.
+//   It also doesn't verify that a trusted tool_result's tool_use_id actually
+//   names a ledger tool (money_compute, ledger_post, ...) rather than some
+//   other MCP server's tool that happens to share the {ok: boolean} envelope
+//   shape — a real but low-severity residual gap (both the shape AND the
+//   specific number/hash would have to collide).
 // - Fail-open on infrastructure failure (missing/unreadable transcript,
 //   malformed JSON, unexpected shape) — never brick a session because this
 //   script couldn't run. Only a confidently detected mismatch blocks the turn.
@@ -72,39 +86,78 @@ function normalizeAmount(raw) {
   return Number.isFinite(n) ? round(n) : null;
 }
 
-/** Recursively harvest decimal/hash leaves, but only once inside a recognized
- * ledger-tool-output envelope (`{ ok: boolean, ... }`), so raw tool *inputs*
- * and unrelated transcript metadata never pollute the proven pool. */
-function harvest(node, pool, insideEnvelope, depth) {
+/** Recursively harvest decimal/hash leaves from an already-parsed, already
+ * shape-verified ledger envelope. No re-detection here — callers only ever
+ * invoke this on an object confirmed to be `{ ok: boolean, ... }` sourced
+ * from a real tool_result block (see extractLedgerEnvelopes). */
+function harvestLeaves(node, pool, depth) {
   if (depth > 14) return; // guard against pathological/cyclic-looking nesting
   if (typeof node === 'string') {
-    if (!insideEnvelope) {
-      try {
-        const parsed = JSON.parse(node);
-        if (parsed && typeof parsed === 'object' && typeof parsed.ok === 'boolean') {
-          pool.sawEnvelope = true;
-          harvest(parsed, pool, true, depth + 1);
-        }
-      } catch {
-        /* not a JSON envelope string; not inside one either, nothing to harvest */
-      }
-      return;
-    }
     if (DECIMAL_RE.test(node)) pool.decimals.add(round(Number.parseFloat(node)));
     if (HASH_RE.test(node)) pool.hashes.add(node.toLowerCase());
     return;
   }
-  if (typeof node === 'number' && insideEnvelope) {
+  if (typeof node === 'number') {
     pool.decimals.add(round(node));
     return;
   }
   if (Array.isArray(node)) {
-    for (const v of node) harvest(v, pool, insideEnvelope, depth + 1);
+    for (const v of node) harvestLeaves(v, pool, depth + 1);
     return;
   }
   if (node && typeof node === 'object') {
-    for (const v of Object.values(node)) harvest(v, pool, insideEnvelope, depth + 1);
+    for (const v of Object.values(node)) harvestLeaves(v, pool, depth + 1);
   }
+}
+
+/** Find every content block the transcript itself marked as `tool_result`,
+ * anywhere in the line (structure-agnostic on the wrapper, but the
+ * `type: "tool_result"` marker itself is required — see header comment). */
+function collectToolResultBlocks(node, out, depth) {
+  if (depth > 14 || node == null) return;
+  if (Array.isArray(node)) {
+    for (const v of node) collectToolResultBlocks(v, out, depth + 1);
+    return;
+  }
+  if (typeof node === 'object') {
+    if (node.type === 'tool_result') out.push(node);
+    for (const v of Object.values(node)) collectToolResultBlocks(v, out, depth + 1);
+  }
+}
+
+/** Given a real tool_result block, return every parsed JSON value inside its
+ * content that matches our ledger envelope shape (`{ ok: boolean, ... }`,
+ * per mcp/src/tools.ts's ok()/fail()) — the second, narrower gate on top of
+ * "came from a real tool_result", so a coincidentally-shaped result from
+ * some unrelated MCP tool isn't trusted either. */
+function isLedgerEnvelope(v) {
+  return !!v && typeof v === 'object' && typeof v.ok === 'boolean';
+}
+
+function extractLedgerEnvelopes(block) {
+  const envelopes = [];
+  // Every ledger MCP tool sets both content[].text (JSON.stringify'd, per
+  // mcp/src/tools.ts's ok()/fail()) and structuredContent (the same object,
+  // already parsed). Accept either shape the transcript preserves.
+  if (isLedgerEnvelope(block.structuredContent)) envelopes.push(block.structuredContent);
+
+  const texts = [];
+  const c = block.content;
+  if (typeof c === 'string') texts.push(c);
+  else if (Array.isArray(c)) {
+    for (const b of c) if (b && typeof b.text === 'string') texts.push(b.text);
+  } else if (c && typeof c.text === 'string') {
+    texts.push(c.text);
+  }
+  for (const text of texts) {
+    try {
+      const parsed = JSON.parse(text);
+      if (isLedgerEnvelope(parsed)) envelopes.push(parsed);
+    } catch {
+      /* not JSON, or not our envelope shape */
+    }
+  }
+  return envelopes;
 }
 
 function isAssistantLine(line) {
@@ -173,7 +226,14 @@ function main() {
   }
 
   const pool = { decimals: new Set(), hashes: new Set(), sawEnvelope: false };
-  for (const line of lines) harvest(line, pool, false, 0);
+  const toolResultBlocks = [];
+  for (const line of lines) collectToolResultBlocks(line, toolResultBlocks, 0);
+  for (const block of toolResultBlocks) {
+    for (const envelope of extractLedgerEnvelopes(block)) {
+      pool.sawEnvelope = true;
+      harvestLeaves(envelope, pool, 0);
+    }
+  }
 
   const unmatchedAmounts = claimedAmounts.filter((a) => !pool.decimals.has(a));
   const unmatchedHashes = claimedHashes.filter((h) => !pool.hashes.has(h));
