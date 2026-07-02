@@ -26,6 +26,7 @@ function main() {
     kernelPlan: 'Money.from + createBalancedEntry + runTrace + validateEntry + auditHash',
     proof: trace.finalEquation ? 'equation holds + hash chain' : 'VIOLATION',
     reproducibility: 'static demo',
+    auditHash: trace.finalHash,
   });
 
   console.log('=== kernel-proof-demo ===');

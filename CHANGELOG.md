@@ -1,5 +1,80 @@
 # Changelog
 
+## Unreleased
+
+(Version bump happens in the release PR per the release skill — this section
+header is deliberately unbracketed so `npm run check:versions` keys on the
+released `[0.17.0]` below. Release note: this contains a BREAKING API change,
+so the next release is a MINOR bump, and `mcp/package.json`'s
+`@eternal-roman/ledger` dependency must be bumped to that same version —
+`artifact_make` requires the new `makeCanonicalArtifact` signature, and an
+older kernel would silently drop the `auditHash` field.)
+
+**AI-proof binding: make narration accountable to real kernel output, not just the kernel's own math.**
+
+### Added
+- Claude Code Stop hook (`hooks/verify-proof-binding.cjs`) checks every currency
+  amount / audit hash in the assistant's final message against real ledger MCP
+  tool results from that session before the turn ends; blocks on a confident
+  mismatch, fails open on its own infrastructure problems, and emits a visible
+  warning (instead of looping) if a mismatch survives the one retry. Ships via
+  `hooks/claude-code-hooks.json`, referenced explicitly by
+  `.claude-plugin/plugin.json`'s `hooks` field (file-split rationale in
+  `hooks/README.md`; `hooks/hooks.json`, which Grok auto-discovers, is untouched).
+- `artifact_make` now **session-binds** `auditHash`: it accepts only a digest
+  the server itself returned from a kernel call this session (`ledger_post` /
+  `ledger_audit_hash` / `ledger_verify_determinism` / `trace_run` /
+  `periods_guarded_post`), or one it can recompute from an optionally supplied
+  serialized `ledger`. A fabricated-but-well-formed 64-hex value is rejected —
+  format validation alone cannot tell a real digest from an invented one.
+
+### Changed (BREAKING)
+- `makeCanonicalArtifact` / the `artifact_make` MCP tool now require `citations`,
+  `kernelPlan`, and `auditHash` — none are silently defaulted anymore.
+  Previously a caller could get `ok: true` back with zero real citations and
+  fabricated `proof`/`reproducibility` text; the "required" checks could never
+  actually fail. (The offline kernel validator checks hash shape; the MCP layer
+  adds the session binding above.)
+
+### Fixed
+- The Stop hook matches MCP tool names as they actually appear in Claude Code
+  transcripts (`mcp__<server>__<tool>` / `mcp__plugin_<plugin>_<server>__<tool>`),
+  not bare names — bare-name matching rejected every real ledger tool result,
+  blocking every correct kernel-proven answer while catching nothing.
+- The Stop hook harvests proof only from kernel-computed value keys and only
+  from hash-minting tools — previously ANY decimal-shaped string in a trusted
+  envelope counted, so an account code (`"3000"`), a caller-authored entry
+  description (`"250 widgets"`), or `artifact_make`'s echo of the caller's own
+  fabricated hash could rubber-stamp a made-up figure.
+- The Stop hook compares amounts as canonical decimal strings, never floats
+  (AGENTS.md rule) — float comparison collapsed distinct values past 2^53 and
+  past 8 decimal places (ETH is scale 18 in the kernel registry).
+- The Stop hook skips display-rounded figures (`$1.8k`, `$1.2M`) instead of
+  truncating them to 1.8/1.2 and false-blocking fully-proven answers, and no
+  longer treats acronym-first phrases (`ADA 2010`, `DOT 49`) as money. Fiat
+  codes match both directions; word-like tickers (ADA/DOT/SOL) only
+  number-first (`0.5 ADA`).
+- The Stop hook's monetary-claim pattern no longer matches accounting/standard
+  citations (`IFRS 16`, `IAS 16.48`, `ASC 842`, `GAAP 2023`, `ISO 4217`, ...) as
+  unverified dollar amounts.
+- The Stop hook no longer trusts a JSON-shaped blob of plain assistant text as
+  proof — only content the transcript itself marks `tool_result` counts (falls
+  back to shape-only trust if tool identity can't be resolved at all, so an
+  undocumented transcript-schema change can't silently disable proof-checking).
+- The Stop hook recognizes `Money.toString()`'s combined format (`"0.30 USD"`),
+  thousands separators, and symbol prefixes; it no longer treats the `v`
+  schema-version tag or incidental integer fields (`entryCount`, `compare`) as
+  provable amounts.
+- The Stop hook finds the final assistant message from the transcript tail and
+  only fully parses tool-bearing lines when claims exist — previously it parsed
+  the entire (unbounded) transcript on every turn, guaranteeing end-of-turn
+  stalls in long sessions and eventual timeout-kill (which fail-opened the
+  check exactly when sessions got long).
+- Agent-facing docs that still described the pre-auditHash artifact contract
+  (`ledger://tools-guide` resource, `docs/SUCCESS-CHECKLIST.md`) now match the
+  enforced schema — following the server's own guide previously produced only
+  schema-rejected `artifact_make` calls.
+
 ## [0.17.0] - 2026-06-29
 
 **Security & MCP integrity audit remediation.**

@@ -23,7 +23,7 @@ Enforce exact monetary handling and double-entry invariants using the ledger ker
 - Fewest lines + tests for invariants. Seed probabilistic work.
 
 ## Output Contract
-Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility. Then code. Use the shipped `scripts/ledger-verify.ts` (or `npm run verify:ledger`) or /ledger-verify when available.
+Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility, AuditHash. Then code. Use the shipped `scripts/ledger-verify.ts` (or `npm run verify:ledger`) or /ledger-verify when available.
 
 See `docs/CORE-PROTOCOL.md`, `AGENTS.md`, and the kernel implementation (`src/core`, `src/verify`).
 

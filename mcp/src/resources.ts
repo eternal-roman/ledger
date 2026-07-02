@@ -60,7 +60,10 @@ so every step is reproducible and replayable.
 ## Grounding and proof bundles
 - \`cite_lookup\` — pull IFRS/GAAP citations from the knowledge graph.
 - \`artifact_make\` — assemble a Canonical Financial Artifact (scope,
-  assumptions, citations, kernel plan, proof, reproducibility).
+  assumptions, citations, kernel plan, proof, reproducibility, auditHash).
+  Every field is required; auditHash must be a digest a kernel call in this
+  session actually returned (or pass the serialized \`ledger\` so it can be
+  recomputed) — a fabricated value is rejected.
 
 ## Operational
 Period locks (\`periods_create_lock\`, \`periods_guarded_post\`), closing
@@ -84,7 +87,7 @@ export const TOOL_USE_WHEN: Record<(typeof TOOL_NAMES)[number], string> = {
   ledger_verify_determinism: 'Rebuild twice and prove byte-identical + equation holds.',
   trace_run: 'Replay a sequence of entries with per-step balances, equation, and hash prefix.',
   cite_lookup: 'Retrieve grounded IFRS/GAAP citations for a concept instead of asserting from memory.',
-  artifact_make: 'Assemble a Canonical Financial Artifact (proof bundle) for a financial answer.',
+  artifact_make: 'Assemble a Canonical Financial Artifact (proof bundle) for a financial answer. Requires a session-issued (or ledger-recomputable) auditHash.',
   periods_create_lock: 'Create a PeriodLock (hard close) fact for anti-fraud guarded posting.',
   periods_guarded_post: 'Post an entry but reject it if effectiveDate is on/after a period lock.',
   closing_generate_entries: 'Generate balanced closing entries (Income/Expense → Retained Earnings).',
