@@ -4,8 +4,13 @@ import { loadDefaultKnowledge, fetch as knowledgeFetch } from '../knowledge/inde
 import { emptyLedger } from '../core/ledger.js';
 import { Money } from '../core/money.js';
 
-/** SHA-256 hex digest, as returned by Ledger.auditHash() / verifyDeterminism(). */
-const AUDIT_HASH_RE = /^[0-9a-f]{64}$/i;
+/** SHA-256 hex digest, as returned by Ledger.auditHash() / verifyDeterminism().
+ * Exported so other layers (the MCP artifact_make schema) reuse the same
+ * shape instead of retyping it. This is a FORMAT check only — the kernel is
+ * offline and cannot know which hashes a session actually produced; session
+ * binding (issued-hash set / ledger recompute) is enforced by the MCP layer
+ * in mcp/src/tools.ts. */
+export const AUDIT_HASH_RE = /^[0-9a-f]{64}$/i;
 
 export interface CanonicalFinancialArtifact {
   scope: string;
@@ -44,7 +49,7 @@ export function validateCanonicalArtifact(artifact: Partial<CanonicalFinancialAr
   if (!artifact.proof) violations.push('proof required');
   if (!artifact.reproducibility) violations.push('reproducibility required');
   if (!artifact.auditHash || !AUDIT_HASH_RE.test(artifact.auditHash)) {
-    violations.push('auditHash required: must be the exact SHA-256 hex digest returned by a real ledger_post / ledger_audit_hash / ledger_verify_determinism call, not a description of one');
+    violations.push('auditHash required: must be a 64-char SHA-256 hex digest as returned by Ledger.auditHash() / runTrace().finalHash / verifyDeterminism().hash — prose is not a hash (session binding is additionally enforced by the MCP artifact_make tool)');
   }
   return { ok: violations.length === 0, violations };
 }

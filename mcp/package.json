@@ -1,6 +1,6 @@
 {
   "name": "@eternal-roman/ledger-mcp",
-  "version": "0.17.1",
+  "version": "0.17.0",
   "description": "MCP server for @eternal-roman/ledger — the deterministic financial-correctness tools AI agents call. Exact decimal money, kernel-enforced double-entry, audit-hashed and reproducible. Agents validate, post, balance, and prove instead of doing the math in-token.",
   "type": "module",
   "bin": {

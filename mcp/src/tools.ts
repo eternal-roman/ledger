@@ -31,12 +31,32 @@ type ToolResult = {
 };
 
 /**
+ * Audit hashes the kernel actually produced in this server process. One stdio
+ * server process serves one session, so membership here means "a real kernel
+ * call returned this digest this session". artifact_make refuses any hash not
+ * in this set (unless it can recompute it from a supplied ledger) — a
+ * well-formed but fabricated digest is not proof, and format validation alone
+ * cannot tell the difference.
+ */
+const issuedAuditHashes = new Set<string>();
+const HASH_ISSUING_KEYS = ['auditHash', 'hash', 'finalHash'] as const;
+
+/**
  * Success or logical failure envelope.
  * All tools should return data with a top-level `ok: boolean`.
  * Logical "fail-closed" (e.g. unbalanced, violations) use ok({ ok: false, ... }) -- isError is typically left unset.
  * This allows the tool execution itself to succeed while reporting the kernel-level failure.
+ *
+ * Also records any top-level kernel-minted audit hash so artifact_make can
+ * later verify a caller-supplied auditHash was really issued this session.
+ * (artifact_make's own response nests the echoed hash inside `artifact`, so
+ * an echo never mints.)
  */
 function ok(data: Record<string, unknown>): ToolResult {
+  for (const k of HASH_ISSUING_KEYS) {
+    const v = data[k];
+    if (typeof v === 'string' && L.AUDIT_HASH_RE.test(v)) issuedAuditHashes.add(v.toLowerCase());
+  }
   return {
     content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
     structuredContent: data,
@@ -405,11 +425,12 @@ export function registerTools(server: McpServer): void {
       description:
         'Assemble a Canonical Financial Artifact (scope, assumptions, citations, kernel plan, ' +
         'proof, reproducibility, auditHash) — the structured proof bundle a financial answer ' +
-        'should carry. Every field is required and unverifiable free text is not accepted for ' +
-        'auditHash: it must be the exact SHA-256 hex digest already returned by a ledger_post / ' +
-        'ledger_audit_hash / ledger_verify_determinism / trace_run call this session, not a ' +
-        'restated or invented value. Validates that the kernel plan references core primitives; ' +
-        'errors otherwise.',
+        'should carry. Every field is required and auditHash is verified, not just format-checked: ' +
+        'it must be a digest a kernel call (ledger_post / ledger_audit_hash / ' +
+        'ledger_verify_determinism / trace_run) actually returned in this session, or one this ' +
+        'tool can recompute from the serialized `ledger` you pass alongside it. A fabricated ' +
+        'value — even a well-formed one — is rejected. Validates that the kernel plan references ' +
+        'core primitives; errors otherwise.',
       inputSchema: {
         scope: z.string(),
         assumptions: z.array(z.string()).min(1),
@@ -419,12 +440,25 @@ export function registerTools(server: McpServer): void {
         reproducibility: z.string(),
         auditHash: z
           .string()
-          .regex(/^[0-9a-f]{64}$/i)
-          .describe('The exact auditHash string returned by a prior ledger_post / ledger_audit_hash / ledger_verify_determinism call in this session — proves the claim instead of asserting it.'),
+          .regex(L.AUDIT_HASH_RE)
+          .describe('The exact auditHash string returned by a prior ledger_post / ledger_audit_hash / ledger_verify_determinism / trace_run call in this session — proves the claim instead of asserting it.'),
+        ledger: ledgerSchema.describe('Optional: the serialized ledger the auditHash belongs to. If provided, the hash is recomputed from it and compared — useful when the hash was produced outside this server process.'),
       },
     },
     async (args): Promise<ToolResult> => {
       try {
+        const supplied = args.auditHash.toLowerCase();
+        let bound = issuedAuditHashes.has(supplied);
+        if (!bound && args.ledger) {
+          bound = parseLedger(args.ledger).auditHash().toLowerCase() === supplied;
+        }
+        if (!bound) {
+          return fail(
+            'auditHash was not produced by any kernel call in this session: pass the exact digest returned by ' +
+              'ledger_post / ledger_audit_hash / ledger_verify_determinism / trace_run, or include the serialized ' +
+              '`ledger` so the hash can be recomputed and checked. A well-formed but fabricated hash is not proof.',
+          );
+        }
         const artifact = L.makeCanonicalArtifact({
           scope: args.scope,
           assumptions: args.assumptions,

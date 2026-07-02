@@ -17,58 +17,61 @@
 //   marked `type: "tool_result"` are treated as real tool output — this is
 //   part of the Anthropic Messages API content-block taxonomy Claude Code's
 //   transcripts are built on, not an internal implementation detail, so it's
-//   far more stable than exact field paths.
-// - That restriction is load-bearing, not incidental: an earlier version
-//   recognized "real tool output" purely by shape (any JSON string anywhere
-//   with a top-level boolean `ok`, matching mcp/src/tools.ts's ok()/fail()
-//   envelope) regardless of where it appeared. That meant an assistant text
-//   block that merely *described* or *hallucinated* what a tool call would
-//   return — a known LLM failure mode, and exactly the case this hook exists
-//   to catch — could launder a fabricated figure straight into the "proven"
-//   pool just by happening to be JSON-shaped. Only content Claude Code itself
-//   marks as a tool_result is trusted now; plain assistant/user text is never
-//   harvested for proof, no matter what it contains.
-// - This is a heuristic lint, not a second kernel: it does decimal-string
+//   far more stable than exact field paths. Plain assistant/user text is
+//   never harvested for proof, no matter what it contains (an assistant can
+//   type out JSON that merely LOOKS like a tool result — a real LLM failure
+//   mode, and exactly the case this hook exists to catch).
+// - MCP tool names in transcripts are NAMESPACED: `mcp__<server>__<tool>` for
+//   user-configured servers, `mcp__plugin_<plugin>_<server>__<tool>` for
+//   plugin-bundled ones (verified against real transcripts and
+//   https://code.claude.com/docs/en/hooks.md's matcher docs). Tool identity is
+//   therefore matched on the bare name OR the segment after the last `__`.
+// - Proof is harvested by KEY, not by shape. Ledger tool envelopes echo
+//   caller-supplied text (entry descriptions, artifact scope/assumptions,
+//   reconcile external amounts) and contain decimal-shaped strings that are
+//   not money (account codes "1000", the `v` schema-version tag). Harvesting
+//   every decimal-shaped leaf let a fabricated "$3,000" be rubber-stamped by
+//   an equity account code. Only the kernel-computed value keys listed in
+//   AMOUNT_KEYS below (derived from mcp/src/tools.ts response shapes, kept in
+//   sync by tests/hooks/verify-proof-binding.test.ts) enter the proven pool,
+//   and audit hashes are only trusted from the tools that MINT them —
+//   artifact_make is excluded entirely because it echoes the caller's own
+//   auditHash back (that echo must not count as proof of itself).
+// - Amounts are compared as canonical decimal STRINGS, never floats.
+//   parseFloat is forbidden for amounts in this repo (AGENTS.md), and floats
+//   would collapse distinct values (>2^53, or >8dp assets like ETH at scale
+//   18) into "matching".
+// - Display-rounded figures ("$1.8k", "$1.2M") are deliberately NOT treated
+//   as claims: they cannot be checked against exact tool output, and
+//   truncating them to 1.8/1.2 produced guaranteed false blocks. Fail-open on
+//   what we cannot verify; fail-closed only on a confident mismatch.
+// - This is a heuristic lint, not a second kernel: it does exact-string
 //   equality on values already produced by the real kernel, it does not
-//   re-derive them. It cannot catch every paraphrase (spelled-out numbers,
-//   rounding for display, split-across-sentences amounts) and isn't meant to.
-// - Tool identity is checked on a best-effort basis: a tool_result's
-//   tool_use_id is resolved against the tool_use block that requested it
-//   (also standard Messages API taxonomy), and if that resolves to a name
-//   NOT in KNOWN_LEDGER_TOOL_NAMES, the result is not trusted — closes the
-//   gap where some other MCP server's tool coincidentally returns the same
-//   {ok: boolean} envelope shape with a colliding number/hash. But if
-//   resolution isn't possible at all (no id/name fields found anywhere,
-//   suggesting this Claude Code version doesn't expose them the way we
-//   expect), we fall back to trusting by shape alone rather than rejecting
-//   everything — a missing id must never turn into "nothing is ever proven".
+//   re-derive them. It cannot catch every paraphrase and isn't meant to. The
+//   durable, non-bypassable binding lives in the MCP layer (artifact_make
+//   only accepts session-issued or ledger-recomputed hashes — see
+//   mcp/src/tools.ts).
 // - Fail-open on infrastructure failure (missing/unreadable transcript,
 //   malformed JSON, unexpected shape) — never brick a session because this
 //   script couldn't run. Only a confidently detected mismatch blocks the turn.
-// - Respects `stop_hook_active` to avoid loops (Claude Code also caps at 8
-//   consecutive blocks, but we shouldn't rely on that).
+// - Respects `stop_hook_active` to avoid loops, but the retry pass is not
+//   silent: if the mismatch is still present it emits a non-blocking
+//   systemMessage warning so a persistent fabrication leaves a user-visible
+//   trace instead of shipping quietly.
 
 const fs = require('node:fs');
 
-// Bare decimal, e.g. Money.toJSON()'s "a" field ("1800.00") where amount and
-// currency are already split into separate fields.
+// Bare decimal, e.g. Money.toJSON()'s "a" field ("1800.00").
 const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
-// Money.toString()'s own format ("1800.00 USD") — amount and currency/asset
-// code combined in one string. This is what money_compute's `result`,
-// ledger_balance's `balance`, and most other single-value tool outputs
-// actually return (see the pervasive `.toString()` calls in mcp/src/tools.ts).
-// Without this, harvesting only bare decimals would miss nearly every
-// legitimate proof and block the single most common interaction pattern in
-// the whole system: compute or look up one value, then state it.
+// Money.toString()'s combined format ("1800.00 USD") — what money_compute's
+// `result`, ledger_balance's `balance`, and most single-value outputs return.
 const MONEY_TOSTRING_RE = /^(-?\d+(?:\.\d+)?)\s\S+$/;
 const HASH_RE = /^[0-9a-f]{64}$/i;
 const HASH_IN_TEXT_RE = /\b[0-9a-f]{64}\b/gi;
 
 // Mirrors TOOL_NAMES in mcp/src/tools.ts. Kept in sync by
-// tests/hooks/verify-proof-binding.test.ts, which imports the real export
-// and diffs it against this list — drift fails CI instead of silently
-// widening (new tool omitted here) or narrowing (removed tool still
-// trusted) the set of names this hook will accept as ledger proof.
+// tests/hooks/verify-proof-binding.test.ts, which require()s this module's
+// exports and diffs them against the real TOOL_NAMES export — drift fails CI.
 const KNOWN_LEDGER_TOOL_NAMES = new Set([
   'money_compute',
   'entry_validate',
@@ -92,134 +95,160 @@ const KNOWN_LEDGER_TOOL_NAMES = new Set([
   'settlement_build_entries',
 ]);
 
-// Explicit allowlist of currency/asset codes, NOT a generic 3-5 uppercase-
-// letter pattern. Accounting/finance prose is full of standard citations that
-// look exactly like "3-5 letters + number" (IFRS 16, IAS 16.48, ASC 842, GAAP
-// 2023, ASU 2016-02, ISO 4217) — matching any such token as a "currency code"
-// would flag citing canon (the behavior the kernel rules exist to encourage)
-// as an unproven monetary claim. Biased toward under-triggering: an amount in
-// a currency not on this list simply isn't checked (fail-open on obscurity),
-// which is the safer direction for a heuristic backstop than blocking a
-// citation. Covers ISO 4217 majors + the kernel's default asset registry
-// (src/instruments/registry.ts) + common crypto not yet in that registry.
-const CURRENCY_CODES =
-  'USD|EUR|GBP|JPY|CHF|CAD|AUD|NZD|CNY|HKD|SGD|INR|MXN|BRL|ZAR|SEK|NOK|DKK|PLN|KRW|' +
-  'BTC|ETH|SOL|ADA|USDT|USDC|XRP|DOGE|LTC|BNB|DOT|MATIC';
-const CURRENCY_CODE_RE = `(?:${CURRENCY_CODES})`;
-// A monetary claim: a currency symbol adjacent to a number, or a decimal
-// number adjacent to a known currency/asset code. Deliberately does NOT match
-// bare integers/decimals (dates, counts, ids, standard citations) with no
-// currency signal.
+// Tools whose envelopes are pure echoes of caller input — never harvested.
+// artifact_make returns the caller's own auditHash/scope/assumptions verbatim;
+// trusting that echo would launder a fabricated figure through one tool call.
+const HARVEST_EXCLUDED_TOOLS = new Set(['artifact_make']);
+
+// Tools that MINT audit hashes (the kernel computed the digest). Hashes found
+// under HASH_KEYS in other tools' envelopes are echoes, not proof.
+const HASH_MINTING_TOOLS = new Set([
+  'ledger_post',
+  'periods_guarded_post',
+  'ledger_audit_hash',
+  'ledger_verify_determinism',
+  'trace_run',
+]);
+const HASH_KEYS = new Set(['auditHash', 'hash', 'finalHash']);
+
+// Kernel-computed value keys, enumerated from mcp/src/tools.ts response
+// shapes (and the kernel serializers they call). A string (or array of
+// strings) under one of these keys is money the kernel produced; anything
+// else — descriptions, ids, account codes, artifact prose, the `v` schema
+// tag — is not, even when it happens to be decimal-shaped.
+const AMOUNT_KEYS = new Set([
+  'a', // Money.toJSON amount, inside any serialized entry/ledger
+  'result', // money_compute
+  'parts', // money_compute allocate
+  'balance', // ledger_balance, trial-balance rows, trace checkpoints
+  'byCurrency', // ledger_balance
+  'original', 'translated', 'total', 'cta', // fx_compute_translation
+  'initialDepreciable', 'depreciation', 'accumulated', 'carrying', // depreciation_build_schedule
+  'operating', 'investing', 'financing', 'netChange', 'openingCash', 'closingCash', // cashflow_statement
+  'ledger', 'external', 'diff', // reconcile_positions rows (string leaves only; the ledger snapshot object recurses normally)
+  'totalRealized', 'quantity', 'costBasis', 'proceeds', 'basis', 'gain', // portfolio_relief
+  'settledCash', // settlement_build_entries
+]);
+
+// Currency/asset codes recognized in prose claims. Explicit allowlist, NOT a
+// generic 3-5 uppercase-letter pattern: accounting prose is full of standard
+// citations shaped exactly like "letters + number" (IFRS 16, IAS 16.48,
+// ASC 842, GAAP 2023, ISO 4217) and matching those as money would block
+// citing canon. Split in two because some asset tickers are common English
+// acronyms (ADA, DOT, SOL): those only count as money when the NUMBER COMES
+// FIRST ("0.5 ADA"), never code-first ("ADA 2010" is a statute, not a
+// payment). Fiat codes match in both directions ("100.00 USD", "USD 100.00").
+// Must cover every symbol in the kernel's defaultAssetRegistry
+// (src/instruments/registry.ts) — enforced by a sync test.
+const FIAT_CODES =
+  'USD|EUR|GBP|JPY|CHF|CAD|AUD|NZD|CNY|HKD|SGD|INR|MXN|BRL|ZAR|SEK|NOK|DKK|PLN|KRW';
+const ASSET_CODES =
+  'BTC|ETH|SOL|ADA|USDT|USDC|XRP|DOGE|LTC|BNB|DOT|MATIC|AAPL|SPY';
+const ANY_CODE_RE = `(?:${FIAT_CODES}|${ASSET_CODES})`;
+const FIAT_CODE_RE = `(?:${FIAT_CODES})`;
+// A number that is a checkable exact amount: not preceded by a word char or
+// '.', and not followed by a magnitude/word suffix ("$1.8k", "$1.2M" are
+// display roundings we cannot verify — skipped, not blocked).
+const NUM = '-?\\d[\\d,]*(?:\\.\\d+)?';
 const MONEY_IN_TEXT_RE = new RegExp(
-  `(?:[$€£¥]\\s?-?\\d[\\d,]*(?:\\.\\d+)?)` +
-    `|(?:-?\\d[\\d,]*(?:\\.\\d+)?\\s?${CURRENCY_CODE_RE}\\b)` +
-    `|(?:\\b${CURRENCY_CODE_RE}\\s?-?\\d[\\d,]*(?:\\.\\d+)?)`,
+  `(?:[$€£¥]\\s?${NUM}(?![\\d.,]*[a-zA-Z]))` + // $1,800.00 — symbol first
+    `|(?:(?<![\\w.])${NUM}\\s?${ANY_CODE_RE}\\b)` + // 0.5 BTC / 1800.00 USD — number first, any code
+    `|(?:\\b${FIAT_CODE_RE}\\s?${NUM}(?![\\d.,]*[a-zA-Z]))`, // USD 1800.00 — code first, fiat only
   'g',
 );
 
-function round(n) {
-  // Collapse float noise from JSON number leaves (e.g. compare: -1/0/1); the
-  // real amounts we care about arrive as exact decimal strings, not numbers.
-  return Math.round(n * 1e8) / 1e8;
+/**
+ * Canonical decimal string for exact comparison — no floats anywhere
+ * (AGENTS.md forbids parseFloat for amounts; floats also collapse distinct
+ * values past 2^53 and past 8dp, e.g. ETH is scale 18 in the kernel).
+ * "1,800.00" -> "1800", "$0.30" -> "0.3", "-0.50 USD" -> "-0.5".
+ */
+function canonDecimal(raw) {
+  const s = raw.replace(/[$€£¥,\s]/g, '').replace(/^[A-Za-z]+|[A-Za-z]+$/g, '');
+  if (!DECIMAL_RE.test(s)) return null;
+  let neg = s.startsWith('-');
+  const [intRaw, fracRaw = ''] = (neg ? s.slice(1) : s).split('.');
+  const int = intRaw.replace(/^0+(?=\d)/, '');
+  const frac = fracRaw.replace(/0+$/, '');
+  if (int === '0' && frac === '') neg = false; // -0 === 0
+  return (neg ? '-' : '') + (frac ? `${int}.${frac}` : int);
 }
 
-function normalizeAmount(raw) {
-  const stripped = raw.replace(/[$€£¥,]/g, '').replace(/[A-Z]{3,5}/g, '').trim();
-  const n = Number.parseFloat(stripped);
-  return Number.isFinite(n) ? round(n) : null;
+/** Bare tool name from a possibly-namespaced transcript name:
+ * "mcp__plugin_ledger_ledger__ledger_post" -> "ledger_post". */
+function bareToolName(name) {
+  const i = name.lastIndexOf('__');
+  return i === -1 ? name : name.slice(i + 2);
 }
 
-/** Recursively harvest decimal/hash leaves from an already-parsed, already
- * shape-verified ledger envelope. No re-detection here — callers only ever
- * invoke this on an object confirmed to be `{ ok: boolean, ... }` sourced
- * from a real tool_result block (see extractLedgerEnvelopes).
- *
- * String leaves only, deliberately — every ledger MCP tool serializes money
- * as an exact decimal STRING (Money.toString()/toJSON(), never a native
- * number; see mcp/src/tools.ts, which calls .toString() on every monetary
- * value it returns). A raw `number` leaf in these envelopes is always
- * incidental metadata (entryCount, compare's -1/0/1, array lengths, ...),
- * never an amount. Treating numbers as "proven" amounts would let a
- * fabricated small claim like "$1" pass just because some unrelated
- * entryCount happened to equal 1. */
-function harvestLeaves(node, pool, depth) {
-  if (depth > 14) return; // guard against pathological/cyclic-looking nesting
+function isKnownLedgerTool(name) {
+  return KNOWN_LEDGER_TOOL_NAMES.has(name) || KNOWN_LEDGER_TOOL_NAMES.has(bareToolName(name));
+}
+
+/** Harvest kernel-computed amounts (by key) and — when allowHashes — minted
+ * audit hashes from an already shape-verified ledger envelope.
+ * `keyAllowed` is true only while descending directly under an AMOUNT_KEYS
+ * key (propagated through arrays, e.g. parts/byCurrency). */
+function harvestLeaves(node, pool, allowHashes, depth, keyAllowed) {
+  if (depth > 14) return; // guard against pathological nesting
   if (typeof node === 'string') {
+    if (!keyAllowed) return;
     if (DECIMAL_RE.test(node)) {
-      pool.decimals.add(round(Number.parseFloat(node)));
+      const c = canonDecimal(node);
+      if (c !== null) pool.decimals.add(c);
     } else {
       const m = node.match(MONEY_TOSTRING_RE);
-      if (m) pool.decimals.add(round(Number.parseFloat(m[1])));
+      if (m) {
+        const c = canonDecimal(m[1]);
+        if (c !== null) pool.decimals.add(c);
+      }
     }
-    if (HASH_RE.test(node)) pool.hashes.add(node.toLowerCase());
     return;
   }
   if (Array.isArray(node)) {
-    for (const v of node) harvestLeaves(v, pool, depth + 1);
+    for (const v of node) harvestLeaves(v, pool, allowHashes, depth + 1, keyAllowed);
     return;
   }
   if (node && typeof node === 'object') {
     for (const [key, v] of Object.entries(node)) {
-      // "v" is this kernel's schema-version tag, always the string "1"
-      // (Ledger.toJSON, JournalEntry.toJSON, Money.toJSON all use it — see
-      // src/core/{ledger,journal,money}.ts). It is never an amount, but it
-      // IS decimal-shaped, so without this exclusion any Money/entry/ledger
-      // object anywhere in a real tool result would pollute the proven pool
-      // with a spurious "1" — which would then rubber-stamp any fabricated
-      // "$1" / "1 <asset>" claim regardless of what was actually posted.
-      if (key === 'v') continue;
-      harvestLeaves(v, pool, depth + 1);
+      if (allowHashes && HASH_KEYS.has(key) && typeof v === 'string' && HASH_RE.test(v)) {
+        pool.hashes.add(v.toLowerCase());
+      }
+      harvestLeaves(v, pool, allowHashes, depth + 1, AMOUNT_KEYS.has(key));
     }
   }
 }
 
-/** Find every content block the transcript itself marked as `tool_result`,
- * anywhere in the line (structure-agnostic on the wrapper, but the
- * `type: "tool_result"` marker itself is required — see header comment). */
-function collectToolResultBlocks(node, out, depth) {
+/** One walk, both block types: content the transcript itself marked
+ * `tool_result` (real tool output) and `tool_use` (to resolve tool identity).
+ * Structure-agnostic on the wrappers; the type markers themselves are
+ * standard Messages API content-block taxonomy. */
+function collectBlocks(node, uses, results, depth) {
   if (depth > 14 || node == null) return;
   if (Array.isArray(node)) {
-    for (const v of node) collectToolResultBlocks(v, out, depth + 1);
+    for (const v of node) collectBlocks(v, uses, results, depth + 1);
     return;
   }
   if (typeof node === 'object') {
-    if (node.type === 'tool_result') out.push(node);
-    for (const v of Object.values(node)) collectToolResultBlocks(v, out, depth + 1);
-  }
-}
-
-/** Find every `tool_use` block (the request a `tool_result` answers), same
- * structure-agnostic walk. Used only to resolve tool_use_id -> tool name. */
-function collectToolUseBlocks(node, out, depth) {
-  if (depth > 14 || node == null) return;
-  if (Array.isArray(node)) {
-    for (const v of node) collectToolUseBlocks(v, out, depth + 1);
-    return;
-  }
-  if (typeof node === 'object') {
-    if (node.type === 'tool_use' && typeof node.id === 'string' && typeof node.name === 'string') {
-      out.push(node);
+    if (node.type === 'tool_result') {
+      results.push(node);
+    } else if (node.type === 'tool_use' && typeof node.id === 'string' && typeof node.name === 'string') {
+      uses.push(node);
     }
-    for (const v of Object.values(node)) collectToolUseBlocks(v, out, depth + 1);
+    for (const v of Object.values(node)) collectBlocks(v, uses, results, depth + 1);
   }
 }
 
-/** Given a real tool_result block, return every parsed JSON value inside its
- * content that matches our ledger envelope shape (`{ ok: boolean, ... }`,
- * per mcp/src/tools.ts's ok()/fail()) — the second, narrower gate on top of
- * "came from a real tool_result", so a coincidentally-shaped result from
- * some unrelated MCP tool isn't trusted either. */
+/** Parsed JSON values inside a real tool_result block that match our ledger
+ * envelope shape ({ ok: boolean, ... }, per mcp/src/tools.ts's ok()/fail()) —
+ * the second, narrower gate on top of "came from a real tool_result". */
 function isLedgerEnvelope(v) {
   return !!v && typeof v === 'object' && typeof v.ok === 'boolean';
 }
 
 function extractLedgerEnvelopes(block) {
   const envelopes = [];
-  // Every ledger MCP tool sets both content[].text (JSON.stringify'd, per
-  // mcp/src/tools.ts's ok()/fail()) and structuredContent (the same object,
-  // already parsed). Accept either shape the transcript preserves.
   if (isLedgerEnvelope(block.structuredContent)) envelopes.push(block.structuredContent);
-
   const texts = [];
   const c = block.content;
   if (typeof c === 'string') texts.push(c);
@@ -255,21 +284,6 @@ function extractText(content) {
   return '';
 }
 
-function readTranscriptLines(transcriptPath) {
-  const raw = fs.readFileSync(transcriptPath, 'utf8');
-  const lines = [];
-  for (const l of raw.split('\n')) {
-    const trimmed = l.trim();
-    if (!trimmed) continue;
-    try {
-      lines.push(JSON.parse(trimmed));
-    } catch {
-      // Schema drift or a partially-written line; skip it rather than fail.
-    }
-  }
-  return lines;
-}
-
 function main() {
   const stdin = fs.readFileSync(0, 'utf8');
   let input;
@@ -279,51 +293,77 @@ function main() {
     process.exit(0); // can't read hook input at all: allow, don't brick the session
   }
 
-  if (input.stop_hook_active) {
-    process.exit(0); // already retried once this turn; never loop
-  }
-
   const transcriptPath = input.transcript_path;
   if (!transcriptPath || !fs.existsSync(transcriptPath)) {
     process.exit(0);
   }
 
-  const lines = readTranscriptLines(transcriptPath);
-  if (lines.length === 0) process.exit(0);
+  // The transcript grows without bound over a session and this hook runs on
+  // EVERY turn, so the common no-claims case must stay cheap: find the final
+  // assistant message from the tail first, and only pay for parsing the rest
+  // of the file when that message actually asserts amounts/hashes.
+  const rawLines = fs.readFileSync(transcriptPath, 'utf8').split('\n');
 
-  const lastAssistant = [...lines].reverse().find(isAssistantLine);
-  if (!lastAssistant) process.exit(0);
+  let finalText = '';
+  let foundAssistant = false;
+  for (let i = rawLines.length - 1; i >= 0; i--) {
+    const trimmed = rawLines[i].trim();
+    if (!trimmed || !trimmed.includes('assistant')) continue; // cheap prefilter
+    let line;
+    try {
+      line = JSON.parse(trimmed);
+    } catch {
+      continue; // partially-written or drifted line; skip rather than fail
+    }
+    if (!isAssistantLine(line)) continue;
+    finalText = extractText(line.message?.content ?? line.content);
+    foundAssistant = true;
+    break;
+  }
+  if (!foundAssistant || !finalText) process.exit(0);
 
-  const finalText = extractText(lastAssistant.message?.content ?? lastAssistant.content);
-  if (!finalText) process.exit(0);
-
-  const claimedAmounts = [...new Set((finalText.match(MONEY_IN_TEXT_RE) || []).map(normalizeAmount).filter((n) => n !== null))];
+  const claimedAmounts = [
+    ...new Set((finalText.match(MONEY_IN_TEXT_RE) || []).map(canonDecimal).filter((c) => c !== null)),
+  ];
   const claimedHashes = [...new Set((finalText.match(HASH_IN_TEXT_RE) || []).map((h) => h.toLowerCase()))];
 
   if (claimedAmounts.length === 0 && claimedHashes.length === 0) {
-    process.exit(0); // nothing that looks like a monetary/hash claim to check
+    process.exit(0); // nothing that looks like a checkable monetary/hash claim
   }
 
   const toolUseBlocks = [];
-  for (const line of lines) collectToolUseBlocks(line, toolUseBlocks, 0);
+  const toolResultBlocks = [];
+  for (const l of rawLines) {
+    // Only lines that can contain tool blocks are worth a JSON.parse.
+    if (!l.includes('"tool_result"') && !l.includes('"tool_use"')) continue;
+    let line;
+    try {
+      line = JSON.parse(l.trim());
+    } catch {
+      continue;
+    }
+    collectBlocks(line, toolUseBlocks, toolResultBlocks, 0);
+  }
   const nameByToolUseId = new Map(toolUseBlocks.map((b) => [b.id, b.name]));
 
   const pool = { decimals: new Set(), hashes: new Set(), sawEnvelope: false };
-  const toolResultBlocks = [];
-  for (const line of lines) collectToolResultBlocks(line, toolResultBlocks, 0);
   for (const block of toolResultBlocks) {
-    // Resolve tool identity on a best-effort basis: if tool_use_id resolves
-    // to a name we don't recognize as a ledger tool, don't trust this
-    // block's envelopes even if they happen to match our {ok: boolean}
-    // shape. If it doesn't resolve at all (no tool_use_id, or no matching
-    // tool_use found), fall back to trusting by shape alone — see header
-    // comment for why an unresolvable id must not become "nothing is ever
-    // proven".
+    // Resolve tool identity on a best-effort basis (namespaced or bare — see
+    // header). If it resolves to a non-ledger tool, don't trust the block. If
+    // it doesn't resolve at all (no tool_use found — a transcript-schema
+    // drift), fall back to trusting by shape alone: a missing id must never
+    // turn into "nothing is ever proven".
     const resolvedName = typeof block.tool_use_id === 'string' ? nameByToolUseId.get(block.tool_use_id) : undefined;
-    if (resolvedName !== undefined && !KNOWN_LEDGER_TOOL_NAMES.has(resolvedName)) continue;
+    let allowHashes = true;
+    if (resolvedName !== undefined) {
+      if (!isKnownLedgerTool(resolvedName)) continue;
+      const bare = bareToolName(resolvedName);
+      if (HARVEST_EXCLUDED_TOOLS.has(bare)) continue;
+      allowHashes = HASH_MINTING_TOOLS.has(bare);
+    }
     for (const envelope of extractLedgerEnvelopes(block)) {
       pool.sawEnvelope = true;
-      harvestLeaves(envelope, pool, 0);
+      harvestLeaves(envelope, pool, allowHashes, 0, false);
     }
   }
 
@@ -353,15 +393,42 @@ function main() {
       'and restate the figure exactly as the tool returned it (or correct your claim) before finishing.',
   );
 
+  if (input.stop_hook_active) {
+    // Already blocked once this turn — never loop, but don't go silent either:
+    // a mismatch that survived the retry leaves a user-visible warning.
+    process.stdout.write(
+      JSON.stringify({
+        systemMessage: 'ledger proof-binding: unverified figures remain in the final message after retry. ' + reasonParts.join(' '),
+      }),
+    );
+    process.exit(0);
+  }
+
   process.stdout.write(JSON.stringify({ decision: 'block', reason: reasonParts.join(' ') }));
   process.exit(0);
 }
 
-try {
-  main();
-} catch (e) {
-  // Any unexpected failure in this script is an infrastructure problem, not a
-  // policy violation: warn and allow, never block a session on our own bug.
-  process.stderr.write(`verify-proof-binding: internal error, allowing turn: ${(e && e.message) || e}\n`);
-  process.exit(0);
+if (require.main === module) {
+  try {
+    main();
+  } catch (e) {
+    // Any unexpected failure in this script is an infrastructure problem, not a
+    // policy violation: warn and allow, never block a session on our own bug.
+    process.stderr.write(`verify-proof-binding: internal error, allowing turn: ${(e && e.message) || e}\n`);
+    process.exit(0);
+  }
 }
+
+// Exported for tests (sync checks against mcp/src/tools.ts TOOL_NAMES and the
+// kernel asset registry, plus direct unit tests) — the hook itself only runs
+// when invoked as a script.
+module.exports = {
+  KNOWN_LEDGER_TOOL_NAMES,
+  HARVEST_EXCLUDED_TOOLS,
+  HASH_MINTING_TOOLS,
+  AMOUNT_KEYS,
+  FIAT_CODES,
+  ASSET_CODES,
+  canonDecimal,
+  bareToolName,
+};

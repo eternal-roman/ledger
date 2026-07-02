@@ -1,5 +1,5 @@
 {
-  "description": "Claude-Code-only hooks (kept out of hooks/hooks.json, which Grok also auto-discovers and whose hook-event schema we cannot verify tolerates unrecognized keys like Stop). Referenced explicitly via the top-level \"hooks\" field in .claude-plugin/plugin.json, which replaces default hooks/hooks.json auto-discovery for Claude Code — so this file must be self-contained (it repeats SessionStart activation rather than relying on hooks/hooks.json, which Claude Code will no longer read once this field is set).",
+  "description": "Claude-Code-only hooks, referenced via .claude-plugin/plugin.json's \"hooks\" field. Self-contained (repeats SessionStart) because that field replaces hooks/hooks.json auto-discovery. Rationale for the file split: see hooks/README.md.",
   "hooks": {
     "SessionStart": [
       {
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-proof-binding.cjs\" || true",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-proof-binding.cjs\"",
             "timeout": 10,
             "statusMessage": "Checking figures against ledger kernel proof..."
           }

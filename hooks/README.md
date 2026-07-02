@@ -27,8 +27,12 @@ Activation hooks (best-effort) for AI hosts. The real rules live in AGENTS.md + 
   not `.claude/settings.json`, which is project-local and gitignored, so it never ships). Not an
   activation banner: it runs at the end of every turn and checks whether any currency amount or
   audit hash in the assistant's final message is traceable to a real ledger MCP tool result from
-  that session. See the file's header comment for the exact signature it looks for and its
-  documented limits (it's a heuristic backstop, not a second kernel).
+  that session (MCP tool names are matched in their namespaced transcript form,
+  `mcp__<server>__<tool>`; proof is harvested only from kernel-computed value keys, and audit
+  hashes only from the tools that mint them — never from `artifact_make`'s echo of caller input).
+  See the file's header comment for the exact signature it looks for and its documented limits
+  (it's a heuristic backstop, not a second kernel — the durable binding is `artifact_make`'s
+  session-issued-hash check in `mcp/src/tools.ts`).
 
 ## Setup (Windows / pwsh)
 - Grok (and node-based hosts): the JS + hooks/hooks.json path works without Git Bash.
@@ -39,10 +43,14 @@ Activation hooks (best-effort) for AI hosts. The real rules live in AGENTS.md + 
 The SessionStart activation banners above are deliberately **fail-open**: if the script can't run
 on a given host, the session must still start. `verify-proof-binding.cjs` follows the same rule
 for its own infrastructure (missing transcript, malformed input, internal errors all allow the
-turn) — but it is **fail-closed on a detected policy violation**: an unmatched monetary claim or
-audit hash blocks the turn until it's corrected. `tests/hooks/activation.test.ts` asserts the
-activation banners actually still print (so a silent regression is a CI failure, not something
-only a human notices), and `tests/hooks/verify-proof-binding.test.ts` covers the Stop hook itself.
+turn) — but it **blocks on a detected policy violation**: an unmatched monetary claim or audit
+hash blocks the turn once so the model can correct it. To avoid infinite loops it will not block
+the same turn twice (`stop_hook_active`); a mismatch that survives the retry ships with a visible
+`systemMessage` warning rather than silently. That one-retry escape is why the hook is a backstop,
+not the enforcement layer: the non-bypassable check is `artifact_make`'s session-hash binding.
+`tests/hooks/activation.test.ts` asserts the activation banners actually still print (so a silent
+regression is a CI failure, not something only a human notices), and
+`tests/hooks/verify-proof-binding.test.ts` covers the Stop hook itself.
 
 ## Environment variables (plugin hooks)
 - `GROK_PLUGIN_ROOT` (and `CLAUDE_PLUGIN_ROOT` alias) point at the installed plugin dir.
