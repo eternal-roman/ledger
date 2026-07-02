@@ -1,6 +1,6 @@
 {
   "name": "@eternal-roman/ledger-mcp",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "MCP server for @eternal-roman/ledger — the deterministic financial-correctness tools AI agents call. Exact decimal money, kernel-enforced double-entry, audit-hashed and reproducible. Agents validate, post, balance, and prove instead of doing the math in-token.",
   "type": "module",
   "bin": {
@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/eternal-roman/ledger/tree/main/mcp#readme",
   "dependencies": {
-    "@eternal-roman/ledger": "^0.17.0",
+    "@eternal-roman/ledger": "^0.18.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
   },
