@@ -1,14 +1,11 @@
 # Changelog
 
-## Unreleased
+## [0.18.0] - 2026-07-02
 
-(Version bump happens in the release PR per the release skill — this section
-header is deliberately unbracketed so `npm run check:versions` keys on the
-released `[0.17.0]` below. Release note: this contains a BREAKING API change,
-so the next release is a MINOR bump, and `mcp/package.json`'s
-`@eternal-roman/ledger` dependency must be bumped to that same version —
-`artifact_make` requires the new `makeCanonicalArtifact` signature, and an
-older kernel would silently drop the `auditHash` field.)
+(Minor, not patch: contains a BREAKING artifact-API change. `mcp/package.json`'s
+`@eternal-roman/ledger` dependency bumped in lockstep — `artifact_make` requires
+the new `makeCanonicalArtifact` signature, and an older kernel would silently
+drop the `auditHash` field. Manifests synced; check:versions + verify:full green.)
 
 **AI-proof binding: make narration accountable to real kernel output, not just the kernel's own math.**
 
