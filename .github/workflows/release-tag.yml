@@ -3,6 +3,7 @@ name: Release Tag
 # Creates (if needed):
 #   - a fallback unsigned annotated git tag (when local signed tag push is blocked by relay)
 #   - the GitHub Release object (with notes extracted from CHANGELOG.md)
+#   - re-publishes a Release that GitHub flipped to Draft after a tag delete+replace
 #
 # Design:
 #   - Local /release process does `git tag -s -a` (signed) + push --follow-tags.
@@ -11,11 +12,16 @@ name: Release Tag
 #   - Tag existence check only gates the *unsigned tag creation*.
 #   - Separate GH Release existence check ensures the rich release (title + notes)
 #     is always created, even for pre-existing tags (local signed or historical).
+#   - Race: package.json bump on main often creates the bot tag + Release first.
+#     Replacing that tag with a local signed tag (delete remote tag, push -s)
+#     briefly removes the tag, which flips the GitHub Release to Draft. The final
+#     "Ensure published (not draft)" step always runs `gh release edit --draft=false`
+#     when needed so a signed-tag push leaves a published Release.
 #   - Supports backfill via workflow_dispatch (ref=sha) for older versions.
 #
 # Triggers:
 #   - push to main touching package.json  -> ensure tag + GH Release for the version
-#   - push of v* tag                     -> ensure GH Release (covers local signed tag push)
+#   - push of v* tag                     -> ensure GH Release + un-draft (signed replace)
 #   - workflow_dispatch (optional `ref`) -> backfill/create for a specific commit
 #
 # Extraction is strict: fails if the version's CHANGELOG section is missing (enforces
@@ -139,11 +145,44 @@ jobs:
             --target "$target_sha"
           echo "GitHub Release created for ${{ steps.ver.outputs.tag }}"
 
+      # Deleting a remote tag (to replace unsigned bot tag with a signed local one)
+      # makes GitHub flip the existing Release to Draft. Always re-publish here so a
+      # v* tag push after replace does not leave a draft Release behind.
+      - name: Ensure GitHub Release is published (not draft)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.ver.outputs.tag }}"
+          if ! gh release view "$tag" --json isDraft > /dev/null 2>&1; then
+            echo "ERROR: No GitHub Release for $tag after create/check steps."
+            exit 1
+          fi
+          is_draft="$(gh release view "$tag" --json isDraft -q .isDraft)"
+          if [ "$is_draft" = "true" ]; then
+            echo "Release $tag is draft (typical after tag delete+recreate). Publishing with gh release edit --draft=false..."
+            gh release edit "$tag" --draft=false
+            is_draft="$(gh release view "$tag" --json isDraft -q .isDraft)"
+            if [ "$is_draft" = "true" ]; then
+              echo "ERROR: Release $tag still draft after gh release edit --draft=false"
+              exit 1
+            fi
+            echo "Release $tag re-published (isDraft=false)."
+          else
+            echo "Release $tag already published (isDraft=false)."
+          fi
+
       - name: Confirm GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          echo "Confirming GitHub Release for ${{ steps.ver.outputs.tag }}..."
-          gh release view "${{ steps.ver.outputs.tag }}" --json tagName,name,url,createdAt | cat
-          echo "✅ GitHub Release confirmed for ${{ steps.ver.outputs.tag }}"
+          tag="${{ steps.ver.outputs.tag }}"
+          echo "Confirming GitHub Release for $tag..."
+          gh release view "$tag" --json tagName,name,url,createdAt,isDraft
+          is_draft="$(gh release view "$tag" --json isDraft -q .isDraft)"
+          if [ "$is_draft" = "true" ]; then
+            echo "ERROR: GitHub Release for $tag is still draft."
+            exit 1
+          fi
+          echo "✅ GitHub Release confirmed published for $tag"

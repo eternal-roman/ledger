@@ -2,6 +2,8 @@
 
 Git + tag + GitHub Release: follow the `/release` skill (enforces feature PRs first, bump on dedicated branch/PR if protected, `check:versions`, signed tag+artifact, post-merge gates, MCP PRs). See `~/.grok/skills/release/SKILL.md` and `.github/workflows/release-tag.yml`.
 
+**Signed-tag race:** `.github/workflows/release-tag.yml` often creates an unsigned bot tag + GitHub Release as soon as the version bump lands on main. Replacing that tag with a local signed tag (delete remote tag, push signed) briefly removes the tag and flips the Release to **Draft**. Handle in one motion — `git push origin :refs/tags/vX.Y.Z && git push origin vX.Y.Z && gh release edit vX.Y.Z --draft=false` — and confirm `isDraft=false`. The workflow also re-publishes draft releases on its final step when a `v*` tag push re-runs it.
+
 npm publish remains manual (needs tokens). These steps assume Git-side release (via skill) is complete.
 
 ## 1. Publish the kernel
