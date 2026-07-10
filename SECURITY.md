@@ -30,9 +30,11 @@ few days.
 Releases are tagged locally with signed annotated git tags (`git tag -s`) when the
 environment allows. When a signed-tag push is blocked, CI creates an **unsigned**
 fallback tag plus the GitHub Release object — so signature presence is best-effort
-and is **not** currently a hard supply-chain guarantee. Verify provenance via the
-published commit SHA and the GitHub Release. Enforced artifact signing (e.g. npm
-provenance / sigstore) is a tracked follow-up.
+and is **not** currently a hard supply-chain guarantee. Replacing a bot tag with a
+signed tag can flip the GitHub Release to Draft; the release-tag workflow and the
+`/release` skill re-publish with `gh release edit --draft=false`. Verify provenance
+via the published commit SHA and the published (non-draft) GitHub Release. Enforced
+artifact signing (e.g. npm provenance / sigstore) is a tracked follow-up.
 
 **Note:** Verification and adversarial tests (kernel + MCP) provide due diligence.
 See the Disclaimer in README.md and the MIT LICENSE for legal terms.
