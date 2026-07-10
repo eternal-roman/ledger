@@ -105,7 +105,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
-    "fast-check": "^3.23.0",
+    "fast-check": "^4.9.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.0",
     "typescript": "^5.5.0",
