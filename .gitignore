@@ -49,9 +49,7 @@ docs/*spec*.md
 
 # Local AI coding agent / IDE rule files and project settings (breadcrumbs from multiple tools)
 # Canonical instructions live in AGENTS.md, CLAUDE.md, skills/, commands/, .claude-plugin/
-# .claude/settings.json contains machine-specific permissions and should not be committed.
-.claude/settings.json
-.claude/*settings*
+.claude/settings.local.json
 .clinerules/
 .cursor/
 .kiro/

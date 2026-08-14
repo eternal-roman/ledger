@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-proof-binding — Claude Code Stop hook.
+// verify-proof-binding — Stop hook.
 //
 // The ledger MCP tools (money_compute, ledger_post, ledger_audit_hash, ...) are
 // fail-closed and kernel-verified, but nothing stops an agent from answering a
@@ -11,20 +11,16 @@
 // produced earlier in the session.
 //
 // Design constraints (read before "fixing" this):
-// - The transcript JSONL schema is undocumented and can change between Claude
-//   Code releases (see https://code.claude.com/docs/en/hooks.md). This script
+// - Transcript JSONL layout can change between host releases. This script
 //   still needs ONE structural fact to hold: only content blocks explicitly
-//   marked `type: "tool_result"` are treated as real tool output — this is
-//   part of the Anthropic Messages API content-block taxonomy Claude Code's
-//   transcripts are built on, not an internal implementation detail, so it's
-//   far more stable than exact field paths. Plain assistant/user text is
-//   never harvested for proof, no matter what it contains (an assistant can
-//   type out JSON that merely LOOKS like a tool result — a real LLM failure
-//   mode, and exactly the case this hook exists to catch).
+//   marked `type: "tool_result"` are treated as real tool output. Plain
+//   assistant/user text is never harvested for proof, no matter what it
+//   contains (an assistant can type out JSON that merely LOOKS like a tool
+//   result — a real LLM failure mode, and exactly the case this hook exists
+//   to catch).
 // - MCP tool names in transcripts are NAMESPACED: `mcp__<server>__<tool>` for
 //   user-configured servers, `mcp__plugin_<plugin>_<server>__<tool>` for
-//   plugin-bundled ones (verified against real transcripts and
-//   https://code.claude.com/docs/en/hooks.md's matcher docs). Tool identity is
+//   plugin-bundled ones (verified against real transcripts). Tool identity is
 //   therefore matched on the bare name OR the segment after the last `__`.
 // - Proof is harvested by KEY, not by shape. Ledger tool envelopes echo
 //   caller-supplied text (entry descriptions, artifact scope/assumptions,
@@ -221,8 +217,7 @@ function harvestLeaves(node, pool, allowHashes, depth, keyAllowed) {
 
 /** One walk, both block types: content the transcript itself marked
  * `tool_result` (real tool output) and `tool_use` (to resolve tool identity).
- * Structure-agnostic on the wrappers; the type markers themselves are
- * standard Messages API content-block taxonomy. */
+ * Structure-agnostic on the wrappers; identity is the `type` marker. */
 function collectBlocks(node, uses, results, depth) {
   if (depth > 14 || node == null) return;
   if (Array.isArray(node)) {

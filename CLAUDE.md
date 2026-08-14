@@ -1,6 +1,6 @@
-# Ledger Development (Claude Code)
+# Ledger Development
 
-This workspace is governed by strict Ledger kernel rules (see [AGENTS.md](./AGENTS.md) and [skills/ledger/SKILL.md](./skills/ledger/SKILL.md)). Use Money.from, validateEntry, Ledger.apply for all value; double-entry + canon enforced. Never allow unbalanced state.
+This workspace is governed by the Ledger kernel (see [AGENTS.md](./AGENTS.md) and [skills/ledger/SKILL.md](./skills/ledger/SKILL.md)). Use Money.from, validateEntry, Ledger.apply for all value. Never allow unbalanced state. How to contribute: [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Active Plugins
 host equivalents for planning/TDD/verification/review (e.g. superpowers-style or pr-review-toolkit-style when present), plus any skill/plugin helpers and security guidance.

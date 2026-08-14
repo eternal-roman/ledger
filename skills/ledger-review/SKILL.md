@@ -1,7 +1,9 @@
 ---
 name: ledger-review
 description: >
-  Full financial review combining ledger invariants (verify/audit) + host verification agents when present (e.g. superpowers TDD/verification or pr-review-toolkit) + security. Performs ledger layer always. Notes when optional layers are unavailable. Use for "ledger-review this", "full review before PR", or before shipping changes that touch money.
+  Pre-ship financial review. Use for ledger-review, review before PR, or shipping
+  money code. Always runs kernel invariants; adds host TDD/review/security layers
+  when those skills exist.
 license: MIT
 ---
 

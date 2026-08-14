@@ -1,6 +1,6 @@
-# ledger (Python Reference Canonical)
+# ledger (Python kernel port)
 
-Faithful port of the Ledger kernel (see main TS implementation in `src/core/`).
+Port of the TypeScript kernel in `src/core/`. Same invariants. The published TypeScript package is canonical.
 
 ## Purpose in Audits
 This is the reference Python implementation of the ledger kernel, intended for use when auditing Python codebases or when a target has not yet integrated the official primitives.
@@ -54,13 +54,12 @@ For a full trading bot audit you would also build:
 - `reconcile_fill(trade: dict) -> JournalEntry`
 - Use `runTrace` style loops (or manual successive apply) + side-by-side vs native math.
 
-## Differences from TypeScript Kernel (Documented)
-- Uses stdlib `decimal.Decimal` (high prec) vs decimal.js.
-- `__str__` / display quantizes to scale (matching TS `toString`).
-- Rounding in `mul`/`allocate` uses `quantize(ROUND_HALF_UP)`.
-- JSON shape is compatible for roundtrips of core fields.
+## Differences from TypeScript
+- `decimal.Decimal` vs decimal.js. Display quantizes to scale.
+- Core fiat scales match TS (`USD`, `EUR`, `GBP`, `JPY`, `CNY`, `KRW`). BTC/ETH/USDC/USDT are also in the Python map so examples run without a resolver; TS loads those via `installAssetScales`.
+- `audit_hash()` is `ledger-audit-v2` (account type + name, JSON-stable tags), same field order as TS.
 
-Run the determinism harness and compare hashes where sequences are built equivalently.
+Do not treat hashes as interchangeable with TS unless the sequence, scales, and tags match.
 
 ## Running Tests
 ```bash

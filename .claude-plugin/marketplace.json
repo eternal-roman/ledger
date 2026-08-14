@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ledger",
   "description": "Execution as Proof for money — the deterministic correctness layer AI agents call. Exact Money.from (no floats), kernel-enforced double-entry via JournalEntry + validateEntry + Ledger.apply, audit-hashed ledgers, canon citations. Provides /ledger-* skills and slash commands.",
   "owner": {

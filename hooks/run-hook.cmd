@@ -8,12 +8,12 @@ REM             and executes the extensionless hook script.
 REM On Unix: the shell sees ":" as no-op and runs the bash part at the bottom.
 REM
 REM Hook scripts have no extension (e.g. "ledger-activate") so that
-REM Claude Code's Windows detection doesn't auto-prepend "bash".
+REM host Windows detection doesn't auto-prepend "bash".
 REM
 REM Usage: run-hook.cmd <script-name-without-ext> [args...]
 REM
 REM Recommended for Windows users: Install Git for Windows (provides bash).
-REM Then run Claude Code from Git Bash when possible for full bash experience.
+REM Then run the host from Git Bash when possible for full bash experience.
 
 if "%~1"=="" (
     echo run-hook.cmd: missing hook script name >&2
