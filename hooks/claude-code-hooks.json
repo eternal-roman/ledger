@@ -1,5 +1,5 @@
 {
-  "description": "Claude-Code-only hooks, referenced via .claude-plugin/plugin.json's \"hooks\" field. Self-contained (repeats SessionStart) because that field replaces hooks/hooks.json auto-discovery. Rationale for the file split: see hooks/README.md.",
+  "description": "Host SessionStart + Stop hooks, referenced via .claude-plugin/plugin.json's \"hooks\" field. Self-contained (repeats SessionStart) because that field replaces hooks/hooks.json auto-discovery. See hooks/README.md.",
   "hooks": {
     "SessionStart": [
       {

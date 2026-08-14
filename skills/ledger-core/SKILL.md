@@ -1,7 +1,10 @@
 ---
 name: ledger-core
 description: >
-  Exact Money (never floats or native numbers), double-entry via JournalEntry + validateEntry + Ledger.apply, provenance, canon citations, Zero-Skip + CanonicalFinancialArtifact. Forbid floats. For any monetary work. Use the kernel primitives. Mistakes do not ship.
+  Kernel-only enforcement for monetary code. Use when writing or reviewing Money.from,
+  JournalEntry, validateEntry, Ledger.apply, or when you see parseFloat / native number
+  amounts. Zero-Skip + Canonical Financial Artifact. Prefer this in libraries that
+  depend on @eternal-roman/ledger without the full plugin.
 license: MIT
 ---
 

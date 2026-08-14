@@ -1,7 +1,7 @@
 {
   "name": "@eternal-roman/ledger-mcp",
   "version": "0.18.0",
-  "description": "MCP server for @eternal-roman/ledger — the deterministic financial-correctness tools AI agents call. Exact decimal money, kernel-enforced double-entry, audit-hashed and reproducible. Agents validate, post, balance, and prove instead of doing the math in-token.",
+  "description": "MCP server for the Ledger kernel. Agents call money_compute, entry_validate, ledger_post — they do not do money math in tokens. Fail-closed, audit-hashed, deterministic.",
   "type": "module",
   "bin": {
     "ledger-mcp": "./dist/server.js"

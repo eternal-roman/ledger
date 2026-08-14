@@ -9,10 +9,29 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict, Tuple, Any
 from decimal import Decimal
 import hashlib
+import json
 
 from .money import Money
 from .account import Account, AccountType
 from .journal import JournalEntry, JournalEntryLine, validate_entry, ValidationResult
+
+
+def _js_len(s: str) -> int:
+    """UTF-16 code-unit length, matching JavaScript String.length used by the TS kernel."""
+    return len(s.encode("utf-16-le")) // 2
+
+
+def _stable_tags(tags: Optional[Dict[str, str]]) -> str:
+    if not tags:
+        return "null"
+    keys = sorted(tags.keys())
+    return json.dumps([[k, tags[k]] for k in keys], separators=(",", ":"), ensure_ascii=False)
+
+
+def _json_nullish(value: Any) -> str:
+    if value is None:
+        return "null"
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
 
 
 def empty_ledger() -> "Ledger":
@@ -156,20 +175,25 @@ class Ledger:
         return Ledger(list(entries))
 
     def audit_hash(self) -> str:
-        """Stable SHA-256 chain mirroring TS logic (length-prefixed fields)."""
-        chain = hashlib.sha256(b"ledger-audit-v1").hexdigest()
+        """SHA-256 chain matching TS Ledger.auditHash (ledger-audit-v2)."""
+        chain = hashlib.sha256(b"ledger-audit-v2").hexdigest()
         for e in self._entries:
             fields: List[str] = [e.id, e.effective_date, e.description]
             for l in e.lines:
-                fields.append(l.side)
-                fields.append(l.account.code)
-                fields.append(l.amount.to_hashable())
-                fields.append(str(l.tags or None))
-            fields.append(str(e.tags or None))
-            fields.append(str(e.citations or None))
-            h = hashlib.sha256((chain).encode())
+                acct_type = l.account.type.value if hasattr(l.account.type, "value") else str(l.account.type)
+                fields.extend([
+                    l.side,
+                    l.account.code,
+                    acct_type,
+                    l.account.name,
+                    l.amount.to_hashable(),
+                    _stable_tags(l.tags),
+                ])
+            fields.append(_stable_tags(e.tags))
+            fields.append(_json_nullish(list(e.citations) if e.citations is not None else None))
+            h = hashlib.sha256(chain.encode("utf-8"))
             for f in fields:
-                h.update(f"{len(f)}:{f}".encode("utf-8"))
+                h.update(f"{_js_len(f)}:{f}".encode("utf-8"))
             chain = h.hexdigest()
         return chain
 

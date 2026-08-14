@@ -1,7 +1,11 @@
 ---
 name: ledger
 description: >
-  Ledger kernel enforcement. Exact Money (never floats or native numbers), double-entry via JournalEntry + validateEntry + Ledger.apply, provenance, canon citations, Zero-Skip + Canonical Financial Artifact. Forbid floats. For any monetary work. "Mistakes do not ship."
+  Use for ANY monetary, accounting, ledger, journal, balance, P&L, fee, FX, invoice,
+  tax, cost-basis, or valuation work. Exact Money.from (never floats or parseFloat),
+  double-entry via JournalEntry + validateEntry + Ledger.apply, MCP money_compute /
+  ledger_post, canon citations, Zero-Skip + Canonical Financial Artifact. Trigger on
+  money, dollars, currency, bookkeeping, unbalanced books, audit hash, or /ledger.
 license: MIT
 ---
 

@@ -1,7 +1,9 @@
 ---
 name: ledger-reconcile
 description: >
-  Convert assumptions, rates, policy impacts, or informal descriptions into fully balanced, validated double-entry JournalEntry objects with attached citations. Use for "reconcile this", "turn these assumptions into entries", "ledger-reconcile", or /ledger-reconcile.
+  Turn assumptions, rates, or a prose transaction into balanced, validated JournalEntry
+  objects with citations. Use for reconcile, "book this", "turn this into entries",
+  or /ledger-reconcile.
 license: MIT
 ---
 

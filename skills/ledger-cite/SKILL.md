@@ -1,7 +1,9 @@
 ---
 name: ledger-cite
 description: >
-  Retrieve precise canon-backed accounting facts using the knowledge graph levers (standard_family, domain etc.). Seeds cover IFRS + US-GAAP. Returns citable material for attaching to entries or code. Use with "ledger-cite", "find the IFRS rule for", "GAAP citation for", or /ledger-cite.
+  Look up IFRS/GAAP citations from the ledger knowledge graph. Use for ledger-cite,
+  "what's the IFRS rule for", "GAAP citation", revenue recognition, leases, cost basis,
+  or /ledger-cite. Never invent a standard paragraph.
 license: MIT
 ---
 

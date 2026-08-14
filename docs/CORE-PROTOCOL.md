@@ -34,7 +34,7 @@ real kernel plan, not an assumed one). The offline kernel validator
   the kernel before responding, and `artifact_make` binds artifacts to session-issued hashes.
 - CI (`npm run verify:full`): fail-closed, non-LLM (`scripts/ledger-verify.ts`,
   `scripts/verify-determinism.ts`).
-- Claude Code Stop hook (`hooks/verify-proof-binding.cjs`, registered via `hooks/claude-code-hooks.json`
+- Stop hook (`hooks/verify-proof-binding.cjs`, registered via `hooks/claude-code-hooks.json`
   and `.claude-plugin/plugin.json`'s `"hooks"` field — file-split rationale in `hooks/README.md`):
   a heuristic backstop that blocks a turn whose final message asserts figures no ledger tool
   returned. It blocks once per turn (a mismatch that survives the retry ships with a visible

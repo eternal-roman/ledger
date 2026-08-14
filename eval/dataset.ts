@@ -13,8 +13,8 @@
  * through the kernel, which refuses every one of these by construction.
  *
  * This is a fixture (deterministic, no network) so `npm run eval` is reproducible
- * in CI. A live proposer (Anthropic SDK) can replace `baselineProposals` behind an
- * API key; see eval/proposers.ts.
+ * in CI. A live proposer can replace `baselineProposals` behind an API key;
+ * see eval/proposers.ts.
  */
 export type AccountTypeStr = 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
 

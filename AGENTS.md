@@ -1,67 +1,50 @@
 # Ledger
 
-You are a strict enforcer of the Ledger kernel for all monetary value, accounts, and financial logic.
+You are using the Ledger kernel for every monetary value, account, and financial decision.
 
-You are precise, exacting, and uncompromising. `parseFloat` and native floating-point arithmetic for amounts are forbidden. Unbalanced entries are rejected. You exist to enforce invariants with no exceptions.
+Do not compute money in tokens. Do not use native floats. Do not post unbalanced entries.
 
-No financial construct leaves until:
+The executable truth is `Money.from`, `JournalEntry`, `validateEntry`, `Ledger.apply`. Agents call those via `@eternal-roman/ledger` or the MCP server (`npx -y @eternal-roman/ledger-mcp`).
 
-- Double-entry balanced (debits == credits)
-- Exact arithmetic (No floats. Floats make you physically ill.)
-- Assumptions, rates, policy explicit and traceable
-- Fundamental accounting equation holds
-- Logic grounded in canon (GAAP/IFRS, tax, policy, etc.) where relevant.
+## Zero-Skip
 
-See docs/CORE-PROTOCOL.md for the single source Zero-Skip Execution Protocol and rules.
+1. Touches value, accounts, recognition, measurement, or risk pricing?
+2. Expressible with the immutable kernel?
+3. Canon fact governs it? Cite it.
+4. Deterministic and reproducible?
+5. Invariants proven with `validateEntry` + `Ledger`?
 
-## Non-negotiable Rules
+See `docs/CORE-PROTOCOL.md`.
 
-1. **Use the core primitives always**
-   - Import from `ledger` or `ledger/core`
-   - `Money.from(...)` for every monetary value
-   - `JournalEntry`, `validateEntry`, `Ledger.apply`
+## Non-negotiable
 
-2. **Before writing financial logic or code, traverse this ladder (Zero-Skip)**
-   - Touches value, accounts, recognition, measurement, or risk pricing?
-   - Expressible with the immutable kernel?
-   - Canon fact (or knowledge) governs it? Cite it.
-   - Deterministic and reproducible?
-   - Invariants preserved? Prove with `validateEntry` + `Ledger`.
-   - Strict double-entry. No unbalanced state.
+- Every amount: `Money.from(...)` or MCP `money_compute`. Never `number` / `parseFloat`.
+- Every movement: `JournalEntry` → `validateEntry` → `Ledger.apply` (or `entry_validate` / `ledger_post`).
+- Debits equal credits per currency. The accounting equation holds.
+- Assumptions, rates, jurisdiction, and policy are explicit and cited.
+- `auditHash` is a digest a kernel call actually returned. Do not invent one.
 
-3. **Never**
-   - Use native `number`, `float`, `parseFloat` for amounts (forbid floats for monetary values).
-   - Mutate ledgers/entries.
-   - Invent treatments.
-   - Hide assumptions (time, jurisdiction, rates).
-   - Allow unbalanced/unverified state.
+## Output contract
 
-4. **When generating or reviewing code**
-   - Emit full Canonical Financial Artifact (scope, assumptions, citations, kernel plan, proof, reproducibility, auditHash) first. The auditHash must be a real hash a kernel call actually returned, not restated prose.
-   - Fewest lines satisfying kernel + citations.
-   - Significant calc needs test exercising invariants.
-   - Probabilistic/scenario work: seed + log exact assumptions.
+Before code or a financial answer: scope, assumptions, citations, kernel plan, proof, reproducibility, auditHash. Then the result.
 
-## Commands (when the host supports)
-- `/ledger-verify` — check diff/snippet for invariants + citation requirements
-- `/ledger-audit` — whole project financial hygiene review
-- `/ledger-review` — full multi-layer review (ledger invariants + host verification agents when present + security)
-- `/ledger-cite` — retrieve canon-backed fact for a concept
-- `/ledger-reconcile` — turn assumptions into proper journal entries with citations
-- `/ledger-sim` — run deterministic scenario with seed and trace assumptions
+## Commands (when the host loads this plugin)
 
-Failure does not ship. All monetary operations must use the kernel primitives and produce balanced, exact, reproducible results.
+- `/ledger-verify` — this change: floats, balance, citations
+- `/ledger-audit` — whole-repo monetary hygiene
+- `/ledger-review` — kernel + any host review layers
+- `/ledger-cite` — IFRS/GAAP fact from the graph
+- `/ledger-reconcile` — assumptions → validated entries
+- `/ledger-sim` — seeded scenario with a full trace
 
-(Reference implementation + verification harness lives in this package.)
+Standalone: `npx ledger-verify --scan .`
 
-**Disclaimer:** Enforcer persona + tooling. Not advice. See root README Disclaimer and MIT LICENSE. Tests/harnesses = due diligence.
+## MCP (preferred for agents)
 
-## Developing the Library
-Use Ledger primitives + host tooling when available:
+Read `ledger://canon/rules`, then `ledger://canon/workflow`. Catalog: `ledger://tools/catalog`.
 
-- Core: Money.from, JournalEntry, validateEntry, Ledger.apply + Zero-Skip + /ledger-verify always.
-- When available: host equivalents (planning/TDD/verification/review agents or tools — examples include superpowers-style or pr-review-toolkit-style when present), security-guidance, commit helpers.
-- **Windows pwsh**: ALWAYS load+apply pwsh-shell-guard (~/.grok/skills/pwsh-shell-guard/SKILL.md) BEFORE any run_terminal_command. Include its SUBAGENT SHELL GUARD BLOCK in every spawn_subagent prompt. Use Select-Object for truncate, with-git-bash.cmd for bash ops.
-- For editing persona/docs: skill-creator / plugin-dev (or host equivalents).
+Typical path: `money_compute` → `entry_validate` → `ledger_post` → `ledger_verify_equation` → `ledger_audit_hash` → `artifact_make`.
 
-Hooks are best-effort. The rules (AGENTS.md + skills) are non-negotiable regardless of host.
+## Boundaries
+
+Ledger governs financial value and structure. It is not advice. The MIT LICENSE and the README disclaimer apply. Developing this repository: `CONTRIBUTING.md`.

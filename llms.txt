@@ -1,0 +1,53 @@
+# Ledger
+
+> Exact-decimal double-entry kernel for AI agents. Do not compute money in tokens. Call the kernel.
+
+The TypeScript package `@eternal-roman/ledger` is the canonical kernel. The MCP server `@eternal-roman/ledger-mcp` is the agent interface. Invalid entries are rejected, never posted.
+
+## Start
+
+- Agent contract: /AGENTS.md
+- Protocol: /docs/CORE-PROTOCOL.md
+- MCP how-to: /mcp/README.md
+- Machine tool catalog (when the server is running): ledger://tools/catalog
+- Pre-ship checklist: /docs/SUCCESS-CHECKLIST.md
+- What the kernel rejects: /docs/ANTI-PATTERNS.md
+- What ships today: /docs/SCOPE-AND-LAYERS.md
+
+## Install
+
+```
+npx -y @eternal-roman/ledger-mcp
+npm install @eternal-roman/ledger
+npx ledger-verify --scan .
+```
+
+MCP config:
+
+```
+{ "mcpServers": { "ledger": { "command": "npx", "args": ["-y", "@eternal-roman/ledger-mcp"] } } }
+```
+
+## Invariants
+
+- Money.from (or money_compute) for every amount. No floats.
+- JournalEntry, >= 2 lines, balanced per currency, ISO date, no silent FX.
+- Ledger.apply is immutable and re-validates. Fail-closed.
+- auditHash is ledger-audit-v2 (account type + name included). Do not fabricate it.
+- Fundamental equation: Assets + Expenses = Liabilities + Equity + Income, per currency.
+
+## Tools (MCP)
+
+money_compute, entry_validate, ledger_post, ledger_balance, ledger_trial_balance, ledger_verify_equation, ledger_audit_hash, ledger_verify_determinism, trace_run, cite_lookup, artifact_make, periods_create_lock, periods_guarded_post, closing_generate_entries, fx_compute_translation, depreciation_build_schedule, cashflow_statement, reconcile_positions, portfolio_relief, settlement_build_entries.
+
+## Skills / commands
+
+/ledger-verify, /ledger-audit, /ledger-cite, /ledger-reconcile, /ledger-sim, /ledger-review. Skill sources under /skills/.
+
+## Optional layers
+
+Trading, portfolio lots, returns, crypto transfers, IFRS 16 lessee, period locks, closing, FX translation, depreciation, cash flow, reconcile — all emit kernel JournalEntry objects. See /examples/.
+
+## Not this
+
+Not a database. Not a bank. Not advice. Citation graph is a starter set; verify against official standards.

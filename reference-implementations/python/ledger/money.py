@@ -28,7 +28,7 @@ getcontext().prec = 50  # ample for financial
 DEFAULT_SCALE = 2
 CURRENCY_SCALES: dict[str, int] = {
     "USD": 2, "EUR": 2, "GBP": 2, "JPY": 0, "CNY": 2, "KRW": 0,
-    "USDC": 2, "USDT": 2, "BTC": 8, "ETH": 8,
+    "USDC": 2, "USDT": 2, "BTC": 8, "ETH": 18,
 }
 
 _extra_resolver = None  # type: Optional[callable]

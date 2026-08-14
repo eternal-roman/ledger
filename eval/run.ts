@@ -3,7 +3,7 @@
  * Benchmark runner. Default (fixture) mode is deterministic and CI-safe:
  *
  *   npm run eval                 # recorded baseline proposals
- *   npm run eval -- --live       # ask a Claude model (needs ANTHROPIC_API_KEY)
+ *   npm run eval -- --live       # ask a live model (needs ANTHROPIC_API_KEY)
  *
  * Writes a Markdown report to docs/BENCHMARK.md and prints the headline. Exits
  * non-zero if the guarded run fails to fully protect the books (so CI can assert).
@@ -71,7 +71,7 @@ un-committable.
 
 async function main(): Promise<void> {
   const live = process.argv.includes('--live');
-  const source = live ? `live Claude model (${process.env.LEDGER_EVAL_MODEL ?? 'claude-sonnet-4-6'})` : 'recorded fixture';
+  const source = live ? `live model (${process.env.LEDGER_EVAL_MODEL ?? 'claude-sonnet-4-6'})` : 'recorded fixture';
   const proposals = live ? await liveProposer() : fixtureProposer();
 
   const result = runBenchmark(proposals);

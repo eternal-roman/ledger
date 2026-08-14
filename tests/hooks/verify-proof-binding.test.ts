@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 
-// Exercises the Stop hook exactly as Claude Code invokes it: JSON on stdin,
+// Exercises the Stop hook as the host invokes it: JSON on stdin,
 // a real transcript file on disk, assertions on exit code + stdout decision.
 // See hooks/verify-proof-binding.cjs for the contract and its documented
 // limitations (heuristic backstop, not a second kernel — the durable binding
@@ -151,7 +151,7 @@ describe('verify-proof-binding Stop hook', () => {
   });
 
   // ─── Tool-name namespacing (the bug that inverted the whole feature) ──────
-  // Real Claude Code transcripts record MCP tools as mcp__<server>__<tool>
+  // Host transcripts record MCP tools as mcp__<server>__<tool>
   // (user-configured) or mcp__plugin_<plugin>_<server>__<tool> (plugin-
   // bundled) — never as the bare tool name. A previous version compared bare
   // names only, so every REAL ledger tool result was rejected as untrusted

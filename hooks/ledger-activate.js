@@ -2,7 +2,7 @@
 // ledger-activate — Node activation hook for Ledger kernel
 // 
 // Used by Grok via hooks/hooks.json (GROK_PLUGIN_ROOT) and for compatibility.
-// Bash primary (ledger-activate + run-hook.cmd) retained for Claude Code + Git Bash users.
+// Bash primary (ledger-activate + run-hook.cmd) retained for bash-first hosts.
 //
 // Prints activation banner only. The real rules live in AGENTS.md + skills/ledger/SKILL.md.
 // Hooks are best-effort; slash commands and skills work independently.

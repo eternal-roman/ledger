@@ -1,7 +1,9 @@
 ---
 name: ledger-sim
 description: >
-  Execute deterministic financial scenarios or simulations. Requires explicit seed for any stochastic elements, full trace of assumptions, and proof of all invariants via the kernel. Use for "run sim", "deterministic projection", "ledger-sim", or /ledger-sim.
+  Deterministic financial scenario. Use for ledger-sim, projection, forecast, or
+  /ledger-sim. Requires an explicit seed, cited assumptions, and a kernel trace
+  (runTrace) with auditHash at each checkpoint.
 license: MIT
 ---
 

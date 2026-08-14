@@ -101,7 +101,7 @@ def test_canonical_artifact_validator():
 def test_allocate_edges_and_remainder():
     """Test remainder-to-last rule and exact sums (mirrors TS allocate)."""
     m = Money.from_("100", "USD")
-    parts = m.allocate([0.5, 0.3, 0.2])
+    parts = m.allocate([Decimal("0.5"), Decimal("0.3"), Decimal("0.2")])
     assert sum(p.to_decimal() for p in parts) == Decimal("100")
     # Check last gets any remainder in non-nice cases
     m2 = Money.from_("1", "USD")
@@ -145,6 +145,25 @@ def test_golden_replay_from_ts_style_sequence():
     det = verify_determinism([e1, e2])
     assert det["ok"]
     assert det["ledger"].balance(cash).to_decimal() == Decimal("12500")
+
+
+def test_audit_hash_v2_includes_account_type_and_name():
+    cash = Account("1000", "Cash", AccountType.Asset)
+    equity = Account("3000", "Equity", AccountType.Equity)
+    e = create_balanced_entry("c1", "2026-06-22", cash, equity, Money.from_("100", "USD"), "Seed")
+    h1 = empty_ledger().apply(e)[0].audit_hash()
+
+    cash_flipped = Account("1000", "Cash", AccountType.Liability)
+    e_flipped = create_balanced_entry("c1", "2026-06-22", cash_flipped, equity, Money.from_("100", "USD"), "Seed")
+    # validate may still accept the pair; hash must change because type is in v2
+    h2 = empty_ledger().apply(e_flipped)[0].audit_hash()
+    assert h1 != h2
+
+    renamed = Account("1000", "Petty Cash", AccountType.Asset)
+    e_renamed = create_balanced_entry("c1", "2026-06-22", renamed, equity, Money.from_("100", "USD"), "Seed")
+    h3 = empty_ledger().apply(e_renamed)[0].audit_hash()
+    assert h1 != h3
+    assert h1 == empty_ledger().apply(e)[0].audit_hash()
 
 
 if __name__ == "__main__":

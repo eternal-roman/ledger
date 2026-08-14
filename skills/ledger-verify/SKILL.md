@@ -1,7 +1,10 @@
 ---
 name: ledger-verify
 description: >
-  Run strict ledger verification on a diff, file, or snippet. Enforces Money.from for all amounts, proper JournalEntry construction, validateEntry / Ledger.apply calls, balance proof, and required canon citations. Use when user asks to "ledger-verify", "verify this financially", "check for floats or unbalanced entries", or invokes /ledger-verify. Reports violations with proof. Standalone: `npm run verify:ledger -- --scan <path>` or `npx tsx node_modules/ledger/scripts/ledger-verify.ts --scan ...` (or after install `npx ledger-verify`).
+  Verify a diff, file, or snippet against ledger invariants. Use when asked to
+  ledger-verify, check for floats, find unbalanced entries, prove a journal,
+  or before committing money code. Enforces Money.from, validateEntry, Ledger.apply,
+  citations. CLI: npx ledger-verify --scan .
 license: MIT
 ---
 

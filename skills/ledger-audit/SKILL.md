@@ -1,10 +1,9 @@
 ---
 name: ledger-audit
 description: >
-  Whole-repo audit that enforces use of the ledger kernel for monetary logic.
-  Requires expressing value flows using Money.from, JournalEntry, validateEntry, and Ledger.apply
-  (or runTrace). Discovers non-kernel monetary expressions via scanning, then models critical paths
-  as kernel sequences with proofs. Use for "ledger-audit", "financial audit", "/ledger-audit".
+  Whole-repo financial audit. Use for ledger-audit, financial audit, or /ledger-audit.
+  Scan for non-kernel money math, reconstruct flows as JournalEntry sequences, prove
+  with validateEntry + Ledger.apply + runTrace + auditHash.
 license: MIT
 ---
 
