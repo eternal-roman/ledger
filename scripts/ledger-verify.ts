@@ -1,18 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * ledger-verify — standalone (non-LLM) enforcement script.
- * Supports mechanical scan + kernel proof using the real exports.
- *
- * Usage (dev):
- *   npx tsx scripts/ledger-verify.ts --scan examples
- *   npx tsx scripts/ledger-verify.ts --scan src
- *   npx tsx scripts/ledger-verify.ts --prove some-entries.json
- *
- * After install (tarball/git):
- *   npx ledger-verify --scan .
- *   npx ledger-verify --prove entries.json
- *
- * Reuses: scan* + real kernel (Money, createEntry/makeLine, runTrace, makeCanonicalArtifact).
+ * Mechanical scan + kernel proof. After install: npx ledger-verify --scan .
+ * Dev: npx tsx scripts/ledger-verify.ts --scan src
  * Loads dist first (packaged) or src fallback (dev).
  */
 

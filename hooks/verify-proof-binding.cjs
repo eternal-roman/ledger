@@ -1,59 +1,15 @@
 #!/usr/bin/env node
-// verify-proof-binding — Stop hook.
+// Stop hook: amounts/hashes in the final message must come from a real
+// tool_result. Heuristic. Durable binding is artifact_make in MCP.
 //
-// The ledger MCP tools (money_compute, ledger_post, ledger_audit_hash, ...) are
-// fail-closed and kernel-verified, but nothing stops an agent from answering a
-// monetary question in prose without calling them at all, or restating a
-// number that doesn't match what a tool actually returned. This hook is a
-// best-effort backstop for exactly that gap: before the turn is allowed to
-// end, it checks whether every currency-amount / audit-hash the assistant's
-// final message asserts is traceable to a real ledger MCP tool result
-// produced earlier in the session.
-//
-// Design constraints (read before "fixing" this):
-// - Transcript JSONL layout can change between host releases. This script
-//   still needs ONE structural fact to hold: only content blocks explicitly
-//   marked `type: "tool_result"` are treated as real tool output. Plain
-//   assistant/user text is never harvested for proof, no matter what it
-//   contains (an assistant can type out JSON that merely LOOKS like a tool
-//   result — a real LLM failure mode, and exactly the case this hook exists
-//   to catch).
-// - MCP tool names in transcripts are NAMESPACED: `mcp__<server>__<tool>` for
-//   user-configured servers, `mcp__plugin_<plugin>_<server>__<tool>` for
-//   plugin-bundled ones (verified against real transcripts). Tool identity is
-//   therefore matched on the bare name OR the segment after the last `__`.
-// - Proof is harvested by KEY, not by shape. Ledger tool envelopes echo
-//   caller-supplied text (entry descriptions, artifact scope/assumptions,
-//   reconcile external amounts) and contain decimal-shaped strings that are
-//   not money (account codes "1000", the `v` schema-version tag). Harvesting
-//   every decimal-shaped leaf let a fabricated "$3,000" be rubber-stamped by
-//   an equity account code. Only the kernel-computed value keys listed in
-//   AMOUNT_KEYS below (derived from mcp/src/tools.ts response shapes, kept in
-//   sync by tests/hooks/verify-proof-binding.test.ts) enter the proven pool,
-//   and audit hashes are only trusted from the tools that MINT them —
-//   artifact_make is excluded entirely because it echoes the caller's own
-//   auditHash back (that echo must not count as proof of itself).
-// - Amounts are compared as canonical decimal STRINGS, never floats.
-//   parseFloat is forbidden for amounts in this repo (AGENTS.md), and floats
-//   would collapse distinct values (>2^53, or >8dp assets like ETH at scale
-//   18) into "matching".
-// - Display-rounded figures ("$1.8k", "$1.2M") are deliberately NOT treated
-//   as claims: they cannot be checked against exact tool output, and
-//   truncating them to 1.8/1.2 produced guaranteed false blocks. Fail-open on
-//   what we cannot verify; fail-closed only on a confident mismatch.
-// - This is a heuristic lint, not a second kernel: it does exact-string
-//   equality on values already produced by the real kernel, it does not
-//   re-derive them. It cannot catch every paraphrase and isn't meant to. The
-//   durable, non-bypassable binding lives in the MCP layer (artifact_make
-//   only accepts session-issued or ledger-recomputed hashes — see
-//   mcp/src/tools.ts).
-// - Fail-open on infrastructure failure (missing/unreadable transcript,
-//   malformed JSON, unexpected shape) — never brick a session because this
-//   script couldn't run. Only a confidently detected mismatch blocks the turn.
-// - Respects `stop_hook_active` to avoid loops, but the retry pass is not
-//   silent: if the mismatch is still present it emits a non-blocking
-//   systemMessage warning so a persistent fabrication leaves a user-visible
-//   trace instead of shipping quietly.
+// Do not "fix" without reading this:
+// - Only type:"tool_result" is proof. Assistant JSON that looks like a result is not.
+// - Tool names are namespaced (mcp__<server>__<tool>). Match bare name or last __ segment.
+// - Harvest by KEY (AMOUNT_KEYS / hash-minting tools), not every decimal-shaped leaf.
+//   artifact_make echoes the caller's hash — never treat that echo as proof.
+// - Compare amounts as decimal strings, never floats. Skip "$1.8k" / "$1.2M".
+// - Fail-open on missing/malformed transcript. Block only a confident mismatch.
+// - One block per turn (stop_hook_active); retry mismatch → warning, not a loop.
 
 const fs = require('node:fs');
 

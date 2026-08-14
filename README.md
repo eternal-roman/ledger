@@ -14,8 +14,6 @@
 
 `Money.from` · `validateEntry` · `Ledger.apply`. Invalid entries are rejected, never posted.
 
-If you are an agent, start here. Humans: same contract, then the library API below.
-
 ## For agents
 
 Do not add, split, convert, or balance amounts yourself. Call the kernel.

@@ -1,44 +1,33 @@
-# Core Ledger Protocol (Single Source of Truth)
+# Core Ledger Protocol
 
-This block is the canonical definition. All persona files, skills, docs, and commands must stay consistent with it.
+Canonical rules. Skills, docs, and commands must match this file.
 
-## Zero-Skip Execution Protocol
-1. Touches value, accounts, recognition, measurement, or risk pricing?
-2. Expressible with the immutable kernel?
-3. Canon fact (or knowledge) governs it? Cite it.
+## Zero-Skip
+
+1. Touches value, accounts, recognition, measurement, or risk?
+2. Expressible with the kernel?
+3. Canon governs it? Cite it.
 4. Deterministic and reproducible?
-5. Invariants preserved? Prove with `validateEntry` + `Ledger`.
+5. Proven with `validateEntry` + `Ledger`?
 
-## Non-negotiable Rules
-- Core primitives only (`Money.from`, `JournalEntry`, `validateEntry`, `Ledger.apply`).
-- No floats, no mutation, no invented treatments, no hidden assumptions.
-- Never allow unbalanced state.
-- Fewest lines + tests for invariants. Seed probabilistic work.
+## Rules
 
-## Output Contract
-Scope, Assumptions, Citations, Kernel Plan, Proof, Reproducibility, AuditHash. Then code. Use
-/ledger-verify or `npm run verify:ledger`.
+- Only `Money.from`, `JournalEntry`, `validateEntry`, `Ledger.apply`.
+- No floats, mutation, invented treatments, or hidden assumptions.
+- No unbalanced state.
+- Test the invariant you changed. Seed anything probabilistic.
 
-The AuditHash must be the exact SHA-256 digest a real `ledger_post` / `ledger_audit_hash` /
-`ledger_verify_determinism` / `trace_run` call returned this session. `artifact_make` enforces
-this, not just its format: it accepts only a hash the server itself issued this session, or one it
-can recompute from a serialized `ledger` passed alongside — free text and fabricated-but-well-formed
-values are both rejected. No field is silently defaulted (a caller must supply real citations and a
-real kernel plan, not an assumed one). The offline kernel validator
-(`validateCanonicalArtifact`) checks shape only; session binding lives in the MCP layer.
+## Output
 
-## Enforcement layers
-- Kernel (`src/core`): fail-closed by construction — invalid entries cannot be constructed or
-  deserialized.
-- MCP tools (`mcp/src/tools.ts`): fail-closed adapters; every ledger-returning tool re-verifies via
-  the kernel before responding, and `artifact_make` binds artifacts to session-issued hashes.
-- CI (`npm run verify:full`): fail-closed, non-LLM (`scripts/ledger-verify.ts`,
-  `scripts/verify-determinism.ts`).
-- Stop hook (`hooks/verify-proof-binding.cjs`, registered via `hooks/claude-code-hooks.json`
-  and `.claude-plugin/plugin.json`'s `"hooks"` field — file-split rationale in `hooks/README.md`):
-  a heuristic backstop that blocks a turn whose final message asserts figures no ledger tool
-  returned. It blocks once per turn (a mismatch that survives the retry ships with a visible
-  warning instead of looping) and fails open on its own infrastructure failures — the durable,
-  non-bypassable binding is the MCP layer above, not this hook.
+Scope, assumptions, citations, kernel plan, proof, reproducibility, auditHash. Then the result.
 
-Failure does not ship. All operations must be exact, balanced, and kernel-enforced.
+`auditHash` must be a digest `ledger_post` / `ledger_audit_hash` / `ledger_verify_determinism` / `trace_run` returned this session. `artifact_make` accepts only a session-issued hash or one it can recompute from a supplied ledger. Fabricated hex is rejected. No field is defaulted. Offline `validateCanonicalArtifact` checks shape only.
+
+## Enforcement
+
+- Kernel (`src/core`) — invalid state cannot be constructed.
+- MCP (`mcp/src/tools.ts`) — re-verifies; `artifact_make` binds the hash.
+- CI — `npm run verify:full`.
+- Stop hook (`hooks/verify-proof-binding.cjs`) — heuristic: blocks a turn that asserts figures no tool returned. One retry, then a warning. Fail-open on its own errors. The durable check is MCP, not this hook.
+
+Failure does not ship.
