@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.0] - 2026-08-14
+
+Agent-first product surface. Python `audit_hash` is `ledger-audit-v2`. CI `ci-ok` is required on `main`. Docs and skills tightened. Manifests synced; check:versions + verify:full green.
+
+- `AGENTS.md`, `llms.txt`, MCP README, skill triggers so agents find the kernel.
+- Python reference hash matches TS (account type + name, stable tags). ETH scale 18.
+- Single CI gate `ci-ok`. Branch protection requires it.
+
 ## [0.18.0] - 2026-07-02
 
 (Minor, not patch: contains a BREAKING artifact-API change. `mcp/package.json`'s
@@ -8,11 +16,6 @@ the new `makeCanonicalArtifact` signature, and an older kernel would silently
 drop the `auditHash` field. Manifests synced; check:versions + verify:full green.)
 
 **AI-proof binding: make narration accountable to real kernel output, not just the kernel's own math.**
-
-### Docs / agent surface
-- Agent-first README, `llms.txt`, tighter `AGENTS.md`, trigger-rich skill descriptions.
-- Docs and Python `audit_hash` aligned to `ledger-audit-v2` (account type + name, stable tags).
-- CI `ci-ok` gate; GitHub topics and `main` protection require it.
 
 ### Added
 - Stop hook (`hooks/verify-proof-binding.cjs`) checks every currency
