@@ -1,40 +1,19 @@
 # Security
 
-Ledger uses exact arithmetic (decimal.js) and enforces invariants at construction
-time via `validateEntry` and `Ledger.apply` (fail-closed: invalid state is never
-posted). The only runtime dependency for core math is decimal.js.
+Fail-closed kernel (`validateEntry`, `Ledger.apply`). Core math depends only on decimal.js.
 
-## Reporting a vulnerability
+## Report
 
-Please report suspected vulnerabilities **privately** via GitHub Security
-Advisories — use "Report a vulnerability" on the repository's **Security** tab —
-rather than opening a public issue. For integrity bugs, describe the broken
-invariant (e.g. an unbalanced ledger that posts, a tamper that does not change the
-audit hash, a non-finite amount that validates). We aim to acknowledge within a
-few days.
+Use GitHub Security Advisories, not a public issue. For integrity bugs, name the broken invariant (unbalanced post, unchanged hash after tamper, non-finite amount that validates).
 
-## Integrity model
+## Integrity
 
-- Determinism and tamper-evidence are verified mechanically by the kernel + MCP
-  test suites and `npm run verify:full`.
-- The audit-hash chain (`ledger-audit-v2`) covers each entry's id / effective date
-  / description and, per line, side / account code / account **type** / account
-  **name** / amount / tags (tag key order canonicalized). Any change to those
-  fields changes the digest.
-- Account identity is enforced: a code cannot be redefined with a different type
-  or name (`ACCOUNT_REDEFINED`), so balances and the fundamental equation cannot
-  be silently corrupted.
+- `npm run verify:full` plus kernel/MCP tests.
+- `ledger-audit-v2` hashes id, date, description, and per line: side, code, **type**, **name**, amount, tags (keys sorted).
+- A code cannot change type or name (`ACCOUNT_REDEFINED`).
 
-## Release signing
+## Signing
 
-Releases are tagged locally with signed annotated git tags (`git tag -s`) when the
-environment allows. When a signed-tag push is blocked, CI creates an **unsigned**
-fallback tag plus the GitHub Release object — so signature presence is best-effort
-and is **not** currently a hard supply-chain guarantee. Replacing a bot tag with a
-signed tag can flip the GitHub Release to Draft; the release-tag workflow and the
-`/release` skill re-publish with `gh release edit --draft=false`. Verify provenance
-via the published commit SHA and the published (non-draft) GitHub Release. Enforced
-artifact signing (e.g. npm provenance / sigstore) is a tracked follow-up.
+Local `git tag -s` when possible. If that push is blocked, CI may create an **unsigned** tag. Signature is best-effort, not a supply-chain guarantee. Trust the commit SHA and a non-draft GitHub Release. npm provenance is follow-up.
 
-**Note:** Verification and adversarial tests (kernel + MCP) provide due diligence.
-See the Disclaimer in README.md and the MIT LICENSE for legal terms.
+See README disclaimer and LICENSE.

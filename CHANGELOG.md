@@ -9,8 +9,13 @@ drop the `auditHash` field. Manifests synced; check:versions + verify:full green
 
 **AI-proof binding: make narration accountable to real kernel output, not just the kernel's own math.**
 
+### Docs / agent surface
+- Agent-first README, `llms.txt`, tighter `AGENTS.md`, trigger-rich skill descriptions.
+- Docs and Python `audit_hash` aligned to `ledger-audit-v2` (account type + name, stable tags).
+- CI `ci-ok` gate; GitHub topics and `main` protection require it.
+
 ### Added
-- Claude Code Stop hook (`hooks/verify-proof-binding.cjs`) checks every currency
+- Stop hook (`hooks/verify-proof-binding.cjs`) checks every currency
   amount / audit hash in the assistant's final message against real ledger MCP
   tool results from that session before the turn ends; blocks on a confident
   mismatch, fails open on its own infrastructure problems, and emits a visible
@@ -34,7 +39,7 @@ drop the `auditHash` field. Manifests synced; check:versions + verify:full green
   adds the session binding above.)
 
 ### Fixed
-- The Stop hook matches MCP tool names as they actually appear in Claude Code
+- The Stop hook matches MCP tool names as they actually appear in host
   transcripts (`mcp__<server>__<tool>` / `mcp__plugin_<plugin>_<server>__<tool>`),
   not bare names — bare-name matching rejected every real ledger tool result,
   blocking every correct kernel-proven answer while catching nothing.

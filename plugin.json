@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "version": "0.18.0",
-  "description": "Exact-decimal Money and double-entry primitives for TypeScript (Money.from, JournalEntry, validateEntry, Ledger.apply). Includes audit hash, determinism checks, citations, MCP server, and /ledger-* skills for agents.",
+  "description": "Exact-decimal double-entry kernel for agents. Money.from, validateEntry, Ledger.apply. MCP + /ledger-* skills so models prove money instead of guessing.",
   "author": {
     "name": "eternal-roman / Ledger maintainers"
   },
@@ -13,8 +13,8 @@
     "accounting",
     "double-entry",
     "ai-skill",
+    "mcp",
     "grok",
-    "claude",
     "money",
     "gaap",
     "ifrs",

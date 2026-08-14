@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, 'feature/*', 'feat/*', 'fix/*', 'claude/**' ]
+    branches: [ main, 'feature/*', 'feat/*', 'fix/*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch: {}
@@ -39,6 +39,16 @@ jobs:
 
     - name: Benchmark (guardrail must fully protect the books)
       run: npm run eval
+
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every matrix leg
+        run: |
+          test "${{ needs.build-and-test.result }}" = "success"
 
 # Pinned actions + Node 22/24 matrix for stable, current runners.
 # Explicit CI tests for hardening:

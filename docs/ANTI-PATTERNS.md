@@ -1,33 +1,31 @@
-# Ledger Anti-Patterns (with grounded fixes)
+# Anti-patterns
 
-## 1. Native float / literal arithmetic
-Bad:
+## Float / literal math
+
 ```ts
+// bad
 const fee = parseFloat('1.23') * 0.01;
-total += fee;
-```
-Error you will hit (or should): `Money.from: non-integer number ...` (src/core/money.ts:90).
-
-Good:
-```ts
+// good
 const fee = Money.from('1.23', 'USD').mul('0.01');
-const e = createBalancedEntry(id, date, feeAcct, cash, fee, 'fee');
-l = l.apply(e).ledger;
 ```
 
-## 2. Direct +/- on money variables
-Bad: `balance = balance + amount;`
+`Money.from` rejects non-integer JS numbers.
 
-Good: use `Money.add` inside `create*` + `Ledger.apply`.
+## `+` / `-` on money
 
-## 3. Mutation
-Bad: `ledger.entries.push(e);`
+Use `Money.add` / `Money.sub` inside a `create*` helper, then `Ledger.apply`.
 
-Good: `ledger = ledger.apply(e).ledger;`
+## Mutation
 
-## 4. Hiding rates/assumptions
-Bad: hard-coded 0.05 with no citation.
+```ts
+// bad
+ledger.entries.push(e);
+// good
+ledger = ledger.apply(e).ledger;
+```
 
-Good: `assumptions: ['rate=0.05 from policy doc X 2026-06'], citations: [from ledger-cite or graph]`, then `makeCanonicalArtifact`.
+## Hidden rates
 
-Run `npx tsx scripts/ledger-verify.ts --scan .` to catch 1-3 mechanically.
+Log the rate, cite it, attach both to `makeCanonicalArtifact`.
+
+Catch 1–3 with `npx ledger-verify --scan .`.

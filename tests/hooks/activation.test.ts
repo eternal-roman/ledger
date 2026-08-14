@@ -53,10 +53,10 @@ describe('plugin-shipped hooks stay wired to real files', () => {
     expect(existsSync(path.join(HOOKS_DIR, 'run-hook.cmd'))).toBe(true);
   });
 
-  it('hooks.json (Grok-shared) has no Stop key — Claude-Code-only hooks must not live here', () => {
+  it('hooks.json (Grok-shared) has no Stop key — Stop hooks must not live here', () => {
     // Grok also auto-discovers this exact file; adding a Stop key here would
     // risk breaking Grok's activation for every user if its parser doesn't
-    // tolerate an unrecognized hook-event name. Claude-Code-only hooks belong
+    // tolerate an unrecognized hook-event name. Stop hooks belong
     // in claude-code-hooks.json instead (see the next tests).
     const cfg = JSON.parse(readFileSync(path.join(HOOKS_DIR, 'hooks.json'), 'utf8'));
     expect(cfg.hooks?.Stop).toBeUndefined();
@@ -68,10 +68,10 @@ describe('plugin-shipped hooks stay wired to real files', () => {
     expect(plugin.hooks).toBe('./hooks/claude-code-hooks.json');
   });
 
-  it('claude-code-hooks.json (Claude-Code-only, explicitly referenced) carries SessionStart', () => {
-    // This file replaces default hooks/hooks.json auto-discovery for Claude
-    // Code once plugin.json's "hooks" field is set, so it must repeat
-    // SessionStart itself rather than relying on hooks.json.
+  it('claude-code-hooks.json (explicitly referenced) carries SessionStart', () => {
+    // This file replaces default hooks/hooks.json auto-discovery once
+    // plugin.json's "hooks" field is set, so it must repeat SessionStart
+    // itself rather than relying on hooks.json.
     const cfg = JSON.parse(readFileSync(path.join(HOOKS_DIR, 'claude-code-hooks.json'), 'utf8'));
     const cmd: string = cfg.hooks.SessionStart[0].hooks[0].command;
     expect(cmd).toContain('ledger-activate.js');
@@ -79,9 +79,9 @@ describe('plugin-shipped hooks stay wired to real files', () => {
   });
 
   it('claude-code-hooks.json Stop hook points at verify-proof-binding.cjs, which exists', () => {
-    // Not .claude/settings.json, which is project-local and gitignored — see
-    // hooks/README.md — so it ships automatically with the plugin for every
-    // installer via ${CLAUDE_PLUGIN_ROOT}.
+    // Not .claude/settings.json, which is project-local — see hooks/README.md —
+    // so it ships automatically with the plugin for every installer via
+    // ${CLAUDE_PLUGIN_ROOT}.
     const cfg = JSON.parse(readFileSync(path.join(HOOKS_DIR, 'claude-code-hooks.json'), 'utf8'));
     const stopHooks = cfg.hooks?.Stop ?? [];
     expect(stopHooks.length).toBeGreaterThan(0);

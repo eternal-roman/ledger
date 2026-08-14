@@ -1,32 +1,32 @@
-# Scope and Layers (What the Kernel + Skills Actually Deliver Today)
+# Scope and layers
 
-## What the Kernel Enforces (src/core + src/verify)
-- `Money.from` (exact Decimal, rejects non-int JS numbers, see money.ts:86-93).
-- `JournalEntry` + `validateEntry` (balance per currency, >=2 lines, positive amounts, scale, ISO date, no currency mix in one entry).
-- Immutable `Ledger.apply` (re-validates on every apply).
-- `auditHash()` (SHA-256 length-prefixed chain, `ledger-audit-v1`).
-- `verifyFundamentalEquation`, `trialBalance`, `incomeStatement`, `balanceSheet`.
-- `runTrace` (per-step checkpoints with balances + equation + hash prefix).
-- `verifyDeterminism`, `makeCanonicalArtifact` + validator, `checkConformance`.
+What ships. Nothing here is a stub.
 
-## Layers Built on the Kernel (current shipping)
-- Trading: `fillToEntries`, custody, fees (taker/maker), deposits/withdrawals (src/trading).
-- Portfolio: lot relief (FIFO etc via tags), realized/unrealized PnL (src/portfolio).
-- Investing: time/money weighted returns, allocation drift, planRebalance (src/investing).
-- Crypto: transfers (one-shot + two-phase), network fees (src/crypto).
-- Instruments + FX: asset scales, createFxConversion.
+## Kernel (`src/core` + `src/verify`)
 
-## Skills / Commands Layer
-Agent guidance (skills/*.SKILL.md + commands/*.toml) that instructs the model to use the above primitives + `CanonicalFinancialArtifact`.
-The mechanical enforcement is now also available via `scripts/ledger-verify.ts` / `npm run verify:ledger`.
+- `Money.from` — exact decimal; rejects non-integer JS numbers and non-finites
+- `JournalEntry` + `validateEntry` — ≥2 lines, per-currency balance, scale, ISO date, no mixed currency
+- Immutable `Ledger.apply` — re-validates; rejects duplicate ids and account redefinition
+- `auditHash()` — SHA-256 length-prefixed chain, format `ledger-audit-v2` (includes account type and name)
+- `verifyFundamentalEquation`, `trialBalance`, `incomeStatement`, `balanceSheet`
+- `runTrace`, `verifyDeterminism`, `makeCanonicalArtifact`, `checkConformance`
 
-## Limitations (see also docs/roadmap.md)
-- IFRS 16 (leases) fully implemented with golden-master verification. General depreciation/amortization (straight-line via allocate, declining balance) and period controls/closing/FX translation+CTA added as production utilities on the kernel.
-- Citation graph seeds are a small, high-quality starter set (see docs/CITATION-COVERAGE.md). Not a full canon replacement.
-- Skills are instructions + the CLI/script layer. LLM fidelity still matters for complex modeling; use the kernel functions directly in code for determinism.
+## Layers (all emit kernel entries)
 
-**Disclaimer:** See README §Disclaimer + MIT LICENSE. Tests/adversarial = due diligence.
+- Trading, portfolio lots / P&L, investing returns / rebalance, crypto transfers
+- Instruments + FX (`installAssetScales`, `createFxConversion`)
+- IFRS 16 lessee (golden-master)
+- Period locks, closing, FX translation + CTA, depreciation
+- Direct-method cash flow, position reconcile
 
-Graceful degradation: ledger layer always runs; when host equivalents absent note "Ledger layer only (no superpowers/pr-review equivalents detected)".
+## Agent surface
 
-Use `docs/CORE-PROTOCOL.md` + the checklist for every value-touching change.
+Skills under `skills/` and commands under `commands/` tell the model to use the primitives. Enforcement is the kernel, the MCP adapter, and `npx ledger-verify`.
+
+## Limits
+
+- Citation graph is a starter set (`docs/CITATION-COVERAGE.md`), not a full canon.
+- LLM fidelity still matters for *modeling*. Determinism comes from calling the kernel, not from the prompt.
+- Python under `reference-implementations/python/` ports the kernel invariants. Fiat scales match TypeScript. Non-fiat scales need a resolver (or the small built-in BTC/ETH/stable map). Hash format is `ledger-audit-v2`.
+
+See `docs/CORE-PROTOCOL.md` and `docs/SUCCESS-CHECKLIST.md`.

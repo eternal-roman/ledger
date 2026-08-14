@@ -3,9 +3,9 @@
  *
  *   fixtureProposer : the recorded baseline proposals (deterministic, no network).
  *                     This is the default and what CI runs.
- *   liveProposer    : asks a Claude model to draft an entry per task, behind an
- *                     ANTHROPIC_API_KEY. Demonstrates the same harness on real
- *                     model output without adding a hard dependency or touching CI.
+ *   liveProposer    : asks a live model to draft an entry per task, behind an
+ *                     API key. Demonstrates the same harness on real model
+ *                     output without adding a hard dependency or touching CI.
  */
 import { tasks, baselineProposals, type Entry } from './dataset.js';
 
@@ -25,21 +25,21 @@ const SYSTEM = [
   'Use decimal strings for amounts. No prose, no code fences.',
 ].join('\n');
 
-/** Live proposer using the Anthropic SDK. Only invoked with --live and a key. */
+/** Live proposer. Only invoked with --live and a key. */
 export async function liveProposer(): Promise<Entry[]> {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error('liveProposer requires ANTHROPIC_API_KEY in the environment.');
   }
-  let Anthropic: any;
+  let Sdk: any;
   try {
     // @ts-ignore optional peer dependency, resolved only in --live mode
-    Anthropic = (await import('@anthropic-ai/sdk')).default;
+    Sdk = (await import('@anthropic-ai/sdk')).default;
   } catch {
     throw new Error(
-      'liveProposer requires the Anthropic SDK. Install it: npm i -D @anthropic-ai/sdk',
+      'liveProposer requires the optional SDK. Install it: npm i -D @anthropic-ai/sdk',
     );
   }
-  const client = new Anthropic();
+  const client = new Sdk();
   const out: Entry[] = [];
   for (const t of tasks) {
     const msg = await client.messages.create({
