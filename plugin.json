@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.19.0",
+  "version": "0.19.1",
   "description": "Exact-decimal double-entry kernel for agents. Money.from, validateEntry, Ledger.apply. MCP + /ledger-* skills so models prove money instead of guessing.",
   "author": {
     "name": "eternal-roman / Ledger maintainers"

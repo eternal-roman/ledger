@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.19.1] - 2026-08-14
+
+First public npm publish. MCP registry field `mcpName`. server.json description fits the 100-character cap.
+
 ## [0.19.0] - 2026-08-14
 
 Agent-first product surface. Python `audit_hash` is `ledger-audit-v2`. CI `ci-ok` is required on `main`. Docs and skills tightened. Manifests synced; check:versions + verify:full green.
