@@ -83,7 +83,7 @@ Action: add `mcpName`, bump, publish MCP package, wait for npm (CDN lag up to 10
 
 ## mcp-publisher 401 / "Authentication failed"
 
-Action: `mcp-publisher login github -token $env:GH_TOKEN` (user-set env; do not print `gh auth token`). Confirm `login github --help` on the downloaded binary. Namespace `io.github.<github-user>/…` must match the token's user.
+Action: `$env:GH_TOKEN = (gh auth token)` then `mcp-publisher login github -token $env:GH_TOKEN`. Do not Write-Host the token. Confirm `login github --help` on the downloaded binary. Namespace `io.github.<github-user>/…` must match the token's user.
 
 ## `Unknown command: stage`
 

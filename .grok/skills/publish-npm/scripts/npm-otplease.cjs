@@ -13,7 +13,7 @@
  *
  * Usage:
  *   node npm-otplease.cjs <pkg-dir> [npm args...]
- * Defaults: publish --access public --ignore-scripts
+ * Defaults: publish --access public
  */
 
 const fs = require('fs')
