@@ -18,7 +18,8 @@ const locations: Array<{ file: string; extract: (s: string) => string | null; no
   { file: 'plugin.json', extract: (s) => JSON.parse(s).version },
   { file: '.claude-plugin/plugin.json', extract: (s) => JSON.parse(s).version },
   { file: 'mcp/package.json', extract: (s) => JSON.parse(s).version },
-  { file: 'mcp/server.json', extract: (s) => { const j=JSON.parse(s); return j.version || j.packages?.[0]?.version; }, note: 'server manifest + package entry' },
+  { file: 'mcp/server.json', extract: (s) => JSON.parse(s).version, note: 'server.json top version' },
+  { file: 'mcp/server.json', extract: (s) => JSON.parse(s).packages?.[0]?.version ?? null, note: 'server.json packages[0].version' },
   { file: 'CHANGELOG.md', extract: (s) => { const m = s.match(/^\s*##\s*\[([^\]]+)\]/m); return m ? m[1] : null; } },
   { file: 'reference-implementations/python/pyproject.toml', extract: (s) => { const m = s.match(/^\s*version\s*=\s*"([^"]+)"/m); return m ? m[1] : null; } },
   { file: 'reference-implementations/python/ledger/__init__.py', extract: (s) => { const m = s.match(/^\s*__version__\s*=\s*"([^"]+)"/m); return m ? m[1].replace(/-ref$/, '') : null; }, note: 'strips -ref for compare; source is X.Y.Z-ref' },
@@ -39,6 +40,23 @@ for (const loc of locations) {
     allGood = false;
     mismatches.push(`${loc.file}: read/extract failed - ${(e as Error).message}`);
   }
+}
+
+try {
+  const server = JSON.parse(readFileSync('mcp/server.json', 'utf8'));
+  const mcpPkg = JSON.parse(readFileSync('mcp/package.json', 'utf8'));
+  if (mcpPkg.mcpName !== server.name) {
+    allGood = false;
+    mismatches.push(`mcp/package.json mcpName "${mcpPkg.mcpName}" !== mcp/server.json name "${server.name}"`);
+  }
+  const desc = typeof server.description === 'string' ? server.description : '';
+  if (desc.length < 1 || desc.length > 100) {
+    allGood = false;
+    mismatches.push(`mcp/server.json description length ${desc.length} (registry maxLength 100)`);
+  }
+} catch (e) {
+  allGood = false;
+  mismatches.push(`mcp registry fields: ${(e as Error).message}`);
 }
 
 if (allGood) {

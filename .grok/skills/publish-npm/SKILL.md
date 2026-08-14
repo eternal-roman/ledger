@@ -39,13 +39,7 @@ Ledger extras before any tarball leaves the machine:
 - `mcp/package.json` depends on the kernel by semver (`^X.Y.Z`), never `file:`.
 - Kernel version on npm must exist **before** publishing MCP.
 
-Hard stop (do not pack until this exits 0):
-
-```pwsh
-node -e "const s=require('./mcp/server.json'),p=require('./mcp/package.json'); const n=s.description.length; if(n>100){console.error('description',n); process.exit(1)}; if(p.mcpName!==s.name){console.error('mcpName',p.mcpName,s.name); process.exit(1)}; console.log('mcp preflight ok',n)"
-```
-
-Do not trust `server.json` `$schema` for the length cap. Registry uses the live schema in `references/SOURCES.md` (`description.maxLength` = 100).
+`npm run check:versions` now also fails if `mcpName` ≠ `server.json` name, if `description` is empty or > 100 chars, or if `server.json` top version and `packages[0].version` disagree. Do not trust `server.json` `$schema` for the length cap — registry uses the live schema in `references/SOURCES.md`.
 
 Missing `mcpName` or a long description on an already-published version **cannot** be patched in place. Bump (`/release` patch), then publish the new version.
 
@@ -104,10 +98,12 @@ MCP banner: start `node node_modules/@eternal-roman/ledger-mcp/dist/server.js`, 
 
 ```pwsh
 # download current mcp-publisher from the latest GitHub release (SOURCES.md)
-# User sets GH_TOKEN in their environment; do not print `gh auth token`
+$env:GH_TOKEN = (gh auth token)   # do not Write-Host this
 mcp-publisher login github -token $env:GH_TOKEN
 mcp-publisher publish
 ```
+
+If `npm-otplease.cjs` no longer intercepts after an npm major bump, stop. Re-read `<npm>/lib/utils/auth.js` and update the helper. Do not invent a third publish path.
 
 `io.github.*` namespace is the GitHub user. Re-login if the binary is new.
 
