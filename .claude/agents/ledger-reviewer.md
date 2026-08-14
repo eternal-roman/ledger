@@ -1,5 +1,5 @@
 ---
-name: ledger-chad-reviewer
+name: ledger-reviewer
 description: Strict reviewer for monetary values, accounts, and financial constructs. Ledger kernel + review + security. Use for PRs or pre-commit on value diffs.
 ---
 
