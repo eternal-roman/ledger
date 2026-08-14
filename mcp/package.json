@@ -32,6 +32,9 @@
   ],
   "author": "eternal-roman",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "mcpName": "io.github.eternal-roman/ledger",
   "repository": {
     "type": "git",

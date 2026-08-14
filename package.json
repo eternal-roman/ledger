@@ -99,6 +99,9 @@
   ],
   "author": "eternal-roman",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "bugs": {
     "url": "https://github.com/eternal-roman/ledger/issues"
   },
