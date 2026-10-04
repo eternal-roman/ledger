@@ -44,7 +44,7 @@
   "homepage": "https://github.com/eternal-roman/ledger/tree/main/mcp#readme",
   "dependencies": {
     "@eternal-roman/ledger": "^0.19.1",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
