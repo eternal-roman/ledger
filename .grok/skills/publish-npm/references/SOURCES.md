@@ -43,7 +43,7 @@ CDN lag after adding `mcpName` to a just-published tarball: wait 10–15 minutes
 
 ## Ledger repo
 
-- `/release` skill: `~/.grok/skills/release/SKILL.md` — git bump, CI, signed tag, GitHub Release. Invoke **before** this skill.
+- `package-release` skill (`/release`): `~/.grok/skills/package-release/SKILL.md` — git bump, CI, signed tag, GitHub Release. Invoke **before** this skill.
 - `docs/RELEASING.md` — short pointer; this skill is the procedure.
 - Version gate: `npm run check:versions` / `scripts/check-versions.ts`
 - Kernel: `@eternal-roman/ledger`
