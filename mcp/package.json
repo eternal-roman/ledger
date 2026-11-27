@@ -1,6 +1,6 @@
 {
   "name": "@eternal-roman/ledger-mcp",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "MCP server for the Ledger kernel. Agents call money_compute, entry_validate, ledger_post — they do not do money math in tokens. Fail-closed, audit-hashed, deterministic.",
   "type": "module",
   "bin": {
@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/eternal-roman/ledger/tree/main/mcp#readme",
   "dependencies": {
-    "@eternal-roman/ledger": "^0.19.1",
+    "@eternal-roman/ledger": "^0.19.2",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "zod": "^4.6.6"
   },
