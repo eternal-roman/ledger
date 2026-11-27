@@ -20,7 +20,7 @@ export const lineSchema = z.object({
     .describe('Exact decimal string — NEVER a float literal (e.g. "1800.00", not 1800.0)'),
   currency: z.string().describe('ISO currency or asset symbol, e.g. "USD", "BTC"'),
   side: z.enum(['debit', 'credit']).describe('Posting side'),
-  tags: z.record(z.string()).optional().describe('Optional line tags (audit-hashed)'),
+  tags: z.record(z.string(), z.string()).optional().describe('Optional line tags (audit-hashed)'),
 });
 export type LineInput = z.infer<typeof lineSchema>;
 
@@ -31,7 +31,7 @@ export const entrySchema = z.object({
   description: z.string().describe('Entry description'),
   lines: z.array(lineSchema).min(1).describe('Journal lines (at least two for double-entry)'),
   citations: z.array(z.string()).optional().describe('Supporting citations (e.g. GAAP/IFRS refs)'),
-  tags: z.record(z.string()).optional(),
+  tags: z.record(z.string(), z.string()).optional(),
 });
 export type EntryInput = z.infer<typeof entrySchema>;
 

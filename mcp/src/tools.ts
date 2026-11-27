@@ -394,7 +394,7 @@ export function registerTools(server: McpServer): void {
         'rather than asserting from memory.',
       inputSchema: {
         query: z.string(),
-        levers: z.record(z.string()).optional().describe('Optional dimension filters'),
+        levers: z.record(z.string(), z.string()).optional().describe('Optional dimension filters'),
         asOf: z.string().optional(),
       },
     },
@@ -567,7 +567,7 @@ export function registerTools(server: McpServer): void {
       inputSchema: {
         ledger: ledgerSchema,
         asOf: z.string(),
-        rates: z.record(z.object({ rate: z.string(), source: z.string().optional() })),
+        rates: z.record(z.string(), z.object({ rate: z.string(), source: z.string().optional() })),
         reportingCurrency: z.string(),
       },
     },
