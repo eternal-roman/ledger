@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.2] - 2026-11-27
+
+Security fix for `@eternal-roman/ledger-mcp`. The kernel's API and the MCP tool contract are unchanged.
+
+- `ledger-mcp` depends on zod 4.6.6 (was `^3.23.0`). Every zod 3.x is in the range of the advisory "Zod can exhaust memory while validating oversized constrained collections" (fixed in 4.6.6), so installs of `ledger-mcp@0.19.1` resolve a vulnerable zod. The four record inputs (line tags, entry tags, citation levers, FX rates) use zod 4's `z.record(key, value)` and keep the same string-keyed shape. Schema-violation errors use zod 4's wording, for example `Invalid input: expected string, received number at rates.USD.rate`.
+- Dependency refresh: `@modelcontextprotocol/sdk` 1.32.2, `hono` 4.13.23, `@hono/node-server` 2.1.11, `vitest` 5.0.3, `fast-check` 4.10.2, and transitive security bumps (`fast-uri`, `ip-address`, `body-parser`, `proxy-addr`, `source-map-js`, `vite`).
+
 ## [0.19.1] - 2026-08-14
 
 First public npm publish. MCP registry field `mcpName`. server.json description fits the 100-character cap.
