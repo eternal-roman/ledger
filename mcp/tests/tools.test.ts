@@ -605,7 +605,9 @@ describe('MCP error response contract', () => {
     });
     expect(bad.isError).toBe(true);
     expect(String(bad.rawText)).toContain('MCP error');
-    expect(String(bad.rawText)).toContain('Expected string, received number');
+    // zod 4 words it 'Invalid input: expected string, received number at rates.USD.rate'.
+    expect(String(bad.rawText)).toMatch(/expected string, received number/i);
+    expect(String(bad.rawText)).toContain('rates.USD.rate');
   });
 
   it('logical fail-closed (unbalanced) returns ok:false via structured result (not necessarily isError)', async () => {
